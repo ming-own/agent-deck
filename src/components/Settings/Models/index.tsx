@@ -35,13 +35,7 @@ import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
 import { Input } from '@/components/ui/input';
 import { itemFadeMotion } from '@/components/ui/motion';
-import { Switch } from '@/components/ui/switch';
 import { useConfiguredModels } from '@/hooks/useConfiguredModels';
-import { SITE_URL } from '@/lib';
-import {
-  cloudModelAvailabilityStatus,
-  isCloudModelAvailable,
-} from '@/lib/cloudModelAvailability';
 import {
   configurationHint,
   modelProviders,
@@ -58,11 +52,8 @@ import {
   needsInvertModelImage,
 } from '@/shared/modelProviderImages';
 import { useAuthStore } from '@/store/authStore';
-import { useCloudModelStore, type CloudModel } from '@/store/cloudModelStore';
-import { refreshUsage, useUsageNoticeStore } from '@/store/usageNoticeStore';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowUpRight,
   Bell,
   Check,
   ChevronDown,
@@ -71,10 +62,9 @@ import {
   MoreHorizontal,
   Plus,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { toast } from 'sonner';
 import SettingsContentShell from '../SettingsContentShell';
 import { SettingsRow, SettingsRowGroup } from '../SettingsRowGroup';
 import SettingsSectionPage from '../SettingsSectionPage';
@@ -87,8 +77,6 @@ import {
   ModelConfigurationDialog,
 } from './ModelConfigurationDialog';
 
-const UNAVAILABLE_TOGGLE_PREVIEW_MS = 320;
-
 export default function SettingModels() {
   const { user_id, email } = useAuthStore();
   return <ModelsContent key={String(user_id || email || 'local')} />;
@@ -100,16 +88,9 @@ function ModelsContent() {
   const inventory = useConfiguredModels();
   const shouldReduceMotion = Boolean(useReducedMotion());
   const auth = useAuthStore();
-  const credits = useUsageNoticeStore((state) => state.credits);
-  const creditsLoading = useUsageNoticeStore((state) => state.refreshing);
-  const planKey = useUsageNoticeStore((state) => state.subscription?.plan_key);
-  const effectiveCloud = useCloudModelStore((state) =>
-    state.getEffectiveModelId(auth.cloud_model_type)
-  );
   const [query, setQuery] = useState('');
   const [providerQuery, setProviderQuery] = useState('');
   const [adding, setAdding] = useState(false);
-  const [showAllEigent, setShowAllEigent] = useState(false);
   const [editing, setEditing] = useState<{
     provider: string;
     record?: ConfiguredProvider;
@@ -119,41 +100,21 @@ function ModelsContent() {
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [configurationBusy, setConfigurationBusy] = useState(false);
-  const [previewEnabledModelId, setPreviewEnabledModelId] = useState<
-    string | null
-  >(null);
-  const unavailableToggleTimer = useRef<number | null>(null);
   const [error, setError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     const target = searchParams.get('provider');
     if (!target) return;
-    if (target === 'cloud' || target === 'eigent')
-      setCollapsed((current) => current.filter((id) => id !== 'eigent'));
-    else if (modelProviders.some((provider) => provider.id === target))
+    if (modelProviders.some((provider) => provider.id === target))
       setEditing({ provider: target });
     const next = new URLSearchParams(searchParams);
     next.delete('provider');
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
-  useEffect(() => {
-    if (inventory.cloudAvailable) void refreshUsage();
-  }, [inventory.cloudAvailable]);
-  useEffect(
-    () => () => {
-      if (unavailableToggleTimer.current !== null)
-        window.clearTimeout(unavailableToggleTimer.current);
-    },
-    []
-  );
-
   const isDefault = (record: ConfiguredProvider) =>
     auth.modelType === providerCategory(record.provider_name) &&
     Boolean(record.prefer);
-  const cloudDefault = (id: string) =>
-    auth.modelType === 'cloud' && effectiveCloud === id;
   const groups = [
-    'eigent',
     ...new Set(inventory.records.map((record) => record.provider_name)),
     ...(inventory.codexConnected ? ['codex-subscription'] : []),
   ];
@@ -171,42 +132,12 @@ function ModelsContent() {
   const invalidRecordCount = inventory.records.filter(
     (record) => !getProviderValid(record)
   ).length;
-  const matchingVisibleCloudCount = inventory.cloudAvailable
-    ? inventory.cloudModels.filter(
-        (model) =>
-          !inventory.hidden.includes(model.id) &&
-          matches(`Eigent ${model.display_name}`)
-      ).length
-    : 0;
-  const visibleCloudCount = inventory.cloudAvailable
-    ? inventory.cloudModels.filter(
-        (model) =>
-          !inventory.hidden.includes(model.id) &&
-          isCloudModelAvailable(model, planKey) &&
-          matches(`Eigent ${model.display_name}`)
-      ).length
-    : 0;
   const visibleCodexCount =
     inventory.codexConnected && matches(`Codex ${auth.codex_model_type}`)
       ? 1
       : 0;
-  const visibleCount =
-    visibleRecordCount + visibleCloudCount + visibleCodexCount;
-  const matchingHiddenCloudCount = inventory.cloudAvailable
-    ? inventory.cloudModels.filter(
-        (model) =>
-          inventory.hidden.includes(model.id) &&
-          matches(`Eigent ${model.display_name}`)
-      ).length
-    : 0;
-  const hasMatches =
-    matchingRecords.length +
-      matchingVisibleCloudCount +
-      matchingHiddenCloudCount +
-      visibleCodexCount >
-    0;
-  const formattedCredits =
-    credits === null ? '—' : new Intl.NumberFormat().format(credits);
+  const visibleCount = visibleRecordCount + visibleCodexCount;
+  const hasMatches = matchingRecords.length + visibleCodexCount > 0;
   const providerIcons = modelProviders.map((provider) => ({
     id: provider.id,
     name: provider.name,
@@ -219,20 +150,17 @@ function ModelsContent() {
   const defaultModelOptions = selectableConfiguredModels({
     ...inventory,
     codexModelType: auth.codex_model_type,
-    planKey,
   });
   const preferredRecord = inventory.records.find(
     (record) =>
       record.prefer && providerCategory(record.provider_name) === auth.modelType
   );
   const selectedDefaultId =
-    auth.modelType === 'cloud'
-      ? `cloud:${effectiveCloud}`
-      : auth.modelType === 'codex_subscription'
-        ? 'codex'
-        : preferredRecord
-          ? `provider:${preferredRecord.id}`
-          : undefined;
+    auth.modelType === 'codex_subscription'
+      ? 'codex'
+      : preferredRecord
+        ? `provider:${preferredRecord.id}`
+        : undefined;
   const selectedDefaultValue = defaultModelOptions.some(
     (option) => option.id === selectedDefaultId
   )
@@ -254,7 +182,7 @@ function ModelsContent() {
     ...new Set(defaultModelOptions.map((option) => option.group)),
   ];
   function logo(provider: string, sizeClass = 'size-ds-24') {
-    const id = provider === 'eigent' ? 'cloud' : provider;
+    const id = provider;
     const src = getModelImage(id);
     return src ? (
       <img
@@ -277,11 +205,6 @@ function ModelsContent() {
   }
   async function chooseDefault(value: string) {
     if (busy) return;
-    if (value.startsWith('cloud:')) {
-      auth.setCloudModelType(value.slice('cloud:'.length));
-      auth.setModelType('cloud');
-      return;
-    }
     if (value === 'codex') {
       auth.setModelType('codex_subscription');
       return;
@@ -345,78 +268,10 @@ function ModelsContent() {
       {t(configured ? 'setting.configured' : 'setting.not-configured')}
     </Badge>
   );
-  const availabilityStatus = (model: CloudModel) => {
-    const status = cloudModelAvailabilityStatus(model, planKey);
-    return (
-      <Badge
-        variant="secondary"
-        size="xs"
-        tone={
-          status === 'available'
-            ? 'success'
-            : status === 'upgrade'
-              ? 'error'
-              : 'information'
-        }
-      >
-        {t(
-          status === 'available'
-            ? 'setting.model-list.available'
-            : status === 'upgrade'
-              ? 'setting.model-list.unavailable'
-              : 'setting.model-list.availability-unknown'
-        )}
-      </Badge>
-    );
-  };
   const modelRowClass =
     'flex min-h-[var(--ds-row-comfortable-min-height)] items-center gap-ds-12 px-ds-12 py-ds-12';
   const modelNameClass = (configured: boolean) =>
     `min-w-0 flex-1 truncate ${configured ? '' : 'text-ds-text-error-default-default'}`;
-  const setCloudModelVisibility = (model: CloudModel, visible: boolean) => {
-    const status = cloudModelAvailabilityStatus(model, planKey);
-    if (status === 'unknown') {
-      toast.info(t('setting.model-list.availability-unknown'), {
-        id: 'eigent-plan-unavailable',
-        closeButton: true,
-        action: { label: t('setting.model-list.retry'), onClick: refreshUsage },
-      });
-      return;
-    }
-    if (status === 'upgrade') {
-      if (!visible) return;
-      if (unavailableToggleTimer.current !== null)
-        window.clearTimeout(unavailableToggleTimer.current);
-      setPreviewEnabledModelId(model.id);
-      unavailableToggleTimer.current = window.setTimeout(
-        () => {
-          setPreviewEnabledModelId((current) =>
-            current === model.id ? null : current
-          );
-          unavailableToggleTimer.current = null;
-        },
-        shouldReduceMotion ? 0 : UNAVAILABLE_TOGGLE_PREVIEW_MS
-      );
-      toast.info(
-        t('setting.model-list.upgrade-required', {
-          model: model.display_name,
-        }),
-        {
-          id: 'eigent-model-upgrade-required',
-          closeButton: true,
-          action: {
-            label: t('setting.upgrade'),
-            onClick: () => {
-              window.location.href = `${SITE_URL}/pricing`;
-            },
-          },
-        }
-      );
-      return;
-    }
-    inventory.setHidden(model.id, !visible);
-  };
-
   return (
     <>
       <CollectionToolbar
@@ -577,10 +432,7 @@ function ModelsContent() {
                         className="scrollbar-always-visible max-h-80 overflow-y-auto"
                       >
                         {defaultModelGroups.map((group) => {
-                          const groupName =
-                            group === 'eigent'
-                              ? 'Eigent'
-                              : providerDefinition(group).name;
+                          const groupName = providerDefinition(group).name;
                           return (
                             <div key={group}>
                               {group !== defaultModelGroups[0] && (
@@ -638,51 +490,23 @@ function ModelsContent() {
               />
             </SettingsRowGroup>
             {groups.map((group) => {
-              const eigent = group === 'eigent';
               const codex = group === 'codex-subscription';
-              const name = eigent
-                ? 'Eigent'
-                : codex
-                  ? 'Codex'
-                  : providerDefinition(group).name;
+              const name = codex ? 'Codex' : providerDefinition(group).name;
               const providerRecords = inventory.records.filter(
                 (record) => record.provider_name === group
               );
               const records = providerRecords.filter((record) =>
                 matches(`${name} ${record.model_type} ${record.id}`)
               );
-              const visibleCloud = inventory.cloudModels.filter(
-                (model) =>
-                  !inventory.hidden.includes(model.id) &&
-                  matches(`Eigent ${model.display_name}`)
-              );
-              const hiddenCloud = inventory.cloudModels.filter(
-                (model) =>
-                  inventory.hidden.includes(model.id) &&
-                  matches(`Eigent ${model.display_name}`)
-              );
               if (
                 query &&
-                !(eigent
-                  ? visibleCloud.length || hiddenCloud.length
-                  : codex
-                    ? matches(`Codex ${auth.codex_model_type}`)
-                    : records.length)
+                !(codex
+                  ? matches(`Codex ${auth.codex_model_type}`)
+                  : records.length)
               )
                 return null;
               const closed = collapsed.includes(group);
-              const enabledCloudCount = inventory.cloudModels.filter(
-                (model) =>
-                  !inventory.hidden.includes(model.id) &&
-                  isCloudModelAvailable(model, planKey)
-              ).length;
-              const modelCount = eigent
-                ? inventory.cloudAvailable
-                  ? enabledCloudCount
-                  : 0
-                : codex
-                  ? 1
-                  : providerRecords.length;
+              const modelCount = codex ? 1 : providerRecords.length;
               return (
                 <section
                   key={group}
@@ -699,75 +523,26 @@ function ModelsContent() {
                         <Badge
                           variant="secondary"
                           size="xs"
-                          aria-label={
-                            eigent
-                              ? `${modelCount}/${inventory.cloudModels.length} ${t('setting.models')}`
-                              : `${modelCount} ${t('setting.models')}`
-                          }
+                          aria-label={`${modelCount} ${t('setting.models')}`}
                         >
                           {modelCount}
-                          {eigent && (
-                            <span className="text-ds-ink-muted-default">
-                              /{inventory.cloudModels.length}
-                            </span>
-                          )}
                         </Badge>
-                        {eigent && (
-                          <Badge
-                            variant="secondary"
-                            size="xs"
-                            tone={
-                              credits === null
-                                ? 'neutral'
-                                : credits > 0
-                                  ? 'success'
-                                  : 'error'
-                            }
-                            aria-label={`${t('setting.credits')}: ${formattedCredits}`}
-                          >
-                            <span>{t('setting.credits')}:</span>
-                            {creditsLoading ? (
-                              <DsIcon
-                                icon={LoaderCircle}
-                                recipe="main-compact"
-                                className="motion-safe:animate-spin"
-                              />
-                            ) : (
-                              formattedCredits
-                            )}
-                          </Badge>
-                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-ds-8">
-                      {eigent ? (
-                        <Button
-                          asChild
-                          id="manage-eigent-account"
-                          variant="secondary"
-                          size="sm"
-                          className="no-underline hover:no-underline"
-                        >
-                          <a href={`${SITE_URL}/dashboard`}>
-                            {t('setting.manage-account')}
-                            <DsIcon icon={ArrowUpRight} />
-                          </a>
-                        </Button>
-                      ) : (
-                        <Button
-                          id={`add-model-${group}`}
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setEditing({ provider: group })}
-                        >
-                          {!codex && <DsIcon icon={Plus} />}
-                          {t(
-                            codex
-                              ? 'setting.manage'
-                              : 'setting.model-list.add-model'
-                          )}
-                        </Button>
-                      )}
+                      <Button
+                        id={`add-model-${group}`}
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setEditing({ provider: group })}
+                      >
+                        {!codex && <DsIcon icon={Plus} />}
+                        {t(
+                          codex
+                            ? 'setting.manage'
+                            : 'setting.model-list.add-model'
+                        )}
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -795,134 +570,7 @@ function ModelsContent() {
                       id={`models-${group}`}
                       className="mx-ds-16 flex flex-col divide-y divide-ds-hairline-subtle-disabled border-x-0 border-t border-b-0 border-solid border-ds-hairline-subtle-default"
                     >
-                      {eigent ? (
-                        <>
-                          {inventory.cloudAvailable &&
-                            visibleCloud.map((model) => {
-                              const available = isCloudModelAvailable(
-                                model,
-                                planKey
-                              );
-                              return (
-                                <div key={model.id} className={modelRowClass}>
-                                  <DsText
-                                    className="min-w-0 flex-1 truncate"
-                                    weight="medium"
-                                  >
-                                    {model.display_name}
-                                  </DsText>
-                                  {cloudDefault(model.id) && badge}
-                                  {availabilityStatus(model)}
-                                  <Switch
-                                    size="sm"
-                                    variant="outline"
-                                    aria-label={model.display_name}
-                                    checked={
-                                      available ||
-                                      previewEnabledModelId === model.id
-                                    }
-                                    disabled={
-                                      available && cloudDefault(model.id)
-                                    }
-                                    onCheckedChange={(checked) =>
-                                      setCloudModelVisibility(model, checked)
-                                    }
-                                  />
-                                  {actions(
-                                    model.display_name,
-                                    <DropdownMenuItem
-                                      disabled={
-                                        cloudDefault(model.id) ||
-                                        busy ||
-                                        !available
-                                      }
-                                      onSelect={() => {
-                                        auth.setCloudModelType(model.id);
-                                        auth.setModelType('cloud');
-                                      }}
-                                    >
-                                      {t('setting.set-as-default')}
-                                    </DropdownMenuItem>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          {inventory.cloudAvailable &&
-                            hiddenCloud.length > 0 && (
-                              <>
-                                {!query.trim() && (
-                                  <Button
-                                    variant="ghost"
-                                    size="xl"
-                                    textWeight="medium"
-                                    className="group w-full justify-between hover:!bg-transparent active:scale-100"
-                                    aria-expanded={showAllEigent}
-                                    aria-controls="hidden-eigent-models"
-                                    onClick={() =>
-                                      setShowAllEigent((current) => !current)
-                                    }
-                                  >
-                                    <span className="underline-offset-2 group-hover:underline">
-                                      {t('setting.model-list.view-all-models')}
-                                    </span>
-                                    {showAllEigent ? (
-                                      <DsIcon icon={ChevronDown} />
-                                    ) : (
-                                      <DsIcon icon={ChevronRight} />
-                                    )}
-                                  </Button>
-                                )}
-                                {(showAllEigent || Boolean(query.trim())) && (
-                                  <div
-                                    id="hidden-eigent-models"
-                                    className="flex flex-col divide-y divide-ds-hairline-subtle-disabled"
-                                  >
-                                    {hiddenCloud.map((model) => {
-                                      return (
-                                        <div
-                                          key={model.id}
-                                          className={modelRowClass}
-                                        >
-                                          <DsText
-                                            className="min-w-0 flex-1 truncate"
-                                            weight="medium"
-                                          >
-                                            {model.display_name}
-                                          </DsText>
-                                          {availabilityStatus(model)}
-                                          <Switch
-                                            size="sm"
-                                            variant="outline"
-                                            aria-label={model.display_name}
-                                            checked={
-                                              previewEnabledModelId === model.id
-                                            }
-                                            onCheckedChange={(checked) =>
-                                              setCloudModelVisibility(
-                                                model,
-                                                checked
-                                              )
-                                            }
-                                          />
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          {(!inventory.cloudAvailable ||
-                            (!visibleCloud.length && !hiddenCloud.length)) && (
-                            <DsText className="px-ds-8 py-ds-12 text-ds-ink-muted-default">
-                              {t(
-                                inventory.cloudAvailable
-                                  ? 'setting.model-list.no-visible-models'
-                                  : 'setting.model-list.cloud-unavailable'
-                              )}
-                            </DsText>
-                          )}
-                        </>
-                      ) : codex ? (
+                      {codex ? (
                         <div className={modelRowClass}>
                           <DsText className="min-w-0 flex-1 truncate">
                             {auth.codex_model_type}

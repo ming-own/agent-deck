@@ -176,16 +176,22 @@ describe('Configured model input menu', () => {
       screen.getByRole('button', { name: /select model/i })
     ).toHaveTextContent('Space default');
     await open('Space default');
-    const defaultModel = screen.getByRole('menuitemradio', { name: 'GPT' });
+    const defaultModel = screen.getByRole('menuitemradio', {
+      name: 'personal-model',
+    });
     expect(defaultModel).toHaveAttribute('aria-checked', 'false');
     fireEvent.click(defaultModel);
     expect(mocks.setProjectModel).toHaveBeenCalledWith('session', {
-      modelType: 'cloud',
-      cloud_model_type: 'gpt',
+      modelType: 'custom',
+      provider_id: 2,
+      model_platform: 'openai',
+      model_type: 'personal-model',
     });
     expect(mocks.setSpaceModelChoice).toHaveBeenCalledWith('space-1', {
-      modelType: 'cloud',
-      cloud_model_type: 'gpt',
+      modelType: 'custom',
+      provider_id: 2,
+      model_platform: 'openai',
+      model_type: 'personal-model',
     });
   });
   it("shows a pending Session on its Space's saved model", () => {
@@ -230,7 +236,12 @@ describe('Configured model input menu', () => {
     expect(trigger).not.toHaveTextContent('|');
     expect(trigger.querySelector('svg')).toBeNull();
     await open();
-    expect(screen.getByRole('group', { name: 'Eigent' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('group', { name: 'Eigent' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('menuitemradio', { name: 'GPT' })
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole('group', { name: 'OpenAI' }).querySelector('img[alt=""]')
     ).toHaveClass('size-ds-16');
@@ -254,7 +265,7 @@ describe('Configured model input menu', () => {
     expect(screen.queryByText('Anthropic')).not.toBeInTheDocument();
     expect(
       within(screen.getAllByRole('menu')[1]).getAllByRole('separator')
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
   it('does not override the model submenu anchor with a visual translation', async () => {
     render(

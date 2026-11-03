@@ -27,7 +27,15 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
@@ -139,6 +147,7 @@ beforeEach(() => {
     subscription: { plan_key: 'free' },
   });
 });
+afterEach(() => vi.unstubAllEnvs());
 function renderPage(provider?: string) {
   return render(
     <MemoryRouter
@@ -166,6 +175,27 @@ async function fillAntLing() {
 }
 
 describe('Models collections and configuration dialogs', () => {
+  it.each(['true', 'false'])(
+    'shows no hosted promotion with an empty inventory (local mode: %s)',
+    async (localMode) => {
+      vi.stubEnv('VITE_USE_LOCAL_PROXY', localMode);
+      mocks.get.mockResolvedValue({ items: [] });
+      renderPage();
+      await waitFor(() =>
+        expect(screen.queryByRole('status')).not.toBeInTheDocument()
+      );
+      expect(screen.queryByText(/Eigent|Credits:/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: 'Manage account' })
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Add model' })).toBeEnabled();
+      expect(
+        screen.getByRole('button', { name: /select default model/i })
+      ).toBeDisabled();
+      expect(mocks.cloud.fetchCloudModels).not.toHaveBeenCalled();
+    }
+  );
+
   it('shows model loading beside the Models heading', () => {
     mocks.get.mockReturnValue(new Promise(() => undefined));
     renderPage();
@@ -217,50 +247,15 @@ describe('Models collections and configuration dialogs', () => {
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label'))
         .filter(Boolean)
-    ).toEqual(['Models', 'All model providers', 'Eigent', 'OpenAI']);
+    ).toEqual(['Models', 'All model providers', 'OpenAI']);
     expect(
       screen.getByRole('region', { name: 'All model providers' })
     ).toBeInTheDocument();
-    const eigent = screen.getByRole('region', { name: 'Eigent' });
-    const eigentCount = within(eigent).getByLabelText('1/2 Models');
-    expect(eigentCount).toHaveTextContent('1/2');
-    expect(eigentCount.querySelector('span')).toHaveClass(
-      'text-ds-ink-muted-default'
-    );
-    expect(within(eigent).getByLabelText('Credits: 1,250')).toHaveTextContent(
-      'Credits:1,250'
-    );
-    const manageAccount = within(eigent).getByRole('link', {
-      name: 'Manage account',
-    });
-    expect(manageAccount.getAttribute('href')).toMatch(/\/dashboard$/);
-    expect(manageAccount).toHaveClass('no-underline', 'hover:no-underline');
-    expect(manageAccount.querySelector('svg')).toBeInTheDocument();
-    const eigentChevron = within(eigent).getByRole('button', {
-      name: 'Eigent',
-    });
-    expect(eigentChevron.querySelector('svg')).toHaveClass(
-      'rotate-90',
-      'transition-transform',
-      'motion-reduce:transition-none'
-    );
+    expect(screen.queryByText('Eigent')).not.toBeInTheDocument();
     expect(
-      eigent.querySelector('header')?.lastElementChild?.lastElementChild
-    ).toBe(eigentChevron);
-    const defaultEigentRow = within(eigent).getByText('GPT')
-      .parentElement as HTMLElement;
-    const defaultEigentRowText = defaultEigentRow.textContent ?? '';
-    expect(defaultEigentRowText.indexOf('Default')).toBeLessThan(
-      defaultEigentRowText.indexOf('Available')
-    );
-    expect(within(eigent).getByText('Available')).toHaveAttribute(
-      'data-tone',
-      'success'
-    );
-    expect(within(eigent).getByText('Unavailable')).toHaveAttribute(
-      'data-tone',
-      'error'
-    );
+      screen.queryByRole('link', { name: 'Manage account' })
+    ).not.toBeInTheDocument();
+    expect(mocks.cloud.fetchCloudModels).not.toHaveBeenCalled();
     const openAi = screen.getByRole('region', { name: 'OpenAI' });
     expect(openAi).toHaveClass('rounded-2xl', 'bg-ds-neutral-default-default');
     expect(within(openAi).getByLabelText('2 Models')).toBeInTheDocument();
@@ -285,6 +280,7 @@ describe('Models collections and configuration dialogs', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
   it('shows all provider icons above a Memory-style default model selector', async () => {
+    mocks.auth.modelType = 'custom';
     const user = userEvent.setup();
     renderPage();
 
@@ -296,7 +292,7 @@ describe('Models collections and configuration dialogs', () => {
       '[data-default-model-setting]'
     ) as HTMLElement;
     expect(defaultSetting).toHaveTextContent(
-      'This default model will be used for new Sessions until you change it.'
+      'This default model will be used for new Spaces until you change it.'
     );
     expect(providerBanner.parentElement?.parentElement).toHaveClass(
       'gap-ds-24',
@@ -334,9 +330,9 @@ describe('Models collections and configuration dialogs', () => {
     ).toBeGreaterThan(1);
 
     const select = within(defaultSetting).getByRole('button', {
-      name: 'Select Default Model: GPT',
+      name: 'Select Default Model: model-b',
     });
-    expect(select).toHaveTextContent('GPT');
+    expect(select).toHaveTextContent('model-b');
     expect(select).toHaveClass('bg-ds-neutral-muted-default');
     expect(select.parentElement).toHaveClass('ml-auto');
     await user.click(select);
@@ -352,7 +348,12 @@ describe('Models collections and configuration dialogs', () => {
         .getByRole('group', { name: 'OpenAI' })
         .querySelector('img[alt=""]')
     ).toHaveClass('size-ds-16');
-    expect(within(modelMenu).getAllByRole('separator')).toHaveLength(1);
+    expect(
+      within(modelMenu).queryByRole('group', { name: 'Eigent' })
+    ).not.toBeInTheDocument();
+    expect(
+      within(modelMenu).queryByRole('menuitemradio', { name: 'GPT' })
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole('menuitemradio', { name: 'model-a' })
     ).toBeInTheDocument();
@@ -391,7 +392,7 @@ describe('Models collections and configuration dialogs', () => {
 
     expect(invalidName).toHaveClass('text-ds-text-error-default-default');
     expect(invalidStatus).toHaveAttribute('data-tone', 'error');
-    expect(within(toolbar).getByLabelText('2 Models')).toHaveTextContent('2');
+    expect(within(toolbar).getByLabelText('1 Models')).toHaveTextContent('1');
     const invalidCount = within(toolbar).getByLabelText('1 Not configured');
     expect(invalidCount).toHaveAttribute('data-tone', 'error');
     expect(invalidCount.querySelector('svg')).toHaveClass('lucide-bell');
@@ -400,20 +401,6 @@ describe('Models collections and configuration dialogs', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('shows enabled and total Eigent models separately', async () => {
-    useModelVisibilityStore.setState({
-      hiddenByAccount: { '1': ['claude'] },
-    });
-    renderPage();
-
-    const eigent = await screen.findByRole('region', { name: 'Eigent' });
-    const count = within(eigent).getByLabelText('1/2 Models');
-
-    expect(count).toHaveTextContent('1/2');
-    expect(count.querySelector('span')).toHaveClass(
-      'text-ds-ink-muted-default'
-    );
-  });
   it('edits only the selected configuration ID and preserves its default flag', async () => {
     renderPage();
     await editRecord('model-b');
@@ -556,88 +543,6 @@ describe('Models collections and configuration dialogs', () => {
     expect(
       screen.queryByRole('dialog', { name: 'Add model · Anthropic' })
     ).not.toBeInTheDocument();
-  });
-  it('hides and restores Eigent models locally, protecting the default', async () => {
-    useUsageNoticeStore.setState({
-      subscription: { plan_key: 'plus' },
-    });
-    const user = userEvent.setup();
-    renderPage();
-    const defaultModelSwitch = screen.getByRole('switch', { name: 'GPT' });
-    expect(defaultModelSwitch).toBeDisabled();
-    expect(defaultModelSwitch.firstElementChild).toHaveClass(
-      'motion-reduce:transition-none'
-    );
-    const claudeRow = within(
-      screen.getByRole('region', { name: 'Eigent' })
-    ).getByText('Claude').parentElement as HTMLElement;
-    await user.click(screen.getByRole('switch', { name: 'Claude' }));
-    expect(useModelVisibilityStore.getState().hiddenByAccount['1']).toEqual([
-      'claude',
-    ]);
-    expect(screen.queryByRole('switch', { name: 'Claude' })).toBeNull();
-    const viewAll = screen.getByRole('button', { name: 'View all models' });
-    expect(viewAll).toHaveClass('!h-[var(--ds-button-xl-height)]');
-    expect(viewAll).toHaveClass('hover:!bg-transparent', 'active:scale-100');
-    expect(screen.getByText('View all models')).toHaveClass(
-      'group-hover:underline'
-    );
-    expect(claudeRow).toHaveClass(
-      'min-h-[var(--ds-row-comfortable-min-height)]',
-      'px-ds-12',
-      'py-ds-12'
-    );
-    expect(viewAll.parentElement).toHaveClass(
-      'mx-ds-16',
-      'divide-ds-hairline-subtle-disabled'
-    );
-    await user.click(viewAll);
-    expect(screen.getByRole('switch', { name: 'Claude' })).not.toBeChecked();
-    await user.click(screen.getByRole('switch', { name: 'Claude' }));
-    expect(useModelVisibilityStore.getState().hiddenByAccount['1']).toEqual([]);
-    expect(mocks.post).not.toHaveBeenCalled();
-    expect(mocks.put).not.toHaveBeenCalled();
-  });
-
-  it('does not present paid models as available before the plan is known', async () => {
-    useUsageNoticeStore.setState({ subscription: null });
-    renderPage();
-    await screen.findByText('model-a');
-    const claudeRow = screen.getByText('Claude').parentElement as HTMLElement;
-    expect(
-      within(claudeRow).getByText('Plan status unavailable')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /select default model/i })
-    ).toBeEnabled();
-    expect(screen.getByRole('switch', { name: 'Claude' })).not.toBeChecked();
-  });
-  it('previews an unavailable toggle before showing a plan upgrade popup', async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    const eigent = screen.getByRole('region', { name: 'Eigent' });
-    const unavailableSwitch = within(eigent).getByRole('switch', {
-      name: 'Claude',
-    });
-    expect(unavailableSwitch).not.toBeChecked();
-
-    await user.click(unavailableSwitch);
-
-    expect(unavailableSwitch).toBeChecked();
-    expect(
-      useModelVisibilityStore.getState().hiddenByAccount['1']
-    ).toBeUndefined();
-    expect(mocks.toastInfo).toHaveBeenCalledWith(
-      'Upgrade your plan to use Claude.',
-      expect.objectContaining({
-        id: 'eigent-model-upgrade-required',
-        closeButton: true,
-        action: expect.objectContaining({ label: 'Upgrade' }),
-      })
-    );
-    expect(within(eigent).queryByRole('alert')).toBeNull();
-    await waitFor(() => expect(unavailableSwitch).not.toBeChecked());
   });
   it('confirms deletion and removes only that record', async () => {
     const user = userEvent.setup();

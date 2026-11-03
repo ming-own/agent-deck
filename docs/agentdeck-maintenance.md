@@ -27,9 +27,12 @@ the existing root Apache-2.0 LICENSE instead of the inherited MIT declaration.
 
 Persisted keys, backend/API identifiers, translation keys, `.eigent` working
 directories, and the `eigent://` authentication protocol remain unchanged.
-They are compatibility contracts, not branding text. Existing cloud model
-provider names remain Eigent where they identify that external service.
-Changing any of these requires a separate, coordinated migration.
+They are compatibility contracts, not branding text. Changing any of these requires a separate, coordinated migration.
+
+The model settings and session selectors list user-connected providers and
+subscriptions only. The inherited Eigent hosted catalog, credit balance, and
+account promotion are no longer exposed there. Cloud protocol types remain for
+compatibility; this presentation change does not migrate stored model settings.
 
 The new package identity changes Electron's default application data directory.
 Existing app data is not migrated automatically. Some backend working paths

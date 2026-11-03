@@ -19,11 +19,12 @@ import {
   type ConfiguredProvider,
 } from '@/lib/configuredModels';
 import { useAuthStore } from '@/store/authStore';
-import { useCloudModelStore } from '@/store/cloudModelStore';
+import type { CloudModel } from '@/store/cloudModelStore';
 import { useModelVisibilityStore } from '@/store/modelVisibilityStore';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 const EMPTY_IDS: string[] = [];
+const EMPTY_CLOUD_MODELS: CloudModel[] = [];
 type InventoryState = {
   key: string;
   records: ConfiguredProvider[];
@@ -117,10 +118,6 @@ export function useConfiguredModels() {
   const { email, token, user_id } = useAuthStore();
   const account = String(user_id || email || 'local');
   const key = `${account}:${token || ''}`;
-  const cloudModels = useCloudModelStore((state) => state.models);
-  const fetchCloudModels = useCloudModelStore(
-    (state) => state.fetchCloudModels
-  );
   const hidden = useModelVisibilityStore(
     (state) => state.hiddenByAccount[account] ?? EMPTY_IDS
   );
@@ -139,10 +136,6 @@ export function useConfiguredModels() {
   useEffect(() => {
     void loadInventory(key);
   }, [key]);
-  useEffect(() => {
-    if (import.meta.env.VITE_USE_LOCAL_PROXY !== 'true')
-      void fetchCloudModels();
-  }, [fetchCloudModels]);
   useEffect(() => {
     let active = true;
     const refreshStatus = async () => {
@@ -175,9 +168,11 @@ export function useConfiguredModels() {
     loading: state.key !== key || state.loading,
     error: state.key === key && state.error,
     refresh,
-    cloudModels,
+    // AgentDeck lists user-connected models, not the upstream hosted catalog.
+    // Keep the inventory shape compatible with existing model consumers.
+    cloudModels: EMPTY_CLOUD_MODELS,
     hidden,
-    cloudAvailable: import.meta.env.VITE_USE_LOCAL_PROXY !== 'true',
+    cloudAvailable: false,
     setHidden: (id: string, value: boolean) => setHidden(account, id, value),
     codexConnected: codex.account === account && codex.connected,
     codexAccountLabel: codex.account === account ? codex.accountLabel : '',
