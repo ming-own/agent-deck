@@ -131,38 +131,24 @@ def append_resume_browser_notice(
     return system_message.create_new_instance(system_message.content + notice)
 
 
-def agent_model(
+def create_model_builder(
     agent_name: str,
+    agent_id: str,
     system_message: str | BaseMessage,
     options: Chat,
-    tools: list[FunctionTool | Callable] | None = None,
-    prune_tool_calls_from_memory: bool = False,
-    tool_names: list[str] | None = None,
-    toolkits_to_register_agent: list[RegisteredAgentToolkit] | None = None,
-    enable_snapshot_clean: bool = False,
+    *,
+    tools=None,
+    tool_names=None,
+    toolkits_to_register_agent=None,
     custom_model_config: AgentModelConfig | None = None,
     managed_resources=None,
+    task_lock=None,
 ):
-    system_message = append_resume_browser_notice(system_message, options)
-    task_lock = get_task_lock(options.project_id)
-    agent_id = str(uuid.uuid4())
-    logger.info(
-        f"Creating agent: {agent_name} with id: {agent_id} "
-        f"for project: {options.project_id}"
-    )
-    # Use thread-safe scheduling to support parallel agent creation
-    _schedule_async_task(
-        task_lock.put_queue(
-            ActionCreateAgentData(
-                data={
-                    "agent_name": agent_name,
-                    "agent_id": agent_id,
-                    "tools": tool_names or [],
-                }
-            )
-        )
-    )
+    """Shared provider construction for legacy workers and Session instances.
 
+    Configuration is captured per invocation. No Session-global model state or
+    TaskLock is required for a standalone text Agent.
+    """
     # Determine model configuration - use custom config if provided,
     # otherwise use task defaults
     config_attrs = ["model_platform", "model_type", "api_key", "api_url"]
@@ -474,6 +460,59 @@ def agent_model(
         if managed_resources is not None:
             model_backend = managed_resources.bind(model_backend)
         return model_backend
+
+    return build_model
+
+
+def agent_model(
+    agent_name: str,
+    system_message: str | BaseMessage,
+    options: Chat,
+    tools: list[FunctionTool | Callable] | None = None,
+    prune_tool_calls_from_memory: bool = False,
+    tool_names: list[str] | None = None,
+    toolkits_to_register_agent: list[RegisteredAgentToolkit] | None = None,
+    enable_snapshot_clean: bool = False,
+    custom_model_config: AgentModelConfig | None = None,
+    managed_resources=None,
+):
+    system_message = append_resume_browser_notice(system_message, options)
+    task_lock = get_task_lock(options.project_id)
+    agent_id = str(uuid.uuid4())
+    logger.info(
+        f"Creating agent: {agent_name} with id: {agent_id} "
+        f"for project: {options.project_id}"
+    )
+    # Use thread-safe scheduling to support parallel agent creation
+    _schedule_async_task(
+        task_lock.put_queue(
+            ActionCreateAgentData(
+                data={
+                    "agent_name": agent_name,
+                    "agent_id": agent_id,
+                    "tools": tool_names or [],
+                }
+            )
+        )
+    )
+
+    build_model = create_model_builder(
+        agent_name,
+        agent_id,
+        system_message,
+        options,
+        tools=tools,
+        tool_names=tool_names,
+        toolkits_to_register_agent=toolkits_to_register_agent,
+        custom_model_config=custom_model_config,
+        managed_resources=managed_resources,
+        task_lock=task_lock,
+    )
+    use_subscription_runtime = is_subscription_auth(options) and not (
+        custom_model_config is not None
+        and custom_model_config.has_custom_config()
+        and custom_model_config.api_key is not None
+    )
 
     model = build_model()
 

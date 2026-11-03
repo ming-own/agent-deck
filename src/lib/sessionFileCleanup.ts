@@ -13,6 +13,7 @@
 // ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
 
 import { fetchDelete, proxyFetchDelete, proxyFetchGet } from '@/api/http';
+import { getAccountEnvironmentKey } from '@/lib/authEnvironment';
 import { deleteWorkspaceProjectWorkdir } from '@/service/workspaceApi';
 import { getAuthStore } from '@/store/authStore';
 
@@ -43,6 +44,7 @@ export async function deleteSessionTaskData({
   knownTasks = [],
   deleteWorkdir = false,
   deferLocalCleanup = false,
+  deleteAgentInstances = false,
   ipcRenderer,
 }: CleanupIdentity & {
   projectId: string;
@@ -52,12 +54,25 @@ export async function deleteSessionTaskData({
   deleteWorkdir?: boolean;
   /** Backend transport failed: leave all potentially active local files intact. */
   deferLocalCleanup?: boolean;
+  deleteAgentInstances?: boolean;
   ipcRenderer?: { invoke: (...args: unknown[]) => Promise<unknown> } | null;
 }) {
   const identity = { email, userId };
   assertSessionCleanupIdentity(identity);
   if (deferLocalCleanup && deleteWorkdir) {
     throw new Error('Session workdir deletion requires the backend');
+  }
+  if (deleteAgentInstances) {
+    if (deferLocalCleanup)
+      throw new Error('Agent Session deletion requires the backend');
+    const account = getAccountEnvironmentKey(getAuthStore());
+    await fetchDelete(
+      `/session-agents/${encodeURIComponent(projectId)}`,
+      undefined,
+      { 'X-AgentDeck-Account': account },
+      { expectedAccountKey: account }
+    );
+    assertSessionCleanupIdentity(identity);
   }
   let tasks = knownTasks;
   let resolvedSpaceId = spaceId;

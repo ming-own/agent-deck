@@ -35,6 +35,7 @@ from app.controller import (
     remote_command_controller,
     remote_sub_agent_controller,
     run_controller,
+    session_agent_controller,
     skill_controller,
     task_controller,
     tool_controller,
@@ -61,6 +62,12 @@ def register_routers(app: FastAPI, prefix: str = "") -> None:
         prefix: Optional global prefix for all routes (e.g., "/api")
     """
     routers_config = [
+        {
+            "router": session_agent_controller.router,
+            "tags": ["Session Agents"],
+            "description": "Session-owned Agent instances and isolated model turns",
+            "self_authenticated": True,
+        },
         {
             "router": health_controller.router,
             "tags": ["Health"],

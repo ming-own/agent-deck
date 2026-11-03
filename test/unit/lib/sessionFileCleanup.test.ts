@@ -74,6 +74,30 @@ afterEach(() => {
 function run() {
   return deleteSessionTaskData({ ...input, ipcRenderer: { invoke } });
 }
+
+it('joins and deletes Agent instances before deleting Session history', async () => {
+  await deleteSessionTaskData({ ...input, deleteAgentInstances: true });
+  expect(fetchDelete).toHaveBeenCalledWith(
+    '/session-agents/session-a',
+    undefined,
+    expect.objectContaining({ 'X-AgentDeck-Account': expect.any(String) }),
+    expect.objectContaining({ expectedAccountKey: expect.any(String) })
+  );
+  expect(vi.mocked(fetchDelete).mock.invocationCallOrder[0]).toBeLessThan(
+    vi.mocked(proxyFetchDelete).mock.invocationCallOrder[0]
+  );
+});
+
+it('retains Agent Session metadata/history when local cleanup is unavailable', async () => {
+  await expect(
+    deleteSessionTaskData({
+      ...input,
+      deleteAgentInstances: true,
+      deferLocalCleanup: true,
+    })
+  ).rejects.toThrow('requires the backend');
+  expect(proxyFetchDelete).not.toHaveBeenCalled();
+});
 function fixture(root: string, taskId = 'task_a') {
   const dir = path.join(home, root, 'user_42/project_session-a', taskId);
   fs.mkdirSync(dir, { recursive: true });

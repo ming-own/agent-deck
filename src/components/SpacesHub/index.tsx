@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { DsIcon } from '@/components/ui/ds-icon';
 import { Tag } from '@/components/ui/tag';
 import { pathBasename } from '@/lib/pathBasename';
+import { ensureProjectRuntimeLoaded } from '@/lib/projectRuntimeHydration';
 import {
   buildTaskQuestionsById,
   computeProjectFreshnessAnchor,
@@ -137,6 +138,10 @@ export default function SpacesHub() {
         setActiveSpace(spaceId);
         projectStore.setActiveProject(project.id);
         setActiveWorkspaceTab('project');
+        if (project.metadata?.agentSession === true) {
+          await ensureProjectRuntimeLoaded(projectStore, project.id);
+          return;
+        }
         const needsRemoteHistoryHydration =
           projectStore.getProjectById(project.id)?.metadata
             ?.remoteHistoryHydrationPending === true;

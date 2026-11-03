@@ -302,6 +302,14 @@ export default function SpaceSidebar({
         return;
       }
       projectStore.setActiveProject(projectId);
+      if (
+        useSpaceStore.getState().getProjectMeta(projectId)?.metadata
+          ?.agentSession === true
+      ) {
+        setActiveWorkspaceTab('project');
+        await ensureProjectLoaded(projectId);
+        return;
+      }
       try {
         const route = await readSessionExecutionRoute(
           executionScope(projectId)
@@ -751,6 +759,7 @@ export default function SpaceSidebar({
       const chatState = projectStore.peekActiveChatStore(projectId)?.getState();
       await deleteSessionTaskData({
         projectId,
+        deleteAgentInstances: projectMeta?.metadata?.agentSession === true,
         spaceId,
         ...identity,
         knownTasks: Object.keys(chatState?.tasks ?? {}).map((taskId) => ({

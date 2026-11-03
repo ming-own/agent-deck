@@ -16,6 +16,7 @@ import ChatBox from '@/components/ChatBox';
 import { SessionArtifactPreview } from '@/components/ChatBox/SessionArtifactPreview';
 import { HeaderBox } from '@/components/Session/HeaderBox';
 import { PreviewPanel } from '@/components/Session/PreviewPanel';
+import { Button } from '@/components/ui/button';
 import Workspace from '@/components/Workspace';
 import useChatStoreAdapter from '@/hooks/useChatStoreAdapter';
 import { ProjectEventRuntimeProvider } from '@/hooks/useProjectEventRuntime';
@@ -27,6 +28,7 @@ import {
   useSessionProjectId,
 } from '@/hooks/useSessionProjectId';
 import { isProjectAchieved } from '@/lib/projectAchievement';
+import { ensureProjectRuntimeLoaded } from '@/lib/projectRuntimeHydration';
 import { inferSessionModeFromTask } from '@/lib/sessionMode';
 import { getSessionMetaDisplayName } from '@/lib/spaceLabel';
 import { cn } from '@/lib/utils';
@@ -54,6 +56,8 @@ import {
   type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SessionAgents } from './Agents';
+import { SessionAgentsLauncher } from './Agents/Launcher';
 import { PreviewColumn } from './layout/PreviewColumn';
 import { getSessionColumnLayout, SUMMARY_WIDTH } from './layout/sessionColumns';
 import { usePreviewEntrance } from './layout/usePreviewEntrance';
@@ -157,6 +161,34 @@ function SessionContent({ isNewProject = false, headerActions }: SessionProps) {
     activeProjectId ? s.getProjectMeta(activeProjectId) : null
   );
   const updateProjectMeta = useSpaceStore((s) => s.updateProjectMeta);
+  const [agentViewBySession, setAgentViewBySession] = useState<
+    Record<string, boolean>
+  >({});
+  const showAgents =
+    !isNewProject &&
+    Boolean(activeProjectId) &&
+    (agentViewBySession[activeProjectId!] ??
+      activeProjectMeta?.metadata?.agentSession === true);
+  useEffect(() => {
+    if (
+      isFocused &&
+      activeProjectId &&
+      activeProjectMeta?.metadata?.agentSession &&
+      !showAgents &&
+      !chatStore
+    ) {
+      void ensureProjectRuntimeLoaded(projectStore, activeProjectId, {
+        requireActiveSelection: true,
+      });
+    }
+  }, [
+    isFocused,
+    activeProjectId,
+    activeProjectMeta?.metadata?.agentSession,
+    showAgents,
+    chatStore,
+    projectStore,
+  ]);
   const [draftSessionMode, setDraftSessionMode] = useState<SessionModeType>(
     SessionMode.SINGLE_AGENT
   );
@@ -252,7 +284,12 @@ function SessionContent({ isNewProject = false, headerActions }: SessionProps) {
   useEffect(() => {
     // The New Project shell stays selected on its own tab — never redirect
     // away from it (it is empty until the user sends the first message).
-    if (isNewProject || !isFocused) return;
+    if (
+      isNewProject ||
+      !isFocused ||
+      activeProjectMeta?.metadata?.agentSession === true
+    )
+      return;
     // Only redirect while the live project tab is active; ignore files/triggers/etc.
     if (activeWorkspaceTab !== 'project') return;
     // Wait until the project chat store is ready (selectSession still loading).
@@ -278,6 +315,7 @@ function SessionContent({ isNewProject = false, headerActions }: SessionProps) {
     }
   }, [
     isFocused,
+    activeProjectMeta?.metadata?.agentSession,
     activeIsReplayProject,
     activeWorkspaceTab,
     chatStore,
@@ -500,6 +538,7 @@ function SessionContent({ isNewProject = false, headerActions }: SessionProps) {
 
   if (
     !isNewProject &&
+    !showAgents &&
     !chatStore &&
     sessionExecution.state.route?.route === 'legacy'
   ) {
@@ -561,7 +600,8 @@ function SessionContent({ isNewProject = false, headerActions }: SessionProps) {
             !isNewProject && isProjectAchieved(activeProjectMeta?.metadata)
           }
           totalTokens={isNewProject ? 0 : (activeTask?.tokens ?? 0)}
-          showTimelineStyle={!isNewProject}
+          showTokenCount={!showAgents}
+          showTimelineStyle={!isNewProject && !showAgents}
           showBack={!isNewProject}
           summary={{
             open: showSummary,
@@ -572,11 +612,42 @@ function SessionContent({ isNewProject = false, headerActions }: SessionProps) {
             popoverBoundary: chatSideElement,
           }}
           className={showPreview ? 'pr-ds-4' : undefined}
-          trailingActions={headerActions}
+          trailingActions={
+            <>
+              {!isNewProject && activeProjectId && showAgents && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    setAgentViewBySession((previous) => ({
+                      ...previous,
+                      [activeProjectId]: false,
+                    }))
+                  }
+                >
+                  {t('chat.session-agents-conversation')}
+                </Button>
+              )}
+              <SessionAgentsLauncher
+                projectId={isNewProject ? null : activeProjectId}
+                selected={showAgents}
+                onOpen={() => {
+                  if (activeProjectId)
+                    setAgentViewBySession((previous) => ({
+                      ...previous,
+                      [activeProjectId]: true,
+                    }));
+                }}
+              />
+              {headerActions}
+            </>
+          }
         />
         <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {isNewProject ? (
+            {showAgents && activeProjectId ? (
+              <SessionAgents projectId={activeProjectId} />
+            ) : isNewProject ? (
               <Workspace
                 variant="new-project"
                 embedded

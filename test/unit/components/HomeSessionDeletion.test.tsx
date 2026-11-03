@@ -338,7 +338,11 @@ describe('Home Session deletion', () => {
     expect(proxyFetchDelete).toHaveBeenCalled();
     expect(mocks.invoke).not.toHaveBeenCalled();
     expect(mocks.deleteWorkdir).not.toHaveBeenCalled();
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    // Runtime removal precedes the async confirmation callback and React's
+    // dialog update. Observe the visible completion instead of racing it.
+    await waitFor(() =>
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    );
   });
 
   it('stops the Session first and touches nothing when it cannot be stopped', async () => {

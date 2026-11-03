@@ -85,6 +85,8 @@ const TITLE_OVERFLOW_MASK =
 export interface HeaderBoxProps {
   /** Total token count for the current project */
   totalTokens?: number;
+  /** Hide legacy execution metrics on independent Agent instance surfaces. */
+  showTokenCount?: boolean;
   /** Display-only identity for the active Project. */
   projectName?: string | null;
   /** The Session menu is shown only for a saved Project. */
@@ -104,6 +106,7 @@ export interface HeaderBoxProps {
 
 export function HeaderBox({
   totalTokens = 0,
+  showTokenCount = true,
   projectName,
   projectId,
   projectAchieved = false,
@@ -394,7 +397,7 @@ export function HeaderBox({
 
       {/* Right: optional token count + summary toggle + preview toggle. */}
       <div className="flex items-center gap-ds-4 text-ds-ink-muted-default">
-        {!compact ? (
+        {!compact && showTokenCount ? (
           <div className="flex items-center gap-1">
             <img src={tokenIcon} alt="" className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">

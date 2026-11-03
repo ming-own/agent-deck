@@ -175,6 +175,9 @@ export function useHomeHubProjects() {
           ?.getState();
         await deleteSessionTaskData({
           projectId,
+          deleteAgentInstances:
+            useSpaceStore.getState().getProjectMeta(projectId)?.metadata
+              ?.agentSession === true,
           spaceId:
             useSpaceStore.getState().getProjectMeta(projectId)?.spaceId ??
             targetProject?.space_id ??
