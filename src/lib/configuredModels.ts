@@ -20,6 +20,7 @@ import { getProviderValid } from '@/lib/providerStatus';
 import { getAuthStore } from '@/store/authStore';
 import type { CloudModel } from '@/store/cloudModelStore';
 import type { Provider } from '@/types';
+import type { CodexModel } from '@/types/codex';
 
 export type ConfiguredProvider = {
   id: number;
@@ -36,7 +37,12 @@ export type ConfiguredProvider = {
 export type ConfiguredModelChoice =
   | { id: string; group: 'eigent'; name: string; cloudModel: CloudModel }
   | { id: string; group: string; name: string; record: ConfiguredProvider }
-  | { id: 'codex'; group: 'codex-subscription'; name: string };
+  | {
+      id: string;
+      group: 'codex-subscription';
+      name: string;
+      codexModelType: string;
+    };
 
 export function selectableConfiguredModels({
   records,
@@ -44,7 +50,7 @@ export function selectableConfiguredModels({
   hidden,
   cloudAvailable,
   codexConnected,
-  codexModelType,
+  codexModels = [],
   planKey,
 }: {
   records: ConfiguredProvider[];
@@ -52,7 +58,8 @@ export function selectableConfiguredModels({
   hidden: string[];
   cloudAvailable: boolean;
   codexConnected: boolean;
-  codexModelType: string;
+  codexModelType?: string;
+  codexModels?: CodexModel[];
   planKey?: string | null;
 }): ConfiguredModelChoice[] {
   return [
@@ -77,13 +84,12 @@ export function selectableConfiguredModels({
       record,
     })),
     ...(codexConnected
-      ? [
-          {
-            id: 'codex' as const,
-            group: 'codex-subscription' as const,
-            name: codexModelType,
-          },
-        ]
+      ? codexModels.map((model) => ({
+          id: `codex:${model.id}`,
+          group: 'codex-subscription' as const,
+          name: model.name,
+          codexModelType: model.id,
+        }))
       : []),
   ];
 }

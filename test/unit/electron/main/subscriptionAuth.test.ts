@@ -61,7 +61,10 @@ import {
   deriveCodeChallenge,
   generateCodeVerifier,
 } from '../../../../electron/main/subscriptionAuth/pkce';
-import { ensureCodexResolverServer } from '../../../../electron/main/subscriptionAuth/resolverServer';
+import {
+  ensureCodexResolverServer,
+  refreshCodexCredential,
+} from '../../../../electron/main/subscriptionAuth/resolverServer';
 import type {
   CodexCredential,
   CodexResolverRuntime,
@@ -278,6 +281,31 @@ describe('resolverServer', () => {
       status: 'expired',
     });
     expect(JSON.stringify(body)).not.toContain('expired-token');
+  });
+
+  it('does not restore a disconnected account when token refresh finishes late', async () => {
+    const old: CodexCredential = {
+      access_token: 'old-token',
+      refresh_token: 'old-refresh',
+      status: 'connected',
+    };
+    saveCodexCredential(email, old);
+    let finish!: (response: Response) => void;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
+    const refreshing = refreshCodexCredential(email, old);
+    clearCodexCredential(email);
+    finish(
+      new Response(
+        JSON.stringify({ access_token: 'new-token', expires_in: 3600 })
+      )
+    );
+    expect(await refreshing).toBeNull();
+    expect(loadCodexCredential(email)).toBeNull();
   });
 
   it('refreshes an expired token when a refresh token is available', async () => {

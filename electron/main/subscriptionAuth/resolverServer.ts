@@ -64,7 +64,7 @@ function readRequestJson(req: http.IncomingMessage): Promise<any> {
   });
 }
 
-function isExpired(expiresAt?: string | null): boolean {
+export function isExpired(expiresAt?: string | null): boolean {
   if (!expiresAt) return false;
   const timestamp = Date.parse(expiresAt);
   if (!Number.isFinite(timestamp)) return true;
@@ -82,7 +82,7 @@ function hasValidResolverSecret(
   return crypto.timingSafeEqual(provided, expected);
 }
 
-async function refreshCodexCredential(
+export async function refreshCodexCredential(
   email: string,
   credential: CodexCredential
 ): Promise<CodexCredential | null> {
@@ -102,6 +102,7 @@ async function refreshCodexCredential(
       'content-type': 'application/x-www-form-urlencoded',
     },
     body,
+    signal: AbortSignal.timeout(20_000),
   });
   if (!response.ok) return null;
 
@@ -125,6 +126,9 @@ async function refreshCodexCredential(
     status: 'connected',
     updated_at: new Date().toISOString(),
   };
+  // A login or disconnect may have happened while the refresh was in flight.
+  if (loadCodexCredential(email)?.access_token !== credential.access_token)
+    return null;
   saveCodexCredential(email, refreshed);
   return refreshed;
 }

@@ -21,10 +21,32 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import type { CloudModel } from '@/store/cloudModelStore';
 import { useModelVisibilityStore } from '@/store/modelVisibilityStore';
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import type { CodexModel } from '@/types/codex';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 const EMPTY_IDS: string[] = [];
 const EMPTY_CLOUD_MODELS: CloudModel[] = [];
+type CodexInventory = {
+  key: string;
+  connected: boolean;
+  accountLabel: string;
+  models: CodexModel[];
+  loading: boolean;
+  error: boolean;
+};
+// All mounted model surfaces receive the same discovery result, including
+// the workspace composer kept mounted while Settings is open.
+const codexListeners = new Set<(state: CodexInventory) => void>();
+const codexGenerations = new Map<string, number>();
+function publishCodex(state: CodexInventory) {
+  codexListeners.forEach((listener) => listener(state));
+}
 type InventoryState = {
   key: string;
   records: ConfiguredProvider[];
@@ -117,7 +139,7 @@ const getInventorySnapshot = () => inventoryState;
 export function useConfiguredModels() {
   const { email, token, user_id } = useAuthStore();
   const account = String(user_id || email || 'local');
-  const key = `${account}:${token || ''}`;
+  const key = `${account}:${email || ''}:${token || ''}`;
   const hidden = useModelVisibilityStore(
     (state) => state.hiddenByAccount[account] ?? EMPTY_IDS
   );
@@ -127,42 +149,100 @@ export function useConfiguredModels() {
     getInventorySnapshot,
     getInventorySnapshot
   );
-  const [codex, setCodex] = useState({
-    account,
+  const [codex, setCodex] = useState<CodexInventory>({
+    key,
     connected: false,
     accountLabel: '',
+    models: [] as CodexModel[],
+    loading: false,
+    error: false,
   });
   const refresh = useCallback(() => loadInventory(key, true), [key]);
   useEffect(() => {
     void loadInventory(key);
   }, [key]);
-  useEffect(() => {
-    let active = true;
-    const refreshStatus = async () => {
+  const codexRequest = useRef(0);
+  const invalidateCodexRequest = useCallback(() => {
+    codexRequest.current++;
+  }, []);
+  const refreshCodex = useCallback(
+    async (force = false) => {
+      const request = ++codexRequest.current;
+      const generation = (codexGenerations.get(key) ?? 0) + 1;
+      codexGenerations.set(key, generation);
+      setCodex((previous) => ({
+        ...(previous.key === key
+          ? previous
+          : { key, connected: false, accountLabel: '', models: [] }),
+        loading: true,
+        error: false,
+      }));
+      let connected = false;
+      let accountLabel = '';
       try {
+        const api = createHost().electronAPI;
         const status = email
-          ? await createHost().electronAPI?.codexSubscriptionStatus?.(email)
+          ? await api?.codexSubscriptionStatus?.(email)
           : null;
-        if (active)
+        if (codexGenerations.get(key) !== generation) return;
+        connected = Boolean(status?.connected);
+        accountLabel = status?.account_label ?? '';
+        if (request === codexRequest.current)
           setCodex({
-            account,
-            connected: Boolean(status?.connected),
-            accountLabel: status?.account_label ?? '',
+            key,
+            connected,
+            accountLabel,
+            models: [],
+            loading: connected,
+            error: false,
+          });
+        const result = connected
+          ? await api?.codexSubscriptionModels?.(email, force)
+          : null;
+        if (codexGenerations.get(key) === generation)
+          publishCodex({
+            key,
+            connected,
+            accountLabel,
+            models: result?.success ? result.models : [],
+            loading: false,
+            error: connected && !result?.success,
           });
       } catch {
-        if (active) setCodex({ account, connected: false, accountLabel: '' });
+        if (codexGenerations.get(key) === generation)
+          publishCodex({
+            key,
+            connected,
+            accountLabel,
+            models: [],
+            loading: false,
+            error: true,
+          });
       }
+    },
+    [key, email]
+  );
+  useEffect(() => {
+    const receive = (next: CodexInventory) => {
+      if (next.key !== key) return;
+      invalidateCodexRequest();
+      setCodex(next);
     };
-    void refreshStatus();
+    codexListeners.add(receive);
+    void refreshCodex();
+    const changed = () => {
+      void refreshCodex(true);
+    };
     const ipc = createHost().ipcRenderer;
-    ipc?.on?.('subscription-auth:codex-status-changed', refreshStatus);
-    window.addEventListener(MODEL_CONFIGURATIONS_CHANGED, refreshStatus);
+    ipc?.on?.('subscription-auth:codex-status-changed', changed);
+    window.addEventListener(MODEL_CONFIGURATIONS_CHANGED, changed);
     return () => {
-      active = false;
-      ipc?.off?.('subscription-auth:codex-status-changed', refreshStatus);
-      window.removeEventListener(MODEL_CONFIGURATIONS_CHANGED, refreshStatus);
+      invalidateCodexRequest();
+      codexListeners.delete(receive);
+      ipc?.off?.('subscription-auth:codex-status-changed', changed);
+      window.removeEventListener(MODEL_CONFIGURATIONS_CHANGED, changed);
     };
-  }, [account, email]);
+  }, [refreshCodex, key, invalidateCodexRequest]);
   return {
     records: state.key === key ? state.records : [],
     loading: state.key !== key || state.loading,
@@ -174,7 +254,11 @@ export function useConfiguredModels() {
     hidden,
     cloudAvailable: false,
     setHidden: (id: string, value: boolean) => setHidden(account, id, value),
-    codexConnected: codex.account === account && codex.connected,
-    codexAccountLabel: codex.account === account ? codex.accountLabel : '',
+    codexConnected: codex.key === key && codex.connected,
+    codexAccountLabel: codex.key === key ? codex.accountLabel : '',
+    codexModels: codex.key === key ? codex.models : [],
+    codexModelsLoading: codex.key === key && codex.loading,
+    codexModelsError: codex.key === key && codex.error,
+    refreshCodexModels: () => refreshCodex(true),
   };
 }

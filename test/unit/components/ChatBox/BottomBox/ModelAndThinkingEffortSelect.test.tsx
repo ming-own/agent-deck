@@ -27,6 +27,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  codexConnected: false,
   get: vi.fn(),
   post: vi.fn(),
   setProjectModel: vi.fn(),
@@ -73,7 +74,22 @@ vi.mock('@/store/cloudModelStore', () => ({
       getEffectiveModelId: (id: string) => id,
     }),
 }));
-vi.mock('@/host/createHost', () => ({ createHost: () => ({}) }));
+vi.mock('@/host/createHost', () => ({
+  createHost: () => ({
+    electronAPI: {
+      codexSubscriptionStatus: async () => ({
+        connected: mocks.codexConnected,
+      }),
+      codexSubscriptionModels: async () => ({
+        success: true,
+        models: [
+          { id: 'codex-a', name: 'Codex A' },
+          { id: 'codex-b', name: 'Codex B' },
+        ],
+      }),
+    },
+  }),
+}));
 vi.mock('@/store/projectRuntimeStore', () => ({
   useProjectRuntimeStore: (selector: (state: unknown) => unknown) =>
     selector({
@@ -135,6 +151,8 @@ beforeAll(() => {
 });
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.codexConnected = false;
+  mocks.auth.email = '';
   mocks.selection = null;
   mocks.spaceDefaultPending = false;
   mocks.spaceId = 'space-1';
@@ -164,6 +182,35 @@ async function open(selectedModel = 'GPT') {
   return user;
 }
 describe('Configured model input menu', () => {
+  it('checks and selects distinct models under the same Codex account', async () => {
+    mocks.codexConnected = true;
+    mocks.auth.email = 'test@example.com';
+    mocks.selection = {
+      modelType: 'codex_subscription',
+      codex_model_type: 'codex-a',
+    };
+    render(
+      <ModelAndThinkingEffortSelect
+        projectId="session"
+        thinkingEffort={undefined}
+      />
+    );
+    await open('codex-a');
+    const first = await screen.findByRole('menuitemradio', { name: 'Codex A' });
+    expect(first).toHaveAttribute('aria-checked', 'true');
+    const second = screen.getByRole('menuitemradio', { name: 'Codex B' });
+    expect(second).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(second);
+    expect(mocks.setProjectModel).toHaveBeenCalledWith('session', {
+      modelType: 'codex_subscription',
+      codex_model_type: 'codex-b',
+    });
+    expect(mocks.setSpaceModelChoice).toHaveBeenCalledWith('space-1', {
+      modelType: 'codex_subscription',
+      codex_model_type: 'codex-b',
+    });
+  });
+
   it('shows a pending Space default without checking the global model, then pins an explicit choice', async () => {
     mocks.spaceDefaultPending = true;
     render(

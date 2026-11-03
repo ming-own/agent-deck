@@ -310,6 +310,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('get-email-folder-path', email),
   restartApp: () => ipcRenderer.invoke('restart-app'),
   readGlobalEnv: (key: string) => ipcRenderer.invoke('read-global-env', key),
+  codexSubscriptionModels: (email: string, force = false) =>
+    ipcRenderer.invoke('subscription-auth:codex-models', email, force),
   codexSubscriptionStatus: (email: string) =>
     ipcRenderer.invoke('subscription-auth:codex-status', email),
   codexSubscriptionLogin: (email: string) =>

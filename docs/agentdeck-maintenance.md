@@ -59,3 +59,18 @@ still require their platform dependencies, runner availability, and signing
 configuration. In particular, inherited macOS jobs use self-hosted runners.
 Review these before enabling release automation. Optional cloud upload steps
 require repository-specific secrets; none are provisioned by this change.
+
+## Codex account model discovery
+
+Codex login connects an account, rather than creating one manually named model.
+The main process fetches the connected account's visible model catalog through
+the existing Codex subscription transport. Only model IDs and display names are
+returned to the renderer; access and refresh tokens remain in encrypted local
+storage and the main-process request boundary.
+
+Settings and session pickers show one choice per catalog model. The existing
+`codex_model_type` field remains the default/selected model ID, so stored Space
+and Session contracts stay compatible. Discovery failures expose a retry state
+instead of a fabricated fallback list. Refresh results reach all mounted model
+surfaces. A model appearing in the catalog is not proof that a given inference
+request will succeed; plan limits and service-side policy still apply.

@@ -284,6 +284,10 @@ interface ElectronAPI {
   }>;
   restartApp: () => Promise<void>;
   readGlobalEnv: (key: string) => Promise<{ value: string | null }>;
+  codexSubscriptionModels: (
+    email: string,
+    force?: boolean
+  ) => Promise<import('./codex').CodexModelsResult>;
   codexSubscriptionStatus: (email: string) => Promise<{
     connected: boolean;
     status:

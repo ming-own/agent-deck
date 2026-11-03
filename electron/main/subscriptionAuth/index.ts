@@ -31,6 +31,7 @@ import {
   getCodexAccountStatus,
   saveCodexCredential,
 } from './credentialStore';
+import { listCodexModels } from './modelCatalog';
 import {
   codexAccountMetadataFromAccessToken,
   expiresAtFromTokenPayload,
@@ -290,6 +291,15 @@ async function ensureLocalOAuthCallbackServer(): Promise<void> {
 }
 
 export function registerCodexSubscriptionAuthIpcHandlers(ipcMain: IpcMain) {
+  ipcMain.handle(
+    'subscription-auth:codex-models',
+    (_event, email: unknown, force: unknown) => {
+      const normalizedEmail = normalizeEmail(email);
+      return normalizedEmail
+        ? listCodexModels(normalizedEmail, force === true)
+        : { success: false, models: [], error_code: 'email_required' };
+    }
+  );
   ipcMain.handle('subscription-auth:codex-status', (_event, email: unknown) => {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) {

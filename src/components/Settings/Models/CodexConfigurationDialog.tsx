@@ -16,15 +16,19 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
-import { Input } from '@/components/ui/input';
 import { createHost } from '@/host/createHost';
 import { notifyModelConfigurationsChanged } from '@/lib/configuredModels';
 import { useAuthStore } from '@/store/authStore';
+import type { CodexModel } from '@/types/codex';
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Props = {
+  models: CodexModel[];
+  modelsLoading: boolean;
+  modelsError: boolean;
+  onRefreshModels: () => void;
   connected: boolean;
   accountLabel: string;
   onClose: () => void;
@@ -36,6 +40,10 @@ type ContentProps = Props & {
 };
 
 export function CodexConfigurationContent({
+  models,
+  modelsLoading,
+  modelsError,
+  onRefreshModels,
   connected,
   accountLabel,
   onClose,
@@ -43,9 +51,7 @@ export function CodexConfigurationContent({
   onBusyChange,
 }: ContentProps) {
   const { t } = useTranslation();
-  const { email, codex_model_type, modelType, setCodexModelType } =
-    useAuthStore();
-  const [model, setModel] = useState(codex_model_type);
+  const { email, modelType } = useAuthStore();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -86,12 +92,7 @@ export function CodexConfigurationContent({
   }
   return (
     <>
-      <DialogHeader
-        title="Codex"
-        subtitle={t('setting.provider-configuration-description', {
-          provider: 'Codex',
-        })}
-      />
+      <DialogHeader title="Codex" subtitle={t('setting.manage-account')} />
       <div className="flex flex-col gap-ds-stack-section p-ds-panel-inset">
         <div className="flex flex-wrap items-center justify-between gap-ds-control-gap">
           <DsText>
@@ -112,16 +113,24 @@ export function CodexConfigurationContent({
             {t('setting.model-list.default-guard')}
           </DsText>
         )}
-        <label htmlFor="codex-model">
-          <DsText as="span">{t('setting.model-type')}</DsText>
-        </label>
-        <Input
-          id="codex-model"
-          autoFocus
-          value={model}
-          onChange={(event) => setModel(event.target.value)}
-          disabled={busy}
-        />
+        {connected && (
+          <div className="flex items-center justify-between gap-ds-control-gap">
+            <DsText role="base" className="text-ds-ink-muted-default">
+              {modelsLoading
+                ? t('setting.loading-models')
+                : modelsError
+                  ? t('setting.model-list.load-error')
+                  : `${t('setting.models')} · ${models.length}`}
+            </DsText>
+            <Button
+              variant="secondary"
+              disabled={busy || modelsLoading}
+              onClick={onRefreshModels}
+            >
+              {t('setting.refresh')}
+            </Button>
+          </div>
+        )}
         {error && (
           <div role="alert">
             <DsText className="text-ds-text-error-default-default">
@@ -137,19 +146,8 @@ export function CodexConfigurationContent({
             </Button>
           )}
           <div className="ml-auto flex items-center gap-ds-control-gap">
-            <Button variant="ghost" disabled={busy} onClick={onClose}>
-              {t('setting.cancel')}
-            </Button>
-            <Button
-              variant="primary"
-              disabled={busy || !model.trim()}
-              onClick={() => {
-                setCodexModelType(model.trim());
-                notifyModelConfigurationsChanged();
-                onClose();
-              }}
-            >
-              {t('setting.save')}
+            <Button variant="primary" disabled={busy} onClick={onClose}>
+              {t('setting.close')}
             </Button>
           </div>
         </div>

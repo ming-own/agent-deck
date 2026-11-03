@@ -132,10 +132,12 @@ function ModelsContent() {
   const invalidRecordCount = inventory.records.filter(
     (record) => !getProviderValid(record)
   ).length;
-  const visibleCodexCount =
-    inventory.codexConnected && matches(`Codex ${auth.codex_model_type}`)
-      ? 1
-      : 0;
+  const matchingCodexModels = inventory.codexModels.filter((model) =>
+    matches(`Codex ${model.name} ${model.id}`)
+  );
+  const visibleCodexCount = inventory.codexConnected
+    ? matchingCodexModels.length
+    : 0;
   const visibleCount = visibleRecordCount + visibleCodexCount;
   const hasMatches = matchingRecords.length + visibleCodexCount > 0;
   const providerIcons = modelProviders.map((provider) => ({
@@ -157,7 +159,7 @@ function ModelsContent() {
   );
   const selectedDefaultId =
     auth.modelType === 'codex_subscription'
-      ? 'codex'
+      ? `codex:${auth.codex_model_type}`
       : preferredRecord
         ? `provider:${preferredRecord.id}`
         : undefined;
@@ -205,7 +207,12 @@ function ModelsContent() {
   }
   async function chooseDefault(value: string) {
     if (busy) return;
-    if (value === 'codex') {
+    if (value.startsWith('codex:')) {
+      const model = inventory.codexModels.find(
+        (item) => value === `codex:${item.id}`
+      );
+      if (!model) return;
+      auth.setCodexModelType(model.id);
       auth.setModelType('codex_subscription');
       return;
     }
@@ -500,13 +507,13 @@ function ModelsContent() {
               );
               if (
                 query &&
-                !(codex
-                  ? matches(`Codex ${auth.codex_model_type}`)
-                  : records.length)
+                !(codex ? matchingCodexModels.length : records.length)
               )
                 return null;
               const closed = collapsed.includes(group);
-              const modelCount = codex ? 1 : providerRecords.length;
+              const modelCount = codex
+                ? inventory.codexModels.length
+                : providerRecords.length;
               return (
                 <section
                   key={group}
@@ -571,23 +578,57 @@ function ModelsContent() {
                       className="mx-ds-16 flex flex-col divide-y divide-ds-hairline-subtle-disabled border-x-0 border-t border-b-0 border-solid border-ds-hairline-subtle-default"
                     >
                       {codex ? (
-                        <div className={modelRowClass}>
-                          <DsText className="min-w-0 flex-1 truncate">
-                            {auth.codex_model_type}
-                          </DsText>
-                          {auth.modelType === 'codex_subscription' && badge}
-                          {modelStatus(inventory.codexConnected)}
-                          {actions(
-                            auth.codex_model_type,
-                            <DropdownMenuItem
-                              onSelect={() =>
-                                auth.setModelType('codex_subscription')
-                              }
-                            >
-                              {t('setting.set-as-default')}
-                            </DropdownMenuItem>
+                        <>
+                          {(inventory.codexModelsLoading ||
+                            inventory.codexModelsError ||
+                            !inventory.codexModels.length) && (
+                            <div className={modelRowClass}>
+                              <DsText
+                                className="flex-1 text-ds-ink-muted-default"
+                                role="base"
+                              >
+                                {t(
+                                  inventory.codexModelsLoading
+                                    ? 'setting.loading-models'
+                                    : inventory.codexModelsError
+                                      ? 'setting.model-list.load-error'
+                                      : 'setting.no-models-found'
+                                )}
+                              </DsText>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                disabled={inventory.codexModelsLoading}
+                                onClick={inventory.refreshCodexModels}
+                              >
+                                {t('setting.model-list.retry')}
+                              </Button>
+                            </div>
                           )}
-                        </div>
+                          {matchingCodexModels.map((model) => (
+                            <div key={model.id} className={modelRowClass}>
+                              <DsText
+                                className="min-w-0 flex-1 truncate"
+                                title={model.id}
+                              >
+                                {model.name}
+                              </DsText>
+                              {auth.modelType === 'codex_subscription' &&
+                                auth.codex_model_type === model.id &&
+                                badge}
+                              {actions(
+                                model.name,
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    void chooseDefault(`codex:${model.id}`)
+                                  }
+                                >
+                                  {t('setting.set-as-default')}
+                                </DropdownMenuItem>
+                              )}
+                            </div>
+                          ))}
+                        </>
                       ) : (
                         records.map((record) => {
                           const configured = getProviderValid(record);
@@ -682,6 +723,10 @@ function ModelsContent() {
                 providerDefinition(editing.provider).authMode ===
                 'oauth_subscription' ? (
                   <CodexConfigurationContent
+                    models={inventory.codexModels}
+                    modelsLoading={inventory.codexModelsLoading}
+                    modelsError={inventory.codexModelsError}
+                    onRefreshModels={inventory.refreshCodexModels}
                     connected={inventory.codexConnected}
                     accountLabel={inventory.codexAccountLabel}
                     onClose={closeAddModelFlow}
@@ -749,6 +794,10 @@ function ModelsContent() {
         (providerDefinition(editing.provider).authMode ===
         'oauth_subscription' ? (
           <CodexConfigurationDialog
+            models={inventory.codexModels}
+            modelsLoading={inventory.codexModelsLoading}
+            modelsError={inventory.codexModelsError}
+            onRefreshModels={inventory.refreshCodexModels}
             connected={inventory.codexConnected}
             accountLabel={inventory.codexAccountLabel}
             onClose={() => setEditing(null)}

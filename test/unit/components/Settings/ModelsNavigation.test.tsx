@@ -38,6 +38,7 @@ import {
 } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  codexConnected: false,
   get: vi.fn(),
   post: vi.fn(),
   put: vi.fn(),
@@ -53,6 +54,7 @@ const mocks = vi.hoisted(() => ({
     appearance: 'light',
     setModelType: vi.fn(),
     setCloudModelType: vi.fn(),
+    setCodexModelType: vi.fn(),
   },
   cloud: {
     models: [
@@ -83,7 +85,21 @@ vi.mock('@/store/cloudModelStore', () => ({
     selector(mocks.cloud),
 }));
 vi.mock('@/host/createHost', () => ({
-  createHost: () => ({ ipcRenderer: { on: vi.fn(), off: vi.fn() } }),
+  createHost: () => ({
+    ipcRenderer: { on: vi.fn(), off: vi.fn() },
+    electronAPI: {
+      codexSubscriptionStatus: async () => ({
+        connected: mocks.codexConnected,
+      }),
+      codexSubscriptionModels: async () => ({
+        success: true,
+        models: [
+          { id: 'codex-a', name: 'Codex A' },
+          { id: 'codex-b', name: 'Codex B' },
+        ],
+      }),
+    },
+  }),
 }));
 vi.mock('@/lib/workspaceConfigurationNavigationGuard', () => ({
   runAfterWorkspaceConfigurationSave: async (action: () => void) => {
@@ -131,6 +147,8 @@ beforeAll(() => {
 });
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.codexConnected = false;
+  mocks.auth.email = '';
   mocks.auth.modelType = 'cloud';
   mocks.auth.user_id = 1;
   mocks.get.mockResolvedValue({ items: records });
@@ -175,6 +193,23 @@ async function fillAntLing() {
 }
 
 describe('Models collections and configuration dialogs', () => {
+  it('lists multiple Codex models for one account and sets the chosen model as default', async () => {
+    mocks.codexConnected = true;
+    mocks.auth.email = 'test@example.com';
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText('Codex B');
+    const section = screen.getByRole('region', { name: 'Codex' });
+    expect(within(section).getByLabelText('2 Models')).toBeInTheDocument();
+    expect(within(section).getByText('Codex A')).toBeInTheDocument();
+    await user.click(
+      within(section).getByRole('button', { name: 'Actions for Codex B' })
+    );
+    await user.click(screen.getByRole('menuitem', { name: 'Set as default' }));
+    expect(mocks.auth.setCodexModelType).toHaveBeenCalledWith('codex-b');
+    expect(mocks.auth.setModelType).toHaveBeenCalledWith('codex_subscription');
+  });
+
   it.each(['true', 'false'])(
     'shows no hosted promotion with an empty inventory (local mode: %s)',
     async (localMode) => {

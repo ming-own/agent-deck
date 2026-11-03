@@ -326,7 +326,7 @@ export function ModelAndThinkingEffortSelect({
     : selection.modelType === 'cloud'
       ? `cloud:${selection.cloud_model_type}`
       : selection.modelType === 'codex_subscription'
-        ? 'codex'
+        ? `codex:${selection.codex_model_type}`
         : `provider:${selection.provider_id}`;
   const selectedRecord = inventory.records.find(
     (record) => record.id === selection.provider_id
@@ -377,7 +377,7 @@ export function ModelAndThinkingEffortSelect({
             }
           : {
               modelType: 'codex_subscription',
-              codex_model_type: auth.codex_model_type,
+              codex_model_type: option.codexModelType,
             },
   }));
   // A pick changes this Session and its Space's later new Sessions. Only
