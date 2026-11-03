@@ -1017,7 +1017,7 @@ export function WorkspaceBundleSaveDialog({
                   <p className="text-ds-text-meta text-ds-ink-muted-default">
                     {t('layout.workspace-bundle-save-assets-description', {
                       defaultValue:
-                        'Eigent does not scan or upload ordinary Space files automatically. Choose each manually referenced asset; explicitly imported Agent Plugin files are reviewed separately below.',
+                        'AgentDeck does not scan or upload ordinary Space files automatically. Choose each manually referenced asset; explicitly imported Agent Plugin files are reviewed separately below.',
                     })}
                   </p>
                 )}

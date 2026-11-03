@@ -379,7 +379,7 @@ function Picker({
         description: t(
           'layout.workspace-resource-artifact-reference-description',
           {
-            defaultValue: 'Point to an authorized Eigent artifact.',
+            defaultValue: 'Point to an authorized AgentDeck artifact.',
           }
         ),
         icon: <DsIcon icon={Package} aria-hidden />,

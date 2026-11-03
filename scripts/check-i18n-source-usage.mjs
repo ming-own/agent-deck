@@ -115,6 +115,13 @@ const PROVIDER_METADATA_DESCRIPTIONS = [
 ];
 
 const ALLOWLIST = [
+  {
+    file: 'src/components/Settings/SettingsOverview/index.tsx',
+    kind: 'jsx-text',
+    text: 'AgentDeck · 智牌',
+    count: 1,
+    reason: 'The bilingual product wordmark is a fixed proper name.',
+  },
   ...[
     'src/components/Settings/General/index.tsx',
     'src/components/TopBar/UserMenu.tsx',
@@ -138,7 +145,7 @@ const ALLOWLIST = [
   {
     file: 'src/components/Session/PreviewPanel/tabs/TerminalTab.tsx',
     kind: 'jsx-text',
-    text: 'Eigent:~$',
+    text: 'AgentDeck:~$',
     count: 1,
     reason: 'Terminal prompt is a product/command token, not prose.',
   },

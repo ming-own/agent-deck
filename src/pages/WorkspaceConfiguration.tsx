@@ -1266,7 +1266,7 @@ export function WorkspaceConfigurationEditor({
                     'layout.workspace-configuration-approval-mode-description',
                     {
                       defaultValue:
-                        'Controls when Eigent asks you before it acts.',
+                        'Controls when AgentDeck asks you before it acts.',
                     }
                   )}
                 >
@@ -1358,7 +1358,7 @@ export function WorkspaceConfigurationEditor({
                     'layout.workspace-configuration-remote-policy-description',
                     {
                       defaultValue:
-                        'Choose when Eigent may push to or pull from a remote.',
+                        'Choose when AgentDeck may push to or pull from a remote.',
                     }
                   )}
                 >

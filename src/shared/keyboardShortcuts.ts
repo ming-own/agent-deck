@@ -270,7 +270,7 @@ export function getKeyboardShortcutGroups(
               {
                 id: 'quit',
                 labelKey: 'layout.shortcuts.quit',
-                defaultLabel: 'Quit Eigent',
+                defaultLabel: 'Quit AgentDeck',
                 keys: ['⌘', 'Q'],
               },
             ]

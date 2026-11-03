@@ -238,7 +238,7 @@ export const useInstallationStore = create<InstallationStoreState>()(
 
         if (response.savedPath) {
           window.location.href =
-            'https://github.com/eigent-ai/eigent/issues/new/choose';
+            'https://github.com/ming-own/agent-deck/issues/new/choose';
           alert('Log saved: ' + response.savedPath);
         }
       } catch (e: any) {

@@ -1,4 +1,15 @@
-# Eigent Agent Instructions
+# AgentDeck Agent Instructions
+
+## Repository ownership and branding
+
+- Product: **AgentDeck（智牌）**; repository: `ming-own/agent-deck`.
+- This project is developed and maintained by ming-own, based on Eigent.
+- Push commits and open pull requests only against `ming-own/agent-deck`.
+  Do not push to or create pull requests against the original upstream repository.
+- Keep upstream copyright notices, license text, and attribution intact.
+- Use AgentDeck in product copy. Preserve technical keys, API fields, data paths,
+  and existing authentication protocols unless a separate migration is requested.
+- Consult `docs/agentdeck-maintenance.md` before changing release or cloud settings.
 
 ## UI work
 

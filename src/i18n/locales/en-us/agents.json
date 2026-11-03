@@ -56,7 +56,7 @@
   "create-skill-default-description": "Describe what this skill does.",
   "save-skill": "Save skill",
   "compose-skill-hint": "Edit SKILL.md (YAML frontmatter with name and description is required), then save.",
-  "try-skill-prompt": "I just added the {{name}} skill for Eigent. Can you make something amazing with this skill?",
+  "try-skill-prompt": "I just added the {{name}} skill for AgentDeck. Can you make something amazing with this skill?",
   "select-agent-access": "Select agent access",
   "all-agents": "All agents",
   "replace-skill-title": "Replace \"{{name}}\" skill?",

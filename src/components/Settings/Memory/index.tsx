@@ -101,7 +101,7 @@ const TRUST_LABELS: Record<
   },
   system_verified: {
     key: 'setting.memory-trust-system-verified',
-    defaultValue: 'Eigent system record',
+    defaultValue: 'AgentDeck system record',
   },
   tool_observed: {
     key: 'setting.memory-trust-tool-observed',
@@ -341,7 +341,7 @@ export default function Memory({
           }),
           description: t('setting.memory-space-description', {
             defaultValue:
-              'Eigent can learn stable notes explicitly meant for this Space and reuse them across its Sessions. Session-specific notes remain in their Session.',
+              'AgentDeck can learn stable notes explicitly meant for this Space and reuse them across its Sessions. Session-specific notes remain in their Session.',
           }),
           autoDescription: t('setting.memory-space-auto-description', {
             defaultValue:
@@ -390,7 +390,7 @@ export default function Memory({
             }),
             description: t('setting.memory-session-description', {
               defaultValue:
-                'Eigent can learn a small set of stable notes from this Session. These notes stay with the Session and are separate from its full task history.',
+                'AgentDeck can learn a small set of stable notes from this Session. These notes stay with the Session and are separate from its full task history.',
             }),
             autoDescription: t('setting.memory-session-auto-description', {
               defaultValue:
@@ -429,7 +429,7 @@ export default function Memory({
             }),
             emptyDescription: t('setting.memory-session-empty-description', {
               defaultValue:
-                'Add a note above, or turn on Auto Memory so Eigent can learn stable details as this Session runs.',
+                'Add a note above, or turn on Auto Memory so AgentDeck can learn stable details as this Session runs.',
             }),
           }
         : {
@@ -445,7 +445,7 @@ export default function Memory({
             }),
             description: t('setting.memory-personal-description', {
               defaultValue:
-                'Eigent can learn personal preferences and stable facts you explicitly want reused across your work. Task history remains separate.',
+                'AgentDeck can learn personal preferences and stable facts you explicitly want reused across your work. Task history remains separate.',
             }),
             autoDescription: t('setting.memory-personal-auto-description', {
               defaultValue:
@@ -472,7 +472,7 @@ export default function Memory({
               'setting.memory-personal-composer-placeholder',
               {
                 defaultValue:
-                  'Add a preference, constraint, or fact for Eigent to remember',
+                  'Add a preference, constraint, or fact for AgentDeck to remember',
               }
             ),
             emptyTitle: t('setting.memory-personal-empty-title', {
@@ -480,7 +480,7 @@ export default function Memory({
             }),
             emptyDescription: t('setting.memory-personal-empty-description', {
               defaultValue:
-                'Add a stable preference or fact above when you want Eigent to remember it across your work.',
+                'Add a stable preference or fact above when you want AgentDeck to remember it across your work.',
             }),
           };
   const ScopeIcon = scopePresentation.icon;
@@ -519,7 +519,7 @@ export default function Memory({
             })}
             description={t('setting.memory-scope-description', {
               defaultValue:
-                'Small, editable notes that Eigent may reuse. Canonical task history is stored separately for replay and reliability; it is not editable or exposed in Memory Center. Agents can always search that history when they need older details.',
+                'Small, editable notes that AgentDeck may reuse. Canonical task history is stored separately for replay and reliability; it is not editable or exposed in Memory Center. Agents can always search that history when they need older details.',
             })}
             actionClassName="w-[280px]"
             action={
@@ -626,7 +626,7 @@ export default function Memory({
                 })}
                 description={t('setting.memory-reconciliation-description', {
                   defaultValue:
-                    'Eigent did not overwrite either version. Choose which content to keep for each item.',
+                    'AgentDeck did not overwrite either version. Choose which content to keep for each item.',
                 })}
               >
                 <div className="flex flex-col gap-3 rounded-2xl bg-ds-bg-warning-subtle-default p-4">

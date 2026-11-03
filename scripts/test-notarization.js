@@ -34,7 +34,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
 const RELEASE_DIR = path.join(projectRoot, 'release');
-const APP_BUNDLE_PATTERN = /Eigent\.app$/;
+const APP_BUNDLE_PATTERN = /AgentDeck\.app$/;
 
 /**
  * Find the app bundle in release directory
@@ -55,7 +55,7 @@ function findAppBundle() {
       return path.join(RELEASE_DIR, entry.name);
     }
 
-    // Check subdirectories (e.g., mac-arm64/Eigent.app)
+    // Check subdirectories (e.g., mac-arm64/AgentDeck.app)
     if (entry.isDirectory()) {
       const subDir = path.join(RELEASE_DIR, entry.name);
       const subEntries = fs.readdirSync(subDir, { withFileTypes: true });

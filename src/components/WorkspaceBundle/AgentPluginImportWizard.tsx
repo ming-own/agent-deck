@@ -201,7 +201,7 @@ export function AgentPluginImportWizard({
     if (!picker) {
       setError(
         t('layout.agent-plugin-import-desktop-required', {
-          defaultValue: 'Agent Plugins import requires Eigent Desktop.',
+          defaultValue: 'Agent Plugins import requires AgentDeck Desktop.',
         })
       );
       return;
@@ -324,7 +324,7 @@ export function AgentPluginImportWizard({
           throw new Error(
             t('layout.agent-plugin-import-workspace-folder-failed', {
               defaultValue:
-                'Eigent could not create the local Workspace folder.',
+                'AgentDeck could not create the local Workspace folder.',
             })
           );
         }
@@ -474,7 +474,7 @@ export function AgentPluginImportWizard({
             <p className="mt-2 max-w-2xl !text-ds-text-base text-ds-ink-muted-default">
               {t('layout.agent-plugin-import-description', {
                 defaultValue:
-                  'Import the Agent Plugins standard. Eigent reviews the package before converting it to a local Workspace Bundle draft.',
+                  'Import the Agent Plugins standard. AgentDeck reviews the package before converting it to a local Workspace Bundle draft.',
               })}
             </p>
           </header>

@@ -474,7 +474,7 @@ export function WorkspaceVersionHistoryDialog({
                   <span className="block text-ds-text-meta text-ds-ink-muted-default">
                     {t('layout.workspace-task-versions-description', {
                       defaultValue:
-                        'One entry per task. Eigent groups the internal Git branches behind each task automatically.',
+                        'One entry per task. AgentDeck groups the internal Git branches behind each task automatically.',
                     })}
                   </span>
                   <div className="overflow-hidden rounded-xl border border-x border-y border-ds-hairline-default-default bg-ds-neutral-default-default px-4">
@@ -706,7 +706,7 @@ export function WorkspaceVersionHistoryDialog({
                       {t('layout.workspace-git-command-instructions', {
                         example: '["status", "--short"]',
                         defaultValue:
-                          'Enter the command as a JSON array of arguments, for example {{example}}. No shell is involved, and Eigent checks what the command does before running it.',
+                          'Enter the command as a JSON array of arguments, for example {{example}}. No shell is involved, and AgentDeck checks what the command does before running it.',
                       })}
                     </span>
                     <Textarea

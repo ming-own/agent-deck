@@ -2654,7 +2654,7 @@ function HtmlRenderer({
         : injectFontStyles(htmlWithDeferredScripts);
 
       // Authorized remote reports retain their declared fonts; offline reports
-      // keep Eigent's deterministic system-font fallback.
+      // keep AgentDeck's deterministic system-font fallback.
       setProcessedHtml(
         injectPreviewContentSecurityPolicy(htmlWithPreviewFonts, remoteOrigins)
       );
@@ -2910,7 +2910,7 @@ function BlockedPreviewPlaceholder({ file }: { file: FileInfo }) {
       : file.preview.reason === 'metadata-unavailable'
         ? t('folder.preview-metadata-unavailable', {
             defaultValue:
-              'Eigent could not verify the file size, so automatic preview was blocked.',
+              'AgentDeck could not verify the file size, so automatic preview was blocked.',
           })
         : t('folder.preview-type-unsupported', {
             defaultValue:

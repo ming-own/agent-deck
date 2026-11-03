@@ -12,18 +12,16 @@
 // limitations under the License.
 // ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
 
-import logoBlack from '@/assets/logo/logo_black.png';
-import logoWhite from '@/assets/logo/logo_white.png';
 import { Button } from '@/components/ui/button';
 import { DsIcon } from '@/components/ui/ds-icon';
+import { DsText } from '@/components/ui/ds-text';
 import useAppVersion from '@/hooks/use-app-version';
 import {
   installDesktopUpdate,
   startDesktopUpdateDownload,
 } from '@/hooks/useDesktopUpdater';
 import { useHost } from '@/host';
-import { SITE_URL } from '@/lib';
-import { useAuthStore } from '@/store/authStore';
+import { AGENTDECK_REPOSITORY_URL } from '@/lib';
 import { useDesktopUpdateStore } from '@/store/updateStore';
 import { Download, ExternalLink, RefreshCw, TagIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -35,8 +33,6 @@ import SettingsSectionPage from '../SettingsSectionPage';
 
 export function AboutSettings() {
   const { t } = useTranslation();
-  const appearance = useAuthStore((state) => state.appearance);
-  const logoSrc = appearance === 'dark' ? logoWhite : logoBlack;
   const host = useHost();
   const ipcRenderer = host?.ipcRenderer;
   const version = useAppVersion();
@@ -54,7 +50,7 @@ export function AboutSettings() {
           size="sm"
           onClick={() =>
             window.open(
-              'https://github.com/eigent-ai/eigent',
+              AGENTDECK_REPOSITORY_URL,
               '_blank',
               'noopener,noreferrer'
             )
@@ -146,19 +142,25 @@ export function AboutSettings() {
     <SettingsSectionPage>
       <SettingsRowGroup>
         <SettingsRow
-          title="Eigent"
+          title="AgentDeck"
           description={t('setting.official-website', {
-            defaultValue: 'Official Eigent website.',
+            defaultValue: 'Official AgentDeck website.',
           })}
           action={
             <button
               type="button"
               onClick={() =>
-                window.open(SITE_URL, '_blank', 'noopener,noreferrer')
+                window.open(
+                  AGENTDECK_REPOSITORY_URL,
+                  '_blank',
+                  'noopener,noreferrer'
+                )
               }
               className="flex cursor-pointer items-center gap-3 bg-transparent transition-opacity duration-200 hover:opacity-60"
             >
-              <img src={logoSrc} alt="Eigent" className="h-7 w-auto" />
+              <DsText as="span" role="title" weight="semibold">
+                AgentDeck · 智牌
+              </DsText>
               <DsIcon icon={ExternalLink} aria-hidden />
             </button>
           }

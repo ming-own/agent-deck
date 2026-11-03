@@ -345,7 +345,7 @@ export default function Login() {
     prepareCallbackUrl();
   }, [host, isDesktopHost]);
 
-  // Render local mode: "Start Eigent" button only
+  // Render local mode: "Start AgentDeck" button only
   const renderLocalMode = () => (
     <div className="relative flex w-80 flex-1 flex-col items-center justify-center pt-8">
       <img
@@ -353,7 +353,7 @@ export default function Login() {
         className="absolute top-10 left-1/2 h-16 w-16 -translate-x-1/2"
       />
       <div className="mb-8 text-ds-text-display font-bold text-ds-ink-default-default">
-        Eigent
+        AgentDeck
       </div>
       {generalError && (
         <p className="mt-1 mb-4 text-ds-text-body-large text-ds-text-status-error-strong-default">
@@ -370,7 +370,7 @@ export default function Login() {
         <span className="flex-1">
           {isLoading
             ? t('layout.logging-in')
-            : t('layout.start-eigent', { defaultValue: 'Start Eigent' })}
+            : t('layout.start-eigent', { defaultValue: 'Start AgentDeck' })}
         </span>
       </Button>
     </div>

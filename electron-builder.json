@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "productName": "Eigent",
-  "appId": "com.eigent.app",
+  "productName": "AgentDeck",
+  "appId": "com.mingown.agentdeck",
   "asar": true,
   "electronLanguages": [
     "ar",
@@ -66,15 +66,15 @@
   ],
   "protocols": [
     {
-      "name": "Eigent OAuth",
+      "name": "AgentDeck OAuth",
       "schemes": ["eigent"]
     }
   ],
   "publish": [
     {
       "provider": "github",
-      "owner": "eigent-ai",
-      "repo": "eigent",
+      "owner": "ming-own",
+      "repo": "agent-deck",
       "releaseType": "release"
     }
   ],
@@ -125,7 +125,7 @@
       ],
       "CFBundleURLTypes": [
         {
-          "CFBundleURLName": "com.eigent.app",
+          "CFBundleURLName": "com.mingown.agentdeck",
           "CFBundleURLSchemes": ["eigent"]
         }
       ]

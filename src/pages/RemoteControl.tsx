@@ -741,7 +741,7 @@ export default function RemoteControlPage() {
                     })
                   : t('layout.remote-control-desktop-offline-description', {
                       defaultValue:
-                        'Desktop is offline. Keep Eigent open on the original computer and stay on the chat view.',
+                        'Desktop is offline. Keep AgentDeck open on the original computer and stay on the chat view.',
                     })}
               </p>
               <p

@@ -22,8 +22,8 @@ const EnvOauthInfoMap = {
 const getElectronAPI = () => createHost().electronAPI;
 
 export class OAuth {
-  public client_name: string = 'Eigent';
-  public client_uri: string = 'https://eigent.ai/';
+  public client_name: string = 'AgentDeck';
+  public client_uri: string = 'https://github.com/ming-own/agent-deck';
   public redirect_uris: string[] = [];
 
   public url: string = '';

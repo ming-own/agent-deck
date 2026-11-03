@@ -67,7 +67,7 @@ const ONBOARDING_THEME_LABELS: Record<
   (typeof ONBOARDING_THEME_PRESET_IDS)[number],
   string
 > = {
-  eigent: 'Eigent',
+  eigent: 'AgentDeck',
   camel: 'CAMEL',
   claw: 'Claw',
   starfish: 'Starfish',

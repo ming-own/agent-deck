@@ -617,7 +617,7 @@ function NodeTraceDetails({
     <span className="block !text-ds-text-meta !font-normal text-ds-ink-muted-default">
       {t('chat.timeline-unsupported-event', {
         defaultValue:
-          "This part of the conversation can't be shown in this version of Eigent.",
+          "This part of the conversation can't be shown in this version of AgentDeck.",
       })}
     </span>
   );

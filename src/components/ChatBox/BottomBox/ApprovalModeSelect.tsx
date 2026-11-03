@@ -85,7 +85,8 @@ export function ApprovalModeSelect({
       value: 'read_only',
       label: t('chat.approval-mode-read-only', { defaultValue: 'Read only' }),
       description: t('chat.approval-mode-read-only-description', {
-        defaultValue: 'Eigent can read your files but cannot change anything.',
+        defaultValue:
+          'AgentDeck can read your files but cannot change anything.',
       }),
       icon: Eye,
     },
@@ -96,7 +97,7 @@ export function ApprovalModeSelect({
       }),
       description: t('chat.approval-mode-ask-first-description', {
         defaultValue:
-          'Eigent asks for your approval before it changes anything.',
+          'AgentDeck asks for your approval before it changes anything.',
       }),
       icon: ShieldQuestion,
     },
@@ -107,7 +108,7 @@ export function ApprovalModeSelect({
       }),
       description: t('chat.approval-mode-approve-for-me-description', {
         defaultValue:
-          'Eigent approves routine steps and only asks about risky ones.',
+          'AgentDeck approves routine steps and only asks about risky ones.',
       }),
       icon: ShieldCheck,
     },
@@ -117,7 +118,7 @@ export function ApprovalModeSelect({
         defaultValue: 'Full access',
       }),
       description: t('chat.approval-mode-full-access-description', {
-        defaultValue: 'Eigent acts without asking. Use with care.',
+        defaultValue: 'AgentDeck acts without asking. Use with care.',
       }),
       icon: TriangleAlert,
     },
@@ -165,7 +166,7 @@ export function ApprovalModeSelect({
       !window.confirm(
         t('chat.approval-mode-full-access-confirmation', {
           defaultValue:
-            'Full access lets Eigent act without asking you first, including actions that change files or send messages. Continue?',
+            'Full access lets AgentDeck act without asking you first, including actions that change files or send messages. Continue?',
         })
       )
     ) {

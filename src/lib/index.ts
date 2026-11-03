@@ -12,6 +12,9 @@
 // limitations under the License.
 // ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
 
+export const AGENTDECK_REPOSITORY_URL =
+  'https://github.com/ming-own/agent-deck';
+
 export const SITE_URL =
   import.meta.env.VITE_SITE_URL || 'https://www.eigent.ai';
 

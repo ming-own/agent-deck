@@ -109,7 +109,7 @@ describe('ReportBugDialog', () => {
     expect(mockToast.success).not.toHaveBeenCalled();
   });
 
-  it('downloads the Eigent log on its own', async () => {
+  it('downloads the AgentDeck log on its own', async () => {
     mockElectronAPI.exportLog.mockResolvedValueOnce({
       success: true,
       savedPath: '/tmp/eigent.log',
@@ -117,7 +117,9 @@ describe('ReportBugDialog', () => {
 
     render(<ReportBugDialog open onOpenChange={vi.fn()} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Eigent log' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'AgentDeck log' })
+    );
 
     await waitFor(() => {
       expect(mockElectronAPI.exportLog).toHaveBeenCalled();
@@ -172,7 +174,9 @@ describe('ReportBugDialog', () => {
 
     render(<ReportBugDialog open onOpenChange={vi.fn()} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Eigent log' }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'AgentDeck log' })
+    );
 
     await waitFor(() => {
       expect(mockElectronAPI.exportLog).toHaveBeenCalled();

@@ -56,7 +56,7 @@
   "create-skill-default-description": "Décrivez ce que fait cette compétence.",
   "save-skill": "Enregistrer la compétence",
   "compose-skill-hint": "Modifiez SKILL.md (un en-tête YAML avec nom et description est requis), puis enregistrez.",
-  "try-skill-prompt": "Je viens d’ajouter la compétence {{name}} à Eigent. Peux-tu créer quelque chose d’incroyable avec cette compétence ?",
+  "try-skill-prompt": "Je viens d’ajouter la compétence {{name}} à AgentDeck. Peux-tu créer quelque chose d’incroyable avec cette compétence ?",
   "select-agent-access": "Sélectionner l’accès des agents",
   "all-agents": "Tous les agents",
   "replace-skill-title": "Remplacer la compétence « {{name}} » ?",

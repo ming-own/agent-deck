@@ -29,7 +29,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-const GITHUB_ISSUES_URL = 'https://github.com/eigent-ai/eigent/issues/new';
+const GITHUB_ISSUES_URL = 'https://github.com/ming-own/agent-deck/issues/new';
 
 /** Matches `getDiagnosticsInfo` in preload / `ElectronAPI` */
 type DiagnosticsInfo = {
@@ -272,7 +272,7 @@ export default function ReportBugDialog({
                 <div className="flex min-w-0 flex-col">
                   <span className="text-ds-text-base font-medium text-ds-ink-default-default">
                     {t('layout.support-eigent-log', {
-                      defaultValue: 'Eigent log',
+                      defaultValue: 'AgentDeck log',
                     })}
                   </span>
                   <span className="text-ds-text-meta text-ds-ink-subtle-default">
@@ -288,7 +288,7 @@ export default function ReportBugDialog({
                   onClick={() => void handleDownloadLog('eigent')}
                   disabled={exportingLog !== null}
                   aria-label={t('layout.support-eigent-log', {
-                    defaultValue: 'Eigent log',
+                    defaultValue: 'AgentDeck log',
                   })}
                 >
                   {exportingLog === 'eigent' ? (

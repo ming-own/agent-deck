@@ -20,10 +20,8 @@ import type {
 } from 'electron-updater';
 import { createRequire } from 'node:module';
 import {
-  DEFAULT_CDN_RELEASE_BASE_URL,
   getGitHubReleaseChannel,
   getUpdatePlatformDirectory,
-  GitHubReleaseCdnProvider,
 } from './githubReleaseCdnProvider';
 
 const { autoUpdater } = createRequire(import.meta.url)('electron-updater');
@@ -74,18 +72,13 @@ export function update(win: Electron.BrowserWindow) {
     return;
   }
 
-  const cdnBaseUrl =
-    process.env.EIGENT_UPDATER_CDN_BASE_URL || DEFAULT_CDN_RELEASE_BASE_URL;
   const channel = getGitHubReleaseChannel(process.platform, process.arch);
   const feed = {
-    provider: 'custom' as const,
-    updateProvider: GitHubReleaseCdnProvider,
-    owner: 'eigent-ai',
-    repo: 'eigent',
+    provider: 'github' as const,
+    owner: 'ming-own',
+    repo: 'agent-deck',
     releaseType: 'release' as const,
     channel,
-    cdnBaseUrl,
-    platformDir,
   };
 
   autoUpdater.setFeedURL(feed);

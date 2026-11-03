@@ -13,4 +13,4 @@
 // ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
 
 export const EIGENT_GITHUB_REPOSITORY_URL =
-  'https://github.com/eigent-ai/eigent';
+  'https://github.com/ming-own/agent-deck';

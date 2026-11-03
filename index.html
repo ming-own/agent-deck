@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<!-- Content Security Policy: CDN allowlist for agent-generated HTML -->
-		<meta
-			http-equiv="Content-Security-Policy"
-			content="
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Content Security Policy: CDN allowlist for agent-generated HTML -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
 				script-src 'self' 'unsafe-inline' 'unsafe-eval'
 					https://cdnjs.cloudflare.com
 					https://cdn.jsdelivr.net
@@ -47,11 +47,11 @@
 				child-src 'self' blob:;
 				frame-src 'self' localfile: blob: data: http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:*;
 			"
-		/>
-		<title>Eigent</title>
-	</head>
-	<body>
-		<div id="root"></div>
-		<script type="module" src="/src/main.tsx"></script>
-	</body>
+    />
+    <title>AgentDeck · 智牌</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

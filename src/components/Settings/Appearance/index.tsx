@@ -403,7 +403,7 @@ export default function AppearanceSettings() {
         <SettingsRow
           title={t('setting.color-mode')}
           description={t('setting.color-mode-description', {
-            defaultValue: 'Choose how Eigent looks on this device.',
+            defaultValue: 'Choose how AgentDeck looks on this device.',
           })}
           actionClassName="w-[280px]"
           action={

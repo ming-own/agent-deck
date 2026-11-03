@@ -35,4 +35,4 @@ Closes #
 
 ## Contribution Guidelines Acknowledgement
 
-- [ ] I have read and agree to the [Eigent Contribution Guideline](https://github.com/eigent-ai/eigent/blob/main/CONTRIBUTING.md#eigent-contribution-guideline)
+- [ ] I have read and agree to the [AgentDeck Contribution Guideline](https://github.com/ming-own/agent-deck/blob/main/CONTRIBUTING.md)

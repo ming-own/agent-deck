@@ -1091,7 +1091,7 @@ function WorkspaceBundleInstallContent({
           throw new Error(
             t('layout.workspace-bundle-save-intent-failed', {
               defaultValue:
-                'Eigent could not save the recoverable installation intent.',
+                'AgentDeck could not save the recoverable installation intent.',
             })
           );
         }
@@ -1121,7 +1121,7 @@ function WorkspaceBundleInstallContent({
           throw new Error(
             t('layout.workspace-bundle-create-folder-failed', {
               defaultValue:
-                'Eigent could not create the local Workspace folder.',
+                'AgentDeck could not create the local Workspace folder.',
             })
           );
         }

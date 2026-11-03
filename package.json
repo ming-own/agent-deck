@@ -1,10 +1,10 @@
 {
-  "name": "eigent",
+  "name": "agent-deck",
   "version": "1.0.7",
   "main": "dist-electron/main/index.js",
-  "description": "Eigent",
-  "author": "Eigent.AI",
-  "license": "MIT",
+  "description": "AgentDeck（智牌）— compose your own team of AI agents",
+  "author": "ming-own",
+  "license": "Apache-2.0",
   "private": true,
   "debug": {
     "env": {
@@ -205,5 +205,13 @@
   },
   "engines": {
     "node": ">=18.0.0 <23.0.0"
+  },
+  "homepage": "https://github.com/ming-own/agent-deck",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ming-own/agent-deck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ming-own/agent-deck/issues"
   }
 }

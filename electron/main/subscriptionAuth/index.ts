@@ -170,7 +170,7 @@ async function handleLocalOAuthCallback(
       res,
       400,
       'Authentication failed',
-      'Return to Eigent and try signing in again.'
+      'Return to AgentDeck and try signing in again.'
     );
     stopCallbackServerWhenIdle();
     return;
@@ -247,7 +247,7 @@ async function ensureLocalOAuthCallbackServer(): Promise<void> {
           res,
           500,
           'Authentication failed',
-          'Eigent could not complete the OAuth callback.'
+          'AgentDeck could not complete the OAuth callback.'
         );
       });
     });

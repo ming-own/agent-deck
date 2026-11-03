@@ -1484,7 +1484,7 @@ function LegacyChatBox({ accountKey }: { accountKey: string }): JSX.Element {
       toast.success(
         t('chat.message-queued', {
           defaultValue:
-            'Message queued. Eigent will send it when the current task finishes.',
+            'Message queued. AgentDeck will send it when the current task finishes.',
         })
       );
       return;
@@ -2480,7 +2480,7 @@ function LegacyChatBox({ accountKey }: { accountKey: string }): JSX.Element {
             toast.info(
               t('chat.message-queued', {
                 defaultValue:
-                  'Message queued. Eigent will send it when the current task finishes.',
+                  'Message queued. AgentDeck will send it when the current task finishes.',
               }),
               { id: `queue-wait:${waitKey}` }
             );

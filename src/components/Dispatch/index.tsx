@@ -223,7 +223,7 @@ function formatLogTime(iso: string): string {
 const REMOTE_CONTROL_TITLE_MAX_LENGTH = 80;
 
 function buildRemoteControlTitle(spaceName?: string | null): string {
-  const base = spaceName?.trim() || 'Eigent Remote Control';
+  const base = spaceName?.trim() || 'AgentDeck Remote Control';
   const text = base.replace(/\s+/g, ' ').trim();
   if (text.length <= REMOTE_CONTROL_TITLE_MAX_LENGTH) return text;
   return `${text.slice(0, REMOTE_CONTROL_TITLE_MAX_LENGTH - 3).trimEnd()}...`;
@@ -439,7 +439,7 @@ export function WorkspaceDispatch() {
                 : bridgeError?.message ||
                   t('layout.remote-control-keep-desktop-open', {
                     defaultValue:
-                      'Keep Eigent Desktop open and try again in a few seconds.',
+                      'Keep AgentDeck Desktop open and try again in a few seconds.',
                   }),
           }
         );
@@ -501,7 +501,7 @@ export function WorkspaceDispatch() {
           {
             description: t('layout.remote-control-bridge-offline-description', {
               defaultValue:
-                'Keep Eigent Desktop open and wait for the bridge to reconnect, then try again.',
+                'Keep AgentDeck Desktop open and wait for the bridge to reconnect, then try again.',
             }),
           }
         );

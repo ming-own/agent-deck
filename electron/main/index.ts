@@ -633,7 +633,7 @@ function createSessionAppWindow(
           ),
         };
   const sessionWindow = new BrowserWindow({
-    title: 'Eigent',
+    title: 'AgentDeck',
     ...bounds,
     minWidth: placement.minimumSize.width,
     minHeight: placement.minimumSize.height,
@@ -1194,7 +1194,7 @@ async function startAuthCallbackServer() {
         </style></head>
         <body><div class="container">
           <h1>Login Successful</h1>
-          <p>You can close this tab and return to Eigent.</p>
+          <p>You can close this tab and return to AgentDeck.</p>
         </div></body></html>
       `);
 
@@ -1946,7 +1946,7 @@ function registerIpcHandlers() {
         const platform = process.platform;
         const arch = process.arch;
         const bugReportText = [
-          'Eigent bug report',
+          'AgentDeck bug report',
           '=================',
           '',
           `App version: ${appVersion}`,
@@ -2308,7 +2308,7 @@ function registerIpcHandlers() {
       title: 'Import Agent Plugin',
       message: 'Choose the Agent Plugin source',
       detail:
-        'A plugin directory is the standard package format. Archives are supported only as an Eigent import transport.',
+        'A plugin directory is the standard package format. Archives are supported only as an AgentDeck import transport.',
       buttons: ['Plugin directory', 'Archive', 'Cancel'],
       defaultId: 0,
       cancelId: 2,
@@ -3476,7 +3476,7 @@ async function createWindowInternal() {
   appShellReadinessGate.markDocumentLoading();
   rendererAppCommands.markNotReady('window-created');
   win = new BrowserWindow({
-    title: 'Eigent',
+    title: 'AgentDeck',
     ...startupWindowState.bounds,
     minWidth: startupWindowState.minimumSize.width,
     minHeight: startupWindowState.minimumSize.height,
