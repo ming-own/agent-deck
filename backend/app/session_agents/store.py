@@ -68,6 +68,8 @@ class AgentStore:
             "revision": row["revision"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
+            "role": "",
+            "instructions": "",
             **json.loads(row["config"]),
         }
 
@@ -86,7 +88,13 @@ class AgentStore:
                 "created_at",
                 "finished_at",
             )
-        } | {"agent": json.loads(row["snapshot"])}
+        } | {
+            "agent": {
+                "role": "",
+                "instructions": "",
+                **json.loads(row["snapshot"]),
+            }
+        }
 
     def list(self, owner, project):
         with self.connect() as db:

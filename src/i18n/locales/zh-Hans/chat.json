@@ -630,5 +630,16 @@
   "session-agents-stop": "停止",
   "session-agents-new-session": "Agent 会话",
   "session-agents-conversation": "原会话",
-  "session-agents-models-loading": "正在加载已接入的模型…"
+  "session-agents-models-loading": "正在加载已接入的模型…",
+  "session-agents-role-label": "角色（可选）",
+  "session-agents-role-placeholder": "例如：研究员、方案设计师、审查员",
+  "session-agents-instructions-label": "指令（可选）",
+  "session-agents-instructions-placeholder": "描述职责、工作规则和期望的输出格式。",
+  "session-agents-instructions-help": "保存后用于此 Agent 的后续对话，已有上下文保留。留空时使用通用助手行为。",
+  "session-agents-role": "角色",
+  "session-agents-instructions": "指令",
+  "session-agents-default-role": "通用助手",
+  "session-agents-no-instructions": "未设置额外指令",
+  "session-agents-behavior": "角色与指令",
+  "session-agents-run-config": "本次执行配置"
 }

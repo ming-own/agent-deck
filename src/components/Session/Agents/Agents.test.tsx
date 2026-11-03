@@ -58,6 +58,8 @@ const node = (id: string, name: string, model: string) => ({
   id,
   name,
   revision: 1,
+  role: '',
+  instructions: '',
   model: {
     id: `codex:${model}`,
     name: model === 'model-a' ? 'Model A' : 'Model B',
@@ -123,9 +125,19 @@ describe('Session Agent instances', () => {
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: 'codex:model-b' },
     });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Role (optional)' }), {
+      target: { value: 'Reviewer' },
+    });
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'Instructions (optional)' }),
+      { target: { value: 'List risks first.' } }
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     await waitFor(() =>
-      expect(mocks.api.create).toHaveBeenCalledWith('Reviewer', second.model)
+      expect(mocks.api.create).toHaveBeenCalledWith('Reviewer', second.model, {
+        role: 'Reviewer',
+        instructions: 'List risks first.',
+      })
     );
     expect(
       await screen.findByRole('button', { name: 'Reviewer', exact: true })
@@ -184,4 +196,80 @@ describe('Session Agent instances', () => {
     await waitFor(() => expect(mocks.api.runs).toHaveBeenCalledWith('b'));
     expect(screen.queryByText('Private old history')).not.toBeInTheDocument();
   });
+});
+
+it('edits node instructions while keeping the previous run configuration visible', async () => {
+  const configured = {
+    ...first,
+    role: 'Researcher',
+    instructions: 'Cite sources.',
+  };
+  mocks.api.list.mockResolvedValue([configured, second]);
+  mocks.api.runs.mockResolvedValue([
+    {
+      id: 'old-run',
+      agent: configured,
+      prompt: 'Question',
+      output: 'Answer',
+      status: 'completed',
+    },
+  ]);
+  mocks.api.update.mockResolvedValue({
+    ...configured,
+    revision: 2,
+    role: 'Reviewer',
+    instructions: 'List risks.',
+  });
+  render(<SessionAgents projectId="s" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit Agent' }));
+  expect(screen.getByRole('textbox', { name: 'Role (optional)' })).toHaveValue(
+    'Researcher'
+  );
+  expect(
+    screen.getByRole('textbox', { name: 'Instructions (optional)' })
+  ).toHaveValue('Cite sources.');
+  fireEvent.change(screen.getByRole('textbox', { name: 'Role (optional)' }), {
+    target: { value: 'Reviewer' },
+  });
+  fireEvent.change(
+    screen.getByRole('textbox', { name: 'Instructions (optional)' }),
+    { target: { value: 'List risks.' } }
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+  await waitFor(() =>
+    expect(mocks.api.update).toHaveBeenCalledWith(
+      configured,
+      'Research',
+      first.model,
+      { role: 'Reviewer', instructions: 'List risks.' }
+    )
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Run configuration' })
+  );
+  expect(screen.getByText('Cite sources.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
+  expect(
+    screen.getByRole('textbox', { name: 'Instructions (optional)' })
+  ).toHaveValue('List risks.');
+});
+
+it('keeps unsaved instructions in the form after a failed save and cancels without changing the node', async () => {
+  mocks.api.update.mockRejectedValue(new Error('conflict'));
+  render(<SessionAgents projectId="s" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit Agent' }));
+  fireEvent.change(
+    screen.getByRole('textbox', { name: 'Instructions (optional)' }),
+    { target: { value: 'Unsaved draft' } }
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+  await screen.findByText('Could not save. Refresh the Agents and try again.');
+  expect(
+    screen.getByRole('textbox', { name: 'Instructions (optional)' })
+  ).toHaveValue('Unsaved draft');
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
+  expect(
+    screen.getByRole('textbox', { name: 'Instructions (optional)' })
+  ).toHaveValue('');
 });

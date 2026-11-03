@@ -17,6 +17,7 @@ import {
 } from '@/lib/configuredModels';
 import {
   sessionAgentApi,
+  type AgentBehavior,
   type SessionAgent,
   type SessionAgentRun,
 } from '@/service/sessionAgentApi';
@@ -25,7 +26,14 @@ import {
   resolveAgentConnection,
 } from '@/service/sessionAgentModels';
 import { useAuthStore } from '@/store/authStore';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 
 export function SessionAgents({ projectId }: { projectId: string }) {
@@ -92,8 +100,12 @@ function AgentInstances({
   useEffect(() => {
     void refresh();
   }, [refresh]);
-  const create = async (name: string, choice: ConfiguredModelChoice) => {
-    const node = await api.create(name, modelReference(choice));
+  const create = async (
+    name: string,
+    choice: ConfiguredModelChoice,
+    behavior: AgentBehavior
+  ) => {
+    const node = await api.create(name, modelReference(choice), behavior);
     if (!alive.current) return;
     refreshSequence.current++;
     setNodes((previous) => [...previous, node]);
@@ -212,12 +224,19 @@ function AgentForm({
 }: {
   node?: SessionAgent;
   choices: ConfiguredModelChoice[];
-  onSave: (name: string, choice: ConfiguredModelChoice) => Promise<void>;
+  onSave: (
+    name: string,
+    choice: ConfiguredModelChoice,
+    behavior: AgentBehavior
+  ) => Promise<void>;
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(node?.name ?? '');
   const [model, setModel] = useState(node?.model.id ?? '');
+  const [role, setRole] = useState(node?.role ?? '');
+  const [instructions, setInstructions] = useState(node?.instructions ?? '');
+  const helpId = useId();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const savingRef = useRef(false);
@@ -232,7 +251,10 @@ function AgentForm({
         setSaving(true);
         setFailed(false);
         try {
-          await onSave(name.trim(), choice);
+          await onSave(name.trim(), choice, {
+            role: role.trim(),
+            instructions: instructions.trim(),
+          });
         } catch {
           setFailed(true);
         } finally {
@@ -272,6 +294,35 @@ function AgentForm({
       {!choices.length && (
         <DsText role="base">{t('chat.session-agents-no-models')}</DsText>
       )}
+      <Input
+        title={t('chat.session-agents-role-label')}
+        aria-label={t('chat.session-agents-role-label')}
+        placeholder={t('chat.session-agents-role-placeholder')}
+        value={role}
+        maxLength={200}
+        onChange={(event) => setRole(event.target.value)}
+        disabled={saving}
+      />
+      <Textarea
+        variant="outlined"
+        title={t('chat.session-agents-instructions-label')}
+        aria-label={t('chat.session-agents-instructions-label')}
+        aria-describedby={helpId}
+        placeholder={t('chat.session-agents-instructions-placeholder')}
+        value={instructions}
+        rows={5}
+        maxLength={12000}
+        onChange={(event) => setInstructions(event.target.value)}
+        disabled={saving}
+      />
+      <DsText
+        as="p"
+        id={helpId}
+        role="meta"
+        className="text-ds-ink-muted-default"
+      >
+        {t('chat.session-agents-instructions-help')}
+      </DsText>
       {failed && (
         <DsText role="base" aria-live="assertive">
           {t('chat.session-agents-save-error')}
@@ -291,6 +342,59 @@ function AgentForm({
         </Button>
       </div>
     </form>
+  );
+}
+
+function AgentBehaviorDetails({
+  agent,
+  label,
+}: {
+  agent: AgentBehavior;
+  label: string;
+}) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
+  return (
+    <div className="flex min-w-0 flex-col items-start gap-ds-stack-related">
+      <Button
+        variant="ghost"
+        size="xs"
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => setExpanded(!expanded)}
+      >
+        {label}
+      </Button>
+      <div id={detailsId} hidden={!expanded} className="w-full min-w-0">
+        <dl className="flex flex-col gap-ds-stack-related">
+          <div>
+            <DsText as="dt" role="meta" className="text-ds-ink-muted-default">
+              {t('chat.session-agents-role')}
+            </DsText>
+            <DsText
+              as="dd"
+              role="base"
+              className="break-words whitespace-pre-wrap"
+            >
+              {agent.role || t('chat.session-agents-default-role')}
+            </DsText>
+          </div>
+          <div>
+            <DsText as="dt" role="meta" className="text-ds-ink-muted-default">
+              {t('chat.session-agents-instructions')}
+            </DsText>
+            <DsText
+              as="dd"
+              role="base"
+              className="break-words whitespace-pre-wrap"
+            >
+              {agent.instructions || t('chat.session-agents-no-instructions')}
+            </DsText>
+          </div>
+        </dl>
+      </div>
+    </div>
   );
 }
 
@@ -403,6 +507,10 @@ function AgentConversation({
           {t('chat.session-agents-edit')}
         </Button>
       </div>
+      <AgentBehaviorDetails
+        agent={node}
+        label={t('chat.session-agents-behavior')}
+      />
       {!available && (
         <DsText role="base" aria-live="polite">
           {t(
@@ -418,11 +526,12 @@ function AgentConversation({
           node={node}
           choices={choices}
           onCancel={() => setEditing(false)}
-          onSave={async (name, choice) => {
+          onSave={async (name, choice, behavior) => {
             const updated = await api.update(
               node,
               name,
-              modelReference(choice)
+              modelReference(choice),
+              behavior
             );
             if (alive.current) {
               onUpdated(updated);
@@ -444,6 +553,10 @@ function AgentConversation({
               {run.agent.name} · {run.agent.model.name} ·{' '}
               {t(`chat.session-agents-status-${run.status}`)}
             </DsText>
+            <AgentBehaviorDetails
+              agent={run.agent}
+              label={t('chat.session-agents-run-config')}
+            />
             <DsText
               as="p"
               role="base"

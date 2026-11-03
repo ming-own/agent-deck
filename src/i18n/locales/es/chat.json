@@ -638,5 +638,16 @@
   "session-agents-stop": "Stop",
   "session-agents-new-session": "Agent session",
   "session-agents-conversation": "Conversation",
-  "session-agents-models-loading": "Loading connected models…"
+  "session-agents-models-loading": "Loading connected models…",
+  "session-agents-role-label": "Role (optional)",
+  "session-agents-role-placeholder": "e.g. Researcher or reviewer",
+  "session-agents-instructions-label": "Instructions (optional)",
+  "session-agents-instructions-placeholder": "Describe responsibilities, working rules and the expected output.",
+  "session-agents-instructions-help": "Applies to future turns for this Agent. Existing conversation history is retained. Leave blank to use the general assistant behavior.",
+  "session-agents-role": "Role",
+  "session-agents-instructions": "Instructions",
+  "session-agents-default-role": "General assistant",
+  "session-agents-no-instructions": "No additional instructions",
+  "session-agents-behavior": "Role and instructions",
+  "session-agents-run-config": "Run configuration"
 }

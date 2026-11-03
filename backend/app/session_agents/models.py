@@ -26,6 +26,8 @@ class AgentConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=100)
     model: ModelReference
+    role: str = Field(default="", max_length=200)
+    instructions: str = Field(default="", max_length=12000)
 
 
 class UpdateAgent(AgentConfig):

@@ -1,7 +1,12 @@
 import { fetchGet, fetchPost, fetchPut } from '@/api/http';
 import type { AgentModelReference } from './sessionAgentModels';
 
-export interface SessionAgent {
+export interface AgentBehavior {
+  role: string;
+  instructions: string;
+}
+
+export interface SessionAgent extends AgentBehavior {
   id: string;
   name: string;
   model: AgentModelReference;
@@ -30,16 +35,21 @@ export function sessionAgentApi(account: string, projectId: string) {
   return {
     list: (): Promise<SessionAgent[]> =>
       fetchGet(root, undefined, headers, options),
-    create: (name: string, model: AgentModelReference): Promise<SessionAgent> =>
-      fetchPost(root, { name, model }, headers, options),
+    create: (
+      name: string,
+      model: AgentModelReference,
+      behavior: AgentBehavior
+    ): Promise<SessionAgent> =>
+      fetchPost(root, { name, model, ...behavior }, headers, options),
     update: (
       node: SessionAgent,
       name: string,
-      model: AgentModelReference
+      model: AgentModelReference,
+      behavior: AgentBehavior
     ): Promise<SessionAgent> =>
       fetchPut(
         `${root}/${node.id}`,
-        { name, model, expected_revision: node.revision },
+        { name, model, ...behavior, expected_revision: node.revision },
         headers,
         options
       ),

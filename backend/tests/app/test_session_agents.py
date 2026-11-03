@@ -235,6 +235,20 @@ def test_controller_requires_local_capability_and_partitions_accounts(
             "/session-agents/s", headers=headers, json=config().model_dump()
         )
         assert result.status_code == 200
+        agent_id = result.json()["id"]
+        updated = client.put(
+            f"/session-agents/s/{agent_id}",
+            headers=headers,
+            json={
+                **config().model_dump(),
+                "expected_revision": 1,
+                "role": "Reviewer",
+                "instructions": "List risks first.",
+            },
+        )
+        assert updated.status_code == 200
+        assert updated.json()["role"] == "Reviewer"
+        assert updated.json()["instructions"] == "List risks first."
         assert (
             len(client.get("/session-agents/s", headers=headers).json()) == 1
         )
@@ -286,6 +300,119 @@ async def test_runner_restores_only_supplied_history_and_closes_model(
         call.args[0].content for call in agent.update_memory.call_args_list
     ] == ["Prior question", "Prior answer"]
     model._async_client.close.assert_awaited_once()
+
+
+def test_role_edits_preserve_run_snapshot_and_other_nodes(tmp_path):
+    path = tmp_path / "agents.db"
+    store = AgentStore(path)
+    original = AgentConfig(
+        **{
+            **config().model_dump(),
+            "role": "Researcher",
+            "instructions": "Cite sources.",
+        }
+    )
+    a = store.create("owner", "s", original)
+    b = store.create("owner", "s", config())
+    run, _ = store.begin("owner", "s", a["id"], 1, "r1", "Hello")
+    changed = original.model_copy(
+        update={"role": "Reviewer", "instructions": "List risks."}
+    )
+    store.update("owner", "s", a["id"], 1, changed)
+    store.finish(run["id"], "completed", output="Answer")
+    restored = AgentStore(path)
+    assert restored.get("owner", "s", a["id"])["role"] == "Reviewer"
+    assert restored.get("owner", "s", a["id"])["instructions"] == "List risks."
+    assert restored.get("owner", "s", b["id"])["instructions"] == ""
+    saved = restored.runs("owner", "s", a["id"])[0]["agent"]
+    assert (saved["role"], saved["instructions"]) == (
+        "Researcher",
+        "Cite sources.",
+    )
+    next_run, _ = restored.begin("owner", "s", a["id"], 2, "r2", "Next")
+    assert next_run["agent"]["instructions"] == "List risks."
+
+
+def test_legacy_configs_load_with_empty_role_without_rewriting_snapshots(
+    tmp_path,
+):
+    import json
+
+    store = AgentStore(tmp_path / "agents.db")
+    a = store.create("owner", "s", config())
+    legacy = {"name": a["name"], "model": a["model"]}
+    with store.connect() as db:
+        db.execute(
+            "UPDATE agents SET config=? WHERE id=?",
+            (json.dumps(legacy), a["id"]),
+        )
+    run, _ = store.begin("owner", "s", a["id"], 1, "r", "Hello")
+    legacy_snapshot = {
+        k: v
+        for k, v in run["agent"].items()
+        if k not in {"role", "instructions"}
+    }
+    serialized = json.dumps(legacy_snapshot)
+    with store.connect() as db:
+        db.execute(
+            "UPDATE agent_runs SET snapshot=? WHERE id=?",
+            (serialized, run["id"]),
+        )
+    assert store.get("owner", "s", a["id"])["role"] == ""
+    assert store.runs("owner", "s", a["id"])[0]["agent"]["instructions"] == ""
+    with store.connect() as db:
+        assert (
+            db.execute(
+                "SELECT snapshot FROM agent_runs WHERE id=?", (run["id"],)
+            ).fetchone()[0]
+            == serialized
+        )
+
+
+@pytest.mark.asyncio
+async def test_runner_uses_each_nodes_role_and_instructions(monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, MagicMock
+
+    from app.session_agents import runner
+    from app.session_agents.models import ModelConnection
+
+    model = SimpleNamespace(_async_client=SimpleNamespace(close=AsyncMock()))
+    factory = MagicMock(return_value=lambda: model)
+    agent = MagicMock()
+    agent.astep = AsyncMock(
+        return_value=SimpleNamespace(
+            terminated=False, msgs=[SimpleNamespace(content="Done")]
+        )
+    )
+    constructor = MagicMock(return_value=agent)
+    monkeypatch.setattr(runner, "create_model_builder", factory)
+    monkeypatch.setattr(runner, "ChatAgent", constructor)
+    connection = ModelConnection(model_platform="openai", model_type="model-a")
+    await runner.run_text_agent(
+        {
+            "id": "a",
+            "name": "A",
+            "role": "Researcher",
+            "instructions": "Cite sources.\nUse Chinese.",
+        },
+        [],
+        "Hello",
+        connection,
+        "test@example.com",
+    )
+    system = constructor.call_args.kwargs["system_message"]
+    assert "Researcher" in system and "Cite sources.\nUse Chinese." in system
+    assert factory.call_args.args[2] == system
+    await runner.run_text_agent(
+        {"id": "b", "name": "B"}, [], "Hello", connection, "test@example.com"
+    )
+    default_system = constructor.call_args.kwargs["system_message"]
+    assert (
+        "Researcher" not in default_system
+        and "Cite sources." not in default_system
+    )
+    assert "helpful assistant" in default_system
 
 
 @pytest.mark.asyncio

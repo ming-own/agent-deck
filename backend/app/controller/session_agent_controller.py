@@ -81,7 +81,7 @@ async def update_agent(
             project_id,
             agent_id,
             body.expected_revision,
-            AgentConfig(name=body.name, model=body.model),
+            AgentConfig(**body.model_dump(exclude={"expected_revision"})),
         )
     except (NotFound, Conflict) as exc:
         raise translate(exc) from exc
