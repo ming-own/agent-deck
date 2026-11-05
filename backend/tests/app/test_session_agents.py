@@ -292,12 +292,15 @@ async def test_runner_restores_only_supplied_history_and_closes_model(
         model_config_dict={
             "tools": [{"type": "web_search"}],
             "temperature": 0.2,
+            "conversation": "external-thread",
         },
         extra_params={
             "model_config_dict": {
                 "extra_body": {
                     "tools": [{"type": "code_interpreter"}],
                     "keep": True,
+                    "previous_response_id": "from-another-task",
+                    "input": "external-history",
                 }
             }
         },

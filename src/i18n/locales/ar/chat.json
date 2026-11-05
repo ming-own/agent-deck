@@ -695,5 +695,9 @@
   "canvas-current": "عرض الجلسة الحالية",
   "canvas-fit": "عرض كل الجلسات",
   "canvas-sync-error": "تعذّرت مزامنة التخطيط. حدّث لتحميل المواضع المحفوظة.",
-  "canvas-locate": "انتقل إلى جلسة"
+  "canvas-locate": "انتقل إلى جلسة",
+  "node-task-select": "اختيار مهمة",
+  "node-task-default": "المهمة الافتراضية",
+  "node-task-new": "مهمة جديدة",
+  "node-task-name": "اسم المهمة"
 }

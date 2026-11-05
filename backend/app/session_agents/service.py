@@ -34,10 +34,13 @@ class AgentService:
             body.request_id,
             body.prompt,
             body.approved_tools,
+            task_id=body.task_id,
             harnesses=self.harnesses,
         )
         if created:
-            history = self.store.history(owner, project, agent_id)
+            history = self.store.history(
+                owner, project, agent_id, run["task_id"]
+            )
             self.tasks[run["id"]] = asyncio.create_task(
                 self.execute(owner, run, history, body.model_copy(deep=True))
             )
@@ -103,8 +106,10 @@ class AgentService:
         finally:
             self.tasks.pop(run["id"], None)
 
-    async def cancel(self, owner, project, agent_id, run_id):
-        runs = self.store.runs(owner, project, agent_id)
+    async def cancel(
+        self, owner, project, agent_id, run_id, task_id="default"
+    ):
+        runs = self.store.runs(owner, project, agent_id, task_id)
         if not any(run["id"] == run_id for run in runs):
             raise NotFound("Run not found")
         task = self.tasks.get(run_id)
@@ -117,8 +122,8 @@ class AgentService:
 
     async def delete_session(self, owner, project):
         self.store.close_session(owner, project)
-        for node in self.store.list(owner, project):
-            for run in self.store.runs(owner, project, node["id"]):
-                if run["status"] == "running":
-                    await self.cancel(owner, project, node["id"], run["id"])
+        for run in self.store.running_in_session(owner, project):
+            await self.cancel(
+                owner, project, run["agent_id"], run["id"], run["task_id"]
+            )
         self.store.delete_session(owner, project)

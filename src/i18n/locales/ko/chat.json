@@ -675,5 +675,9 @@
   "canvas-current": "현재 세션으로 이동",
   "canvas-fit": "모든 세션 보기",
   "canvas-sync-error": "레이아웃을 동기화할 수 없습니다. 새로 고쳐 저장된 위치를 불러오세요.",
-  "canvas-locate": "세션으로 이동"
+  "canvas-locate": "세션으로 이동",
+  "node-task-select": "작업 선택",
+  "node-task-default": "기본 작업",
+  "node-task-new": "새 작업",
+  "node-task-name": "작업 이름"
 }

@@ -56,6 +56,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentCanvas } from './AgentCanvas';
+import { AgentTasks } from './AgentTasks';
 import { markSessionAgents } from './Launcher';
 import { SkillPicker } from './SkillPicker';
 import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
@@ -346,14 +347,29 @@ function AgentInstances({
       )}
       {node && (
         <div className={canvas ? 'hidden' : 'contents'}>
-          <AgentConversation
+          <AgentTasks
             key={node.id}
-            node={node}
-            choices={choices}
-            modelsLoading={inventory.loading || inventory.codexModelsLoading}
+            agentId={node.id}
             api={api}
-            email={email}
-          />
+            storageKey={
+              'agentdeck:agent-task:' +
+              JSON.stringify([account, projectId, node.id])
+            }
+          >
+            {(taskId) => (
+              <AgentConversation
+                key={taskId}
+                taskId={taskId}
+                node={node}
+                choices={choices}
+                modelsLoading={
+                  inventory.loading || inventory.codexModelsLoading
+                }
+                api={api}
+                email={email}
+              />
+            )}
+          </AgentTasks>
         </div>
       )}
     </section>
@@ -694,12 +710,14 @@ function AgentBehaviorDetails({
 }
 
 function AgentConversation({
+  taskId,
   node,
   choices,
   modelsLoading,
   api,
   email,
 }: {
+  taskId: string;
   node: SessionAgent;
   choices: ConfiguredModelChoice[];
   modelsLoading: boolean;
@@ -759,7 +777,7 @@ function AgentConversation({
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
       try {
-        const result = await api.runs(node.id);
+        const result = await api.runs(node.id, taskId);
         if (cancelled) return;
         setRuns(result);
         const pendingId = request.current?.id;
@@ -777,7 +795,7 @@ function AgentConversation({
       alive.current = false;
       clearTimeout(timer);
     };
-  }, [api, node.id, acknowledge]);
+  }, [api, node.id, taskId, acknowledge]);
   const send = async () => {
     const text = prompt.trim();
     if (!text || busy.current || running || !ready) return;
@@ -803,6 +821,7 @@ function AgentConversation({
     try {
       const connection = resolveAgentConnection(node.model, choices);
       const result = await api.start(node.id, {
+        task_id: taskId,
         request_id: submissionId,
         expected_revision: node.revision,
         approved_tools: selectedTools,
@@ -1031,7 +1050,7 @@ function AgentConversation({
                 aria-label={t('chat.session-agents-stop')}
                 title={t('chat.session-agents-stop')}
                 onClick={() =>
-                  void api.cancel(node.id, running.id).catch(() => {
+                  void api.cancel(node.id, running.id, taskId).catch(() => {
                     if (alive.current) setError(true);
                   })
                 }

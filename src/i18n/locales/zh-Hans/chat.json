@@ -675,5 +675,9 @@
   "canvas-current": "定位当前会话",
   "canvas-fit": "适应全部会话",
   "canvas-sync-error": "布局同步失败，请刷新以加载已保存的位置。",
-  "canvas-locate": "定位会话"
+  "canvas-locate": "定位会话",
+  "node-task-select": "切换任务",
+  "node-task-default": "默认任务",
+  "node-task-new": "新建任务",
+  "node-task-name": "任务名称"
 }

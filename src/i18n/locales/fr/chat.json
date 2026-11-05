@@ -683,5 +683,9 @@
   "canvas-current": "Centrer la session",
   "canvas-fit": "Afficher toutes les sessions",
   "canvas-sync-error": "Échec de la synchronisation. Actualisez pour charger les positions enregistrées.",
-  "canvas-locate": "Aller à la session"
+  "canvas-locate": "Aller à la session",
+  "node-task-select": "Sélectionner une tâche",
+  "node-task-default": "Tâche par défaut",
+  "node-task-new": "Nouvelle tâche",
+  "node-task-name": "Nom de la tâche"
 }

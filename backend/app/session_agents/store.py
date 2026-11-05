@@ -54,9 +54,30 @@ class AgentStore:
                     created_at TEXT NOT NULL, finished_at TEXT,
                     UNIQUE(owner, project, agent_id, request_id)
                 );
-                CREATE UNIQUE INDEX IF NOT EXISTS agent_running ON agent_runs(agent_id)
-                    WHERE status = 'running';
+                CREATE TABLE IF NOT EXISTS agent_tasks (
+                    id TEXT PRIMARY KEY, agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS agent_tasks_by_node ON agent_tasks(agent_id);
             """)
+
+            # Existing runs keep their row IDs, outputs and snapshots. A constant
+            # default also puts runs from older clients in the default task.
+            db.execute("BEGIN IMMEDIATE")
+            columns = {
+                r["name"] for r in db.execute("PRAGMA table_info(agent_runs)")
+            }
+            if "task_id" not in columns:
+                db.execute(
+                    "ALTER TABLE agent_runs ADD COLUMN task_id TEXT NOT NULL DEFAULT 'default'"
+                )
+            db.execute("DROP INDEX IF EXISTS agent_running")
+            db.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS agent_task_running ON agent_runs(agent_id,task_id) WHERE status='running'"
+            )
+            db.execute(
+                "CREATE INDEX IF NOT EXISTS agent_task_history ON agent_runs(agent_id,task_id)"
+            )
 
     @contextmanager
     def connect(self):
@@ -96,6 +117,7 @@ class AgentStore:
                 "id",
                 "agent_id",
                 "request_id",
+                "task_id",
                 "prompt",
                 "status",
                 "output",
@@ -228,14 +250,52 @@ class AgentStore:
                 )
         return self.get(owner, project, agent_id)
 
-    def runs(self, owner, project, agent_id):
+    def tasks(self, owner, project, agent_id):
         self.get(owner, project, agent_id)
         with self.connect() as db:
+            return [{"id": "default", "name": ""}] + [
+                dict(row)
+                for row in db.execute(
+                    "SELECT id,name FROM agent_tasks WHERE agent_id=? ORDER BY rowid",
+                    (agent_id,),
+                )
+            ]
+
+    def create_task(self, owner, project, agent_id, body):
+        task_id = str(body.id)
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self.require_open(db, owner, project)
+            self.require_task(db, owner, project, agent_id, "default")
+            db.execute(
+                "INSERT OR IGNORE INTO agent_tasks(id,agent_id,name) VALUES(?,?,?)",
+                (task_id, agent_id, body.name),
+            )
+            row = db.execute(
+                "SELECT id,name FROM agent_tasks WHERE id=? AND agent_id=?",
+                (task_id, agent_id),
+            ).fetchone()
+            if not row or row["name"] != body.name:
+                raise Conflict("Task ID already used")
+            return dict(row)
+
+    @staticmethod
+    def require_task(db, owner, project, agent_id, task_id):
+        if not db.execute(
+            "SELECT 1 FROM agents a WHERE a.owner=? AND a.project=? AND a.id=? AND "
+            "(?='default' OR EXISTS (SELECT 1 FROM agent_tasks t WHERE t.agent_id=a.id AND t.id=?))",
+            (owner, project, agent_id, task_id, task_id),
+        ).fetchone():
+            raise NotFound("Task not found")
+
+    def runs(self, owner, project, agent_id, task_id="default"):
+        with self.connect() as db:
+            self.require_task(db, owner, project, agent_id, task_id)
             return [
                 self.run(row)
                 for row in db.execute(
-                    "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? ORDER BY rowid",
-                    (owner, project, agent_id),
+                    "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND task_id=? ORDER BY rowid",
+                    (owner, project, agent_id, task_id),
                 )
             ]
 
@@ -249,6 +309,7 @@ class AgentStore:
         prompt,
         approved_tools=(),
         *,
+        task_id="default",
         harnesses=HARNESSES,
     ):
         with self.connect() as db:
@@ -260,6 +321,7 @@ class AgentStore:
                     (owner, project, agent_id),
                 ).fetchone()
             )
+            self.require_task(db, owner, project, agent_id, task_id)
             previous = db.execute(
                 "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND request_id=?",
                 (owner, project, agent_id, request_id),
@@ -269,6 +331,7 @@ class AgentStore:
                 if (
                     sorted(set(approved_tools))
                     != run["agent"].get("approved_tools", [])
+                    or run["task_id"] != task_id
                     or run["prompt"] != prompt
                     or run["agent"]["revision"] != revision
                 ):
@@ -296,20 +359,21 @@ class AgentStore:
             run_id = str(uuid4())
             try:
                 db.execute(
-                    "INSERT INTO agent_runs(id,owner,project,agent_id,request_id,snapshot,prompt,status,created_at) VALUES(?,?,?,?,?,?,?,'running',?)",
+                    "INSERT INTO agent_runs(id,owner,project,agent_id,request_id,task_id,snapshot,prompt,status,created_at) VALUES(?,?,?,?,?,?,?,?,'running',?)",
                     (
                         run_id,
                         owner,
                         project,
                         agent_id,
                         request_id,
+                        task_id,
                         json.dumps(node),
                         prompt,
                         now(),
                     ),
                 )
             except sqlite3.IntegrityError as exc:
-                raise Conflict("Agent already has a running turn") from exc
+                raise Conflict("Task already has a running turn") from exc
             return self.run(
                 db.execute(
                     "SELECT * FROM agent_runs WHERE id=?", (run_id,)
@@ -358,12 +422,19 @@ class AgentStore:
                 (status, output, error, now(), run_id),
             )
 
-    def history(self, owner, project, agent_id):
+    def history(self, owner, project, agent_id, task_id="default"):
         return [
             (run["prompt"], run["output"])
-            for run in self.runs(owner, project, agent_id)
+            for run in self.runs(owner, project, agent_id, task_id)
             if run["status"] == "completed"
         ]
+
+    def running_in_session(self, owner, project):
+        with self.connect() as db:
+            return db.execute(
+                "SELECT agent_id, task_id, id FROM agent_runs WHERE owner=? AND project=? AND status='running'",
+                (owner, project),
+            ).fetchall()
 
     def interrupt_unfinished(self):
         with self.connect() as db:

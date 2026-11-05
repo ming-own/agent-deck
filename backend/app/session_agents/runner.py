@@ -32,10 +32,14 @@ async def close_model(model):
                 pass
 
 
-# These request options can advertise or force provider-hosted tools outside
-# the node's grant list. Preserve unrelated provider settings and JSON schemas.
-_TOOL_OPTIONS = frozenset(
+# The node owns tool grants and each task supplies its own history. Provider
+# configuration must not inject an external conversation or replace its input.
+_NODE_OWNED_OPTIONS = frozenset(
     {
+        "previous_response_id",
+        "conversation",
+        "messages",
+        "input",
         "tools",
         "tool_choice",
         "functions",
@@ -59,7 +63,7 @@ def _node_model_settings(settings):
         if key in {"extra_body", "model_config_dict"}
         else value
         for key, value in settings.items()
-        if key not in _TOOL_OPTIONS
+        if key not in _NODE_OWNED_OPTIONS
     }
 
 

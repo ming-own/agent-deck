@@ -687,5 +687,9 @@
   "canvas-current": "Текущий сеанс",
   "canvas-fit": "Показать все сеансы",
   "canvas-sync-error": "Не удалось синхронизировать холст. Обновите сохранённые позиции.",
-  "canvas-locate": "Перейти к сеансу"
+  "canvas-locate": "Перейти к сеансу",
+  "node-task-select": "Выбрать задачу",
+  "node-task-default": "Задача по умолчанию",
+  "node-task-new": "Новая задача",
+  "node-task-name": "Название задачи"
 }

@@ -675,5 +675,9 @@
   "canvas-current": "現在のセッションに移動",
   "canvas-fit": "全セッションを表示",
   "canvas-sync-error": "レイアウトを同期できません。更新して保存済みの位置を読み込んでください。",
-  "canvas-locate": "セッションへ移動"
+  "canvas-locate": "セッションへ移動",
+  "node-task-select": "タスクを選択",
+  "node-task-default": "既定のタスク",
+  "node-task-new": "新規タスク",
+  "node-task-name": "タスク名"
 }

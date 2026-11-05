@@ -32,7 +32,13 @@ export interface SessionAgent extends AgentBehavior {
   created_at: string;
   updated_at: string;
 }
+export interface AgentTask {
+  id: string;
+  name: string;
+}
+
 export interface SessionAgentRun {
+  task_id: string;
   id: string;
   agent_id: string;
   request_id: string;
@@ -92,11 +98,29 @@ export function sessionAgentApi(account: string, projectId: string) {
         headers,
         options
       ),
-    runs: (id: string): Promise<SessionAgentRun[]> =>
-      fetchGet(`${root}/${id}/runs`, undefined, headers, options),
+    tasks: (id: string): Promise<AgentTask[]> =>
+      fetchGet(`${root}/${id}/tasks`, undefined, headers, options),
+    createTask: (
+      id: string,
+      taskId: string,
+      name: string
+    ): Promise<AgentTask> =>
+      fetchPost(`${root}/${id}/tasks`, { id: taskId, name }, headers, options),
+    runs: (id: string, taskId: string): Promise<SessionAgentRun[]> =>
+      fetchGet(
+        `${root}/${id}/runs?task_id=${encodeURIComponent(taskId)}`,
+        undefined,
+        headers,
+        options
+      ),
     start: (id: string, body: unknown): Promise<SessionAgentRun> =>
       fetchPost(`${root}/${id}/runs`, body, headers, options),
-    cancel: (id: string, runId: string) =>
-      fetchPost(`${root}/${id}/runs/${runId}/cancel`, {}, headers, options),
+    cancel: (id: string, runId: string, taskId: string) =>
+      fetchPost(
+        `${root}/${id}/runs/${runId}/cancel?task_id=${encodeURIComponent(taskId)}`,
+        {},
+        headers,
+        options
+      ),
   };
 }

@@ -679,5 +679,9 @@
   "canvas-current": "Aktuelle Sitzung zentrieren",
   "canvas-fit": "Alle Sitzungen anzeigen",
   "canvas-sync-error": "Layout konnte nicht synchronisiert werden. Bitte aktualisieren.",
-  "canvas-locate": "Zur Sitzung"
+  "canvas-locate": "Zur Sitzung",
+  "node-task-select": "Aufgabe auswählen",
+  "node-task-default": "Standardaufgabe",
+  "node-task-new": "Neue Aufgabe",
+  "node-task-name": "Aufgabenname"
 }

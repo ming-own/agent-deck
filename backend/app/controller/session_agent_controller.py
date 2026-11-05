@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.auth import LocalControlPrincipal, require_local_control_principal
 from app.session_agents.models import (
     AgentConfig,
+    CreateTask,
     PositionUpdate,
     RunRequest,
     UpdateAgent,
@@ -121,12 +122,38 @@ def move_agent(
         raise translate(exc) from exc
 
 
-@router.get("/{project_id}/{agent_id}/runs")
-async def list_runs(
+@router.get("/{project_id}/{agent_id}/tasks")
+def list_tasks(
     project_id: str, agent_id: str, account: Annotated[str, Depends(owner)]
 ):
     try:
-        return service().store.runs(account, project_id, agent_id)
+        return service().store.tasks(account, project_id, agent_id)
+    except NotFound as exc:
+        raise translate(exc) from exc
+
+
+@router.post("/{project_id}/{agent_id}/tasks")
+def create_task(
+    project_id: str,
+    agent_id: str,
+    body: CreateTask,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return service().store.create_task(account, project_id, agent_id, body)
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.get("/{project_id}/{agent_id}/runs")
+async def list_runs(
+    project_id: str,
+    agent_id: str,
+    account: Annotated[str, Depends(owner)],
+    task_id: str = "default",
+):
+    try:
+        return service().store.runs(account, project_id, agent_id, task_id)
     except NotFound as exc:
         raise translate(exc) from exc
 
@@ -150,9 +177,10 @@ async def cancel_run(
     agent_id: str,
     run_id: str,
     account: Annotated[str, Depends(owner)],
+    task_id: str = "default",
 ):
     try:
-        await service().cancel(account, project_id, agent_id, run_id)
+        await service().cancel(account, project_id, agent_id, run_id, task_id)
         return {"ok": True}
     except NotFound as exc:
         raise translate(exc) from exc

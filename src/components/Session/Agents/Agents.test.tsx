@@ -12,6 +12,8 @@ import { SessionAgents } from './index';
 const mocks = vi.hoisted(() => ({
   api: {
     list: vi.fn(),
+    tasks: vi.fn(),
+    createTask: vi.fn(),
     skills: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -80,7 +82,9 @@ const first = node('a', 'Research', 'model-a');
 const second = node('b', 'Writer', 'model-b');
 
 beforeEach(() => {
+  localStorage.clear();
   vi.clearAllMocks();
+  mocks.api.tasks.mockResolvedValue([{ id: 'default', name: '' }]);
   mocks.api.skills.mockResolvedValue([{ id: 'audit-package', name: 'Audit' }]);
   mocks.api.list.mockResolvedValue([first, second]);
   mocks.api.runs.mockResolvedValue([]);
@@ -196,6 +200,55 @@ describe('Session Agent instances', () => {
     );
   });
 
+  it('opens the last task again and discards a late history response from the previous task', async () => {
+    mocks.api.tasks.mockResolvedValue([
+      { id: 'default', name: '' },
+      { id: 'b', name: 'Budget' },
+    ]);
+    let finishDefault!: (rows: unknown[]) => void;
+    mocks.api.runs.mockImplementation((_node, task) =>
+      task === 'default'
+        ? new Promise((resolve) => {
+            finishDefault = resolve;
+          })
+        : Promise.resolve([
+            {
+              id: 'budget-run',
+              task_id: 'b',
+              agent: first,
+              prompt: 'Budget only',
+              status: 'completed',
+              output: '',
+            },
+          ])
+    );
+    const view = render(<SessionAgents projectId="one" />);
+    const selector = await screen.findByRole('combobox', {
+      name: 'Select task',
+    });
+    await waitFor(() => expect(selector).toBeEnabled());
+    fireEvent.change(selector, { target: { value: 'b' } });
+    await screen.findByText('Budget only');
+    await act(async () =>
+      finishDefault([
+        {
+          id: 'older',
+          agent: first,
+          prompt: 'Legacy only',
+          status: 'completed',
+          output: '',
+        },
+      ])
+    );
+    expect(screen.queryByText('Legacy only')).not.toBeInTheDocument();
+    view.unmount();
+    render(<SessionAgents projectId="one" />);
+    await screen.findByText('Budget only');
+    expect(screen.getByRole('combobox', { name: 'Select task' })).toHaveValue(
+      'b'
+    );
+  });
+
   it('does not show a previous node history after switching', async () => {
     let deliver: (value: unknown) => void = () => {};
     mocks.api.runs.mockImplementation((id) =>
@@ -219,7 +272,9 @@ describe('Session Agent instances', () => {
         status: 'completed',
       },
     ]);
-    await waitFor(() => expect(mocks.api.runs).toHaveBeenCalledWith('b'));
+    await waitFor(() =>
+      expect(mocks.api.runs).toHaveBeenCalledWith('b', 'default')
+    );
     expect(screen.queryByText('Private old history')).not.toBeInTheDocument();
   });
 });

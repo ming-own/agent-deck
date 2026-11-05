@@ -675,5 +675,9 @@
   "canvas-current": "定位目前對話",
   "canvas-fit": "顯示所有對話",
   "canvas-sync-error": "版面同步失敗，請重新整理以載入已儲存的位置。",
-  "canvas-locate": "前往對話"
+  "canvas-locate": "前往對話",
+  "node-task-select": "切換任務",
+  "node-task-default": "預設任務",
+  "node-task-new": "新增任務",
+  "node-task-name": "任務名稱"
 }

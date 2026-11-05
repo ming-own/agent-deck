@@ -1,4 +1,5 @@
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import (
     BaseModel,
@@ -89,9 +90,16 @@ class ModelConnection(BaseModel):
     extra_params: dict[str, Any] | None = Field(default=None, repr=False)
 
 
+class CreateTask(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    id: UUID
+    name: str = Field(min_length=1, max_length=100)
+
+
 class RunRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     approved_tools: list[ToolId] = Field(default_factory=list, max_length=3)
+    task_id: str = Field(default="default", min_length=1, max_length=100)
     request_id: str = Field(min_length=1, max_length=100)
     expected_revision: int = Field(ge=1)
     prompt: str = Field(min_length=1, max_length=32000)

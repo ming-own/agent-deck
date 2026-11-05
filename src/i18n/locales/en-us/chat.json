@@ -679,5 +679,9 @@
   "canvas-current": "Focus current session",
   "canvas-fit": "Fit all sessions",
   "canvas-sync-error": "Could not sync the layout. Refresh to load saved positions.",
-  "canvas-locate": "Go to session"
+  "canvas-locate": "Go to session",
+  "node-task-select": "Select task",
+  "node-task-default": "Default task",
+  "node-task-new": "New task",
+  "node-task-name": "Task name"
 }
