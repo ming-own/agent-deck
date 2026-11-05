@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -141,12 +142,19 @@ describe('Session Agent instances', () => {
       { target: { value: 'List risks first.' } }
     );
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Audit' }));
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Calculator' })).getByRole(
+        'button',
+        { name: 'Choose each turn' }
+      )
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     await waitFor(() =>
       expect(mocks.api.create).toHaveBeenCalledWith('Reviewer', second.model, {
         role: 'Reviewer',
         instructions: 'List risks first.',
         skill_ids: ['audit-package'],
+        tool_policy: { calculate: 'turn' },
       })
     );
     expect(
@@ -251,7 +259,12 @@ it('edits node instructions while keeping the previous run configuration visible
       configured,
       'Research',
       first.model,
-      { role: 'Reviewer', instructions: 'List risks.', skill_ids: [] }
+      {
+        role: 'Reviewer',
+        instructions: 'List risks.',
+        skill_ids: [],
+        tool_policy: {},
+      }
     )
   );
   fireEvent.click(
@@ -312,4 +325,58 @@ it('preserves a missing skill across a catalog failure and lets the user remove 
       expect.objectContaining({ skill_ids: [] })
     )
   );
+});
+
+it('limits optional tool consent to the submitted turn', async () => {
+  const configured = { ...first, tool_policy: { utc_time: 'turn' } };
+  mocks.api.list.mockResolvedValue([configured, second]);
+  render(<SessionAgents projectId="s" />);
+  const grant = await screen.findByRole('checkbox', {
+    name: 'Current UTC time',
+  });
+  expect(grant).not.toBeChecked();
+  fireEvent.click(grant);
+  fireEvent.change(
+    screen.getByRole('textbox', { name: 'Message this Agent' }),
+    { target: { value: 'Time?' } }
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Send', exact: true }));
+  await waitFor(() =>
+    expect(mocks.api.start).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({ approved_tools: ['utc_time'] })
+    )
+  );
+  await waitFor(() => expect(grant).not.toBeChecked());
+  await act(async () => {
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Writer', exact: true })
+    );
+  });
+  expect(
+    screen.queryByRole('checkbox', { name: 'Current UTC time' })
+  ).not.toBeInTheDocument();
+});
+
+it('requires a fresh per-turn grant after an uncertain send and a changed prompt', async () => {
+  mocks.api.start.mockRejectedValue(new Error('lost response'));
+  mocks.api.list.mockResolvedValue([
+    { ...first, tool_policy: { calculate: 'turn' } },
+  ]);
+  render(<SessionAgents projectId="s" />);
+  const check = await screen.findByRole('checkbox', { name: 'Calculator' });
+  const message = screen.getByRole('textbox', { name: 'Message this Agent' });
+  fireEvent.click(check);
+  fireEvent.change(message, { target: { value: 'First question' } });
+  const send = screen.getByRole('button', { name: 'Send', exact: true });
+  fireEvent.click(send);
+  await waitFor(() => expect(send).toBeEnabled());
+  expect(mocks.api.start.mock.calls[0][1].approved_tools).toEqual([
+    'calculate',
+  ]);
+  fireEvent.change(message, { target: { value: 'Another question' } });
+  expect(check).not.toBeChecked();
+  fireEvent.click(send);
+  await waitFor(() => expect(mocks.api.start).toHaveBeenCalledTimes(2));
+  expect(mocks.api.start.mock.calls[1][1].approved_tools).toEqual([]);
 });

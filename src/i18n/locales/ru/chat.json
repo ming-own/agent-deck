@@ -660,5 +660,15 @@
   "session-agents-skill-load-error": "Не удалось загрузить библиотеку навыков.",
   "session-agents-missing-skill": "{{name}} (недоступен)",
   "session-agents-skill-unavailable": "Выбранный навык недоступен. Проверьте навыки агента.",
-  "session-agents-skill-limit": "Объём инструкций превышает 256 КиБ. Выберите меньше навыков."
+  "session-agents-skill-limit": "Объём инструкций превышает 256 КиБ. Выберите меньше навыков.",
+  "node-tools": "Разрешения инструментов",
+  "node-tool-calculate": "Калькулятор",
+  "node-tool-utc_time": "Текущее время UTC",
+  "node-tool-read_skill_reference": "Чтение справки выбранных навыков",
+  "node-tool-off": "Выключено",
+  "node-tool-turn": "Выбирать каждый раз",
+  "node-tool-allow": "Всегда разрешать",
+  "node-tool-consent": "Разрешить на этот ход",
+  "node-tool-used": "Разрешено · Вызовов: {{count}}",
+  "node-tool-withheld": "На этот ход не разрешено"
 }

@@ -6,7 +6,11 @@ export interface SkillOption {
   name: string;
 }
 
+export type AgentToolId = 'calculate' | 'utc_time' | 'read_skill_reference';
+export type AgentToolPolicy = Partial<Record<AgentToolId, 'turn' | 'allow'>>;
+
 export interface AgentBehavior {
+  tool_policy: AgentToolPolicy;
   skill_ids: string[];
   role: string;
   instructions: string;
@@ -25,6 +29,8 @@ export interface SessionAgentRun {
   agent_id: string;
   request_id: string;
   agent: SessionAgent & {
+    granted_tools?: AgentToolId[];
+    tool_calls?: Partial<Record<AgentToolId, number>>;
     skill_versions?: (SkillOption & { sha256: string })[];
   };
   prompt: string;

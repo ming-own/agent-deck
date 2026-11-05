@@ -86,10 +86,10 @@ async def update_agent(
 ):
     try:
         config = body.model_dump(exclude={"expected_revision"})
-        if "skill_ids" not in body.model_fields_set:
-            config["skill_ids"] = service().store.get(
-                account, project_id, agent_id
-            )["skill_ids"]
+        missing = {"skill_ids", "tool_policy"} - body.model_fields_set
+        if missing:
+            current = service().store.get(account, project_id, agent_id)
+            config.update({key: current[key] for key in missing})
         return service().store.update(
             account,
             project_id,

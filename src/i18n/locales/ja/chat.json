@@ -648,5 +648,15 @@
   "session-agents-skill-load-error": "スキルライブラリを読み込めませんでした。",
   "session-agents-missing-skill": "{{name}}（利用不可）",
   "session-agents-skill-unavailable": "選択したスキルが利用できません。スキルの設定を確認してください。",
-  "session-agents-skill-limit": "スキルの指示が 256 KiB を超えています。選択するスキルを減らしてください。"
+  "session-agents-skill-limit": "スキルの指示が 256 KiB を超えています。選択するスキルを減らしてください。",
+  "node-tools": "ツールの権限",
+  "node-tool-calculate": "電卓",
+  "node-tool-utc_time": "現在の UTC 時刻",
+  "node-tool-read_skill_reference": "選択したスキルの参考資料を読む",
+  "node-tool-off": "オフ",
+  "node-tool-turn": "毎回選択",
+  "node-tool-allow": "常に許可",
+  "node-tool-consent": "今回の実行で許可",
+  "node-tool-used": "許可済み · 呼び出し {{count}} 回",
+  "node-tool-withheld": "今回は未許可"
 }

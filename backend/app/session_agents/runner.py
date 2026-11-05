@@ -11,6 +11,7 @@ from camel.types import OpenAIBackendRole
 
 from app.agent.agent_model import create_model_builder
 from app.model.chat import Chat
+from app.session_agents.tools import build_node_tools
 
 
 async def close_model(model):
@@ -31,6 +32,37 @@ async def close_model(model):
                 pass
 
 
+# These request options can advertise or force provider-hosted tools outside
+# the node's grant list. Preserve unrelated provider settings and JSON schemas.
+_TOOL_OPTIONS = frozenset(
+    {
+        "tools",
+        "tool_choice",
+        "functions",
+        "function_call",
+        "web_search_options",
+        "plugins",
+        "mcp_servers",
+        "tool_resources",
+        "tool_config",
+        "toolConfig",
+        "parallel_tool_calls",
+    }
+)
+
+
+def _node_model_settings(settings):
+    if not isinstance(settings, dict):
+        return settings
+    return {
+        key: _node_model_settings(value)
+        if key in {"extra_body", "model_config_dict"}
+        else value
+        for key, value in settings.items()
+        if key not in _TOOL_OPTIONS
+    }
+
+
 async def run_text_agent(node, history, prompt, connection, email):
     # Keep history bounded explicitly instead of silently dropping earlier turns.
     if (
@@ -39,22 +71,36 @@ async def run_text_agent(node, history, prompt, connection, email):
         > 200000
     ):
         raise ValueError("history_limit")
+    settings = connection.model_dump()
+    for key in ("extra_params", "model_config_dict"):
+        settings[key] = _node_model_settings(settings.get(key))
     options = Chat(
         task_id=str(uuid4()),
         project_id=node["id"],
         question=prompt,
         email=email,
         session_mode="single-agent",
-        **connection.model_dump(),
+        **settings,
     )
-    system = "You are a helpful assistant. This Agent supports text conversation only. No tools are available."
+    tools = build_node_tools(node)
+    system = "You are a helpful assistant."
+    if tools:
+        system += " Use the provided tools when needed. Only report tool results that were returned."
+        if node.get("skill_ids"):
+            system += "\nSelected skill package IDs: " + ", ".join(
+                node["skill_ids"]
+            )
+    else:
+        system += " This Agent supports text conversation only. No tools are available."
     if node.get("role"):
         system += f"\n\nYour role:\n{node['role']}"
     if node.get("instructions"):
         system += f"\n\nInstructions:\n{node['instructions']}"
     if node.get("skill_material"):
         system += "\n\nSelected skill instructions:\n" + node["skill_material"]
-    build = create_model_builder(node["name"], node["id"], system, options)
+    build = create_model_builder(
+        node["name"], node["id"], system, options, tools=tools
+    )
     # Token resolution may do bounded synchronous local I/O. Join construction
     # on cancellation so a late SDK client is never leaked.
     building = asyncio.create_task(asyncio.to_thread(build))
@@ -70,8 +116,8 @@ async def run_text_agent(node, history, prompt, connection, email):
         agent = ChatAgent(
             system_message=system,
             model=model,
-            tools=[],
-            max_iteration=1,
+            tools=tools,
+            max_iteration=6 if tools else 1,
             stream_accumulate=False,
         )
         for question, answer in history:

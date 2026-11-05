@@ -652,5 +652,15 @@
   "session-agents-skill-load-error": "Could not load the skill library.",
   "session-agents-missing-skill": "{{name}} (unavailable)",
   "session-agents-skill-unavailable": "A selected skill is unavailable. Check this Agent’s skills before sending again.",
-  "session-agents-skill-limit": "The selected skill instructions exceed 256 KiB. Select fewer skills and try again."
+  "session-agents-skill-limit": "The selected skill instructions exceed 256 KiB. Select fewer skills and try again.",
+  "node-tools": "Tool permissions",
+  "node-tool-calculate": "Calculator",
+  "node-tool-utc_time": "Current UTC time",
+  "node-tool-read_skill_reference": "Read selected skill references",
+  "node-tool-off": "Off",
+  "node-tool-turn": "Choose each turn",
+  "node-tool-allow": "Always allow",
+  "node-tool-consent": "Allow for this turn",
+  "node-tool-used": "Allowed · Calls: {{count}}",
+  "node-tool-withheld": "Not granted this turn"
 }

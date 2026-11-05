@@ -18,6 +18,8 @@ import {
 import {
   sessionAgentApi,
   type AgentBehavior,
+  type AgentToolId,
+  type AgentToolPolicy,
   type SessionAgent,
   type SessionAgentRun,
 } from '@/service/sessionAgentApi';
@@ -36,6 +38,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SkillPicker } from './SkillPicker';
+import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
 
 export function SessionAgents({ projectId }: { projectId: string }) {
   const auth = useAuthStore();
@@ -240,6 +243,9 @@ function AgentForm({
   const [model, setModel] = useState(node?.model.id ?? '');
   const [role, setRole] = useState(node?.role ?? '');
   const [instructions, setInstructions] = useState(node?.instructions ?? '');
+  const [toolPolicy, setToolPolicy] = useState<AgentToolPolicy>(
+    node?.tool_policy ?? {}
+  );
   const [skillIds, setSkillIds] = useState(node?.skill_ids ?? []);
   const helpId = useId();
   const [saving, setSaving] = useState(false);
@@ -257,6 +263,7 @@ function AgentForm({
         setFailed(false);
         try {
           await onSave(name.trim(), choice, {
+            tool_policy: toolPolicy,
             skill_ids: skillIds,
             role: role.trim(),
             instructions: instructions.trim(),
@@ -333,6 +340,11 @@ function AgentForm({
         load={loadSkills}
         selected={skillIds}
         onChange={setSkillIds}
+        disabled={saving}
+      />
+      <ToolPermissions
+        policy={toolPolicy}
+        onChange={setToolPolicy}
         disabled={saving}
       />
       {failed && (
@@ -418,6 +430,29 @@ function AgentBehaviorDetails({
               </DsText>
             </div>
           )}
+          {nodeTools
+            .filter((id) => agent.tool_policy?.[id])
+            .map((id) => (
+              <div key={id}>
+                <DsText
+                  as="dt"
+                  role="meta"
+                  className="text-ds-ink-muted-default"
+                >
+                  {t('chat.node-tool-' + id)}
+                </DsText>
+                <DsText as="dd" role="base">
+                  {t('chat.node-tool-' + agent.tool_policy[id])}
+                  {agent.granted_tools &&
+                    ' · ' +
+                      (agent.granted_tools.includes(id)
+                        ? t('chat.node-tool-used', {
+                            count: agent.tool_calls?.[id] ?? 0,
+                          })
+                        : t('chat.node-tool-withheld'))}
+                </DsText>
+              </div>
+            ))}
         </dl>
       </div>
     </div>
@@ -446,13 +481,27 @@ function AgentConversation({
   const [error, setError] = useState(false);
   const [sending, setSending] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const [consent, setConsent] = useState<{
+    revision: number;
+    ids: AgentToolId[];
+  }>({ revision: node.revision, ids: [] });
+  const selectedTools = consent.revision === node.revision ? consent.ids : [];
   const busy = useRef(false);
   const alive = useRef(true);
   const request = useRef<{
     id: string;
     prompt: string;
     revision: number;
+    permissions: string;
   } | null>(null);
+  const acknowledge = useCallback((id: string) => {
+    const pending = request.current;
+    if (pending?.id !== id) return;
+    setError(false);
+    request.current = null;
+    setPrompt((current) => (current.trim() === pending.prompt ? '' : current));
+    setConsent({ revision: pending.revision, ids: [] });
+  }, []);
   const running = runs.find((run) => run.status === 'running');
   let available = true;
   try {
@@ -469,6 +518,9 @@ function AgentConversation({
         const result = await api.runs(node.id);
         if (cancelled) return;
         setRuns(result);
+        const pendingId = request.current?.id;
+        if (pendingId && result.some((run) => run.request_id === pendingId))
+          acknowledge(pendingId);
         setReady(true);
       } catch {
         if (!cancelled) setError(true);
@@ -481,29 +533,34 @@ function AgentConversation({
       alive.current = false;
       clearTimeout(timer);
     };
-  }, [api, node.id]);
+  }, [api, node.id, acknowledge]);
   const send = async () => {
     const text = prompt.trim();
     if (!text || busy.current || running || !ready) return;
     busy.current = true;
     setSending(true);
     setError(false);
+    const permissions = [...selectedTools].sort().join(',');
     // Reuse the id on an uncertain response; the server never repeats inference.
     if (
       !request.current ||
       request.current.prompt !== text ||
+      request.current.permissions !== permissions ||
       request.current.revision !== node.revision
     )
       request.current = {
         id: crypto.randomUUID(),
         prompt: text,
         revision: node.revision,
+        permissions,
       };
+    const submissionId = request.current.id;
     try {
       const connection = resolveAgentConnection(node.model, choices);
       const result = await api.start(node.id, {
-        request_id: request.current.id,
+        request_id: submissionId,
         expected_revision: node.revision,
+        approved_tools: selectedTools,
         prompt: text,
         connection,
         email,
@@ -514,10 +571,9 @@ function AgentConversation({
           ? previous
           : [...previous, result]
       );
-      setPrompt((current) => (current.trim() === text ? '' : current));
-      request.current = null;
+      acknowledge(submissionId);
     } catch {
-      if (alive.current) setError(true);
+      if (alive.current && request.current?.id === submissionId) setError(true);
     } finally {
       busy.current = false;
       if (alive.current) setSending(false);
@@ -624,12 +680,27 @@ function AgentConversation({
           {t('chat.session-agents-request-error')}
         </DsText>
       )}
+      <TurnTools
+        policy={node.tool_policy ?? {}}
+        selected={selectedTools}
+        onChange={(ids) => setConsent({ revision: node.revision, ids })}
+        disabled={sending || Boolean(running)}
+      />
       <Textarea
         aria-label={t('chat.session-agents-message')}
         placeholder={t('chat.session-agents-message')}
         value={prompt}
         maxLength={32000}
-        onChange={(event) => setPrompt(event.target.value)}
+        onChange={(event) => {
+          if (
+            request.current &&
+            request.current.prompt !== event.target.value.trim()
+          ) {
+            request.current = null;
+            setConsent({ revision: node.revision, ids: [] });
+          }
+          setPrompt(event.target.value);
+        }}
       />
       <div className="flex flex-wrap gap-ds-control-gap">
         <Button

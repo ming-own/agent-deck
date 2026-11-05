@@ -149,3 +149,99 @@ def test_untrusted_paths_and_missing_packages_never_supply_model_context(
     policy.write_text("invalid JSON")
     with pytest.raises(SkillUnavailable):
         resolve_skills("brain:1", ["audit"])
+
+
+def test_reference_tool_is_scoped_to_selected_packages_and_readable_docs(
+    library,
+):
+    from app.session_agents.tools import build_node_tools
+
+    (library / "audit" / "guide.md").write_text("Audit reference")
+    (library / "audit" / "script.py").write_text("script")
+    (library / "audit" / "linked.md").symlink_to(
+        library / "writer" / "SKILL.md"
+    )
+    calls = []
+    [tool] = build_node_tools(
+        {
+            "granted_tools": ["read_skill_reference"],
+            "tool_owner": "brain:1",
+            "skill_ids": ["audit"],
+            "admit_tool": calls.append,
+        }
+    )
+    assert tool(skill_id="audit", path="guide.md") == "Audit reference"
+    for path in ["../writer/SKILL.md", "script.py", "linked.md"]:
+        assert "unavailable" in tool(skill_id="audit", path=path)
+    assert "not selected" in tool(skill_id="writer", path="SKILL.md")
+    skill_config_service.skill_config_update(1, "Reviewer", {"enabled": False})
+    assert "unavailable" in tool(skill_id="audit", path="guide.md")
+    assert calls == ["read_skill_reference"] * 6
+
+
+def test_turn_permissions_are_enforced_during_dispatch_and_replay(tmp_path):
+    from app.session_agents.store import Conflict
+    from app.session_agents.tools import build_node_tools
+
+    store = AgentStore(tmp_path / "nodes.db")
+    cfg = agent_config([]).model_copy(
+        update={"tool_policy": {"calculate": "turn", "utc_time": "allow"}}
+    )
+    node = store.create("owner", "session", cfg)
+    scope = ("owner", "session", node["id"], 1)
+    with pytest.raises(Conflict):
+        store.begin(*scope, "forged", "Hi", ["read_skill_reference"])
+    first, _ = store.begin(*scope, "req1", "Hi", ["calculate"])
+    run_id = first["id"]
+    tools = build_node_tools(
+        {
+            **first["agent"],
+            "admit_tool": lambda tool: store.admit_tool_call(run_id, tool),
+        }
+    )
+    names = {tool.func.__name__: tool for tool in tools}
+    assert set(names) == {"calculate", "utc_time"}
+    assert (
+        names["calculate"](operation="multiply", first=12, second=13) == "156"
+    )
+    assert "+" in names["utc_time"]()
+    with pytest.raises(PermissionError):
+        store.admit_tool_call(run_id, "read_skill_reference")
+    with pytest.raises(Conflict):
+        store.begin(*scope, "req1", "Hi", [])
+    store.finish(run_id, "completed", output="156")
+    with pytest.raises(PermissionError):
+        store.admit_tool_call(run_id, "calculate")
+    replay, created = store.begin(*scope, "req1", "Hi", ["calculate"])
+    assert not created and replay["agent"]["tool_calls"] == {
+        "calculate": 1,
+        "utc_time": 1,
+    }
+    second, _ = store.begin(*scope, "req2", "Hi", [])
+    assert second["agent"]["granted_tools"] == ["utc_time"]
+    with pytest.raises(PermissionError):
+        store.admit_tool_call(second["id"], "calculate")
+
+
+def test_windows_reference_compares_handle_to_selected_physical_package(
+    library, monkeypatch
+):
+    from pathlib import Path
+
+    from app.session_agents import tools
+
+    # Emulate the OS-observed final handle path on a Unix test host.
+    monkeypatch.setattr(
+        tools,
+        "_windows_handle_path",
+        lambda file: str(Path(file.name).resolve()),
+    )
+    (library / "audit" / "note.txt").write_text("selected")
+    (library / "writer" / "note.txt").write_text("other")
+    assert tools._read_windows_reference("audit", "note.txt") == b"selected"
+    (library / "audit").rename(library / "old_audit")
+    (library / "audit").symlink_to(
+        library / "writer", target_is_directory=True
+    )
+    with pytest.raises(PermissionError):
+        tools._read_windows_reference("audit", "note.txt")

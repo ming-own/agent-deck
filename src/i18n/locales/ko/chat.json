@@ -648,5 +648,15 @@
   "session-agents-skill-load-error": "스킬 라이브러리를 불러올 수 없습니다.",
   "session-agents-missing-skill": "{{name}} (사용 불가)",
   "session-agents-skill-unavailable": "선택한 스킬을 사용할 수 없습니다. 에이전트의 스킬 설정을 확인하세요.",
-  "session-agents-skill-limit": "스킬 지침이 256 KiB를 초과합니다. 스킬을 더 적게 선택하세요."
+  "session-agents-skill-limit": "스킬 지침이 256 KiB를 초과합니다. 스킬을 더 적게 선택하세요.",
+  "node-tools": "도구 권한",
+  "node-tool-calculate": "계산기",
+  "node-tool-utc_time": "현재 UTC 시간",
+  "node-tool-read_skill_reference": "선택한 스킬의 참고 문서 읽기",
+  "node-tool-off": "끄기",
+  "node-tool-turn": "매번 선택",
+  "node-tool-allow": "항상 허용",
+  "node-tool-consent": "이번 대화에서 허용",
+  "node-tool-used": "허용됨 · 호출 {{count}}회",
+  "node-tool-withheld": "이번에는 허용하지 않음"
 }

@@ -648,5 +648,15 @@
   "session-agents-skill-load-error": "無法載入技能庫。",
   "session-agents-missing-skill": "{{name}}（無法使用）",
   "session-agents-skill-unavailable": "所選技能已無法使用，請編輯此 Agent 的技能後重新傳送。",
-  "session-agents-skill-limit": "所選技能說明超過 256 KiB，請減少勾選的技能後再試一次。"
+  "session-agents-skill-limit": "所選技能說明超過 256 KiB，請減少勾選的技能後再試一次。",
+  "node-tools": "工具權限",
+  "node-tool-calculate": "計算機",
+  "node-tool-utc_time": "查詢 UTC 時間",
+  "node-tool-read_skill_reference": "讀取已選技能的參考文件",
+  "node-tool-off": "關閉",
+  "node-tool-turn": "每輪選擇",
+  "node-tool-allow": "一律允許",
+  "node-tool-consent": "本輪允許使用",
+  "node-tool-used": "已授權 · 呼叫 {{count}} 次",
+  "node-tool-withheld": "本輪未授權"
 }

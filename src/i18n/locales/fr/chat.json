@@ -656,5 +656,15 @@
   "session-agents-skill-load-error": "Impossible de charger la bibliothèque de compétences.",
   "session-agents-missing-skill": "{{name}} (indisponible)",
   "session-agents-skill-unavailable": "Une compétence sélectionnée est indisponible. Vérifiez les compétences de cet agent.",
-  "session-agents-skill-limit": "Les instructions dépassent 256 Kio. Sélectionnez moins de compétences."
+  "session-agents-skill-limit": "Les instructions dépassent 256 Kio. Sélectionnez moins de compétences.",
+  "node-tools": "Autorisations des outils",
+  "node-tool-calculate": "Calculatrice",
+  "node-tool-utc_time": "Heure UTC actuelle",
+  "node-tool-read_skill_reference": "Lire les références des compétences choisies",
+  "node-tool-off": "Désactivé",
+  "node-tool-turn": "Choisir à chaque tour",
+  "node-tool-allow": "Toujours autoriser",
+  "node-tool-consent": "Autoriser pour ce tour",
+  "node-tool-used": "Autorisé · Appels : {{count}}",
+  "node-tool-withheld": "Non autorisé pour ce tour"
 }

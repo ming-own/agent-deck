@@ -28,12 +28,17 @@ class ModelReference(BaseModel):
         return self
 
 
+ToolId = Literal["calculate", "utc_time", "read_skill_reference"]
+ToolMode = Literal["turn", "allow"]
+
+
 class AgentConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=100)
     model: ModelReference
     role: str = Field(default="", max_length=200)
     instructions: str = Field(default="", max_length=12000)
+    tool_policy: dict[ToolId, ToolMode] = Field(default_factory=dict)
     skill_ids: list[str] = Field(default_factory=list, max_length=32)
 
     @field_validator("skill_ids")
@@ -69,6 +74,7 @@ class ModelConnection(BaseModel):
 
 class RunRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    approved_tools: list[ToolId] = Field(default_factory=list, max_length=3)
     request_id: str = Field(min_length=1, max_length=100)
     expected_revision: int = Field(ge=1)
     prompt: str = Field(min_length=1, max_length=32000)

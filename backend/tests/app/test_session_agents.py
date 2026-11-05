@@ -285,7 +285,21 @@ async def test_runner_restores_only_supplied_history_and_closes_model(
     monkeypatch.setattr(runner, "ChatAgent", MagicMock(return_value=agent))
     node = {"id": "node-a", "name": "Research"}
     connection = ModelConnection(
-        model_platform="openai", model_type="gpt-a", api_key="secret"
+        model_platform="openai",
+        model_type="gpt-a",
+        api_key="secret",
+        model_config_dict={
+            "tools": [{"type": "web_search"}],
+            "temperature": 0.2,
+        },
+        extra_params={
+            "model_config_dict": {
+                "extra_body": {
+                    "tools": [{"type": "code_interpreter"}],
+                    "keep": True,
+                }
+            }
+        },
     )
     result = await runner.run_text_agent(
         node,
@@ -295,6 +309,11 @@ async def test_runner_restores_only_supplied_history_and_closes_model(
         "test@example.com",
     )
     assert result == "Answer"
+    options = factory.call_args.args[3]
+    assert options.model_config_dict == {"temperature": 0.2}
+    assert options.extra_params == {
+        "model_config_dict": {"extra_body": {"keep": True}}
+    }
     assert factory.call_args.args[3].model_type == "gpt-a"
     assert [
         call.args[0].content for call in agent.update_memory.call_args_list

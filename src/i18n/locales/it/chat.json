@@ -656,5 +656,15 @@
   "session-agents-skill-load-error": "Impossibile caricare la libreria delle competenze.",
   "session-agents-missing-skill": "{{name}} (non disponibile)",
   "session-agents-skill-unavailable": "Una competenza selezionata non è disponibile. Controlla le competenze di questo agente.",
-  "session-agents-skill-limit": "Le istruzioni superano 256 KiB. Seleziona meno competenze."
+  "session-agents-skill-limit": "Le istruzioni superano 256 KiB. Seleziona meno competenze.",
+  "node-tools": "Permessi degli strumenti",
+  "node-tool-calculate": "Calcolatrice",
+  "node-tool-utc_time": "Ora UTC attuale",
+  "node-tool-read_skill_reference": "Leggi i riferimenti delle competenze selezionate",
+  "node-tool-off": "Disattivato",
+  "node-tool-turn": "Scegli a ogni turno",
+  "node-tool-allow": "Consenti sempre",
+  "node-tool-consent": "Consenti per questo turno",
+  "node-tool-used": "Consentito · Chiamate: {{count}}",
+  "node-tool-withheld": "Non consentito in questo turno"
 }

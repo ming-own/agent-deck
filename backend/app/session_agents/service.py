@@ -31,6 +31,7 @@ class AgentService:
             body.expected_revision,
             body.request_id,
             body.prompt,
+            body.approved_tools,
         )
         if created:
             history = self.store.history(owner, project, agent_id)
@@ -49,6 +50,14 @@ class AgentService:
                     )
                     self.store.record_skill_versions(run["id"], versions)
                     agent = {**agent, "skill_material": material}
+                if agent.get("granted_tools"):
+                    agent = {
+                        **agent,
+                        "tool_owner": owner,
+                        "admit_tool": lambda tool: self.store.admit_tool_call(
+                            run["id"], tool
+                        ),
+                    }
                 output = await self.runner(
                     agent,
                     history,

@@ -648,5 +648,15 @@
   "session-agents-skill-load-error": "技能库加载失败。",
   "session-agents-missing-skill": "{{name}}（不可用）",
   "session-agents-skill-unavailable": "所选技能已不可用，请编辑此 Agent 的技能后重新发送。",
-  "session-agents-skill-limit": "所选技能说明超过 256 KiB，请减少勾选的技能后重试。"
+  "session-agents-skill-limit": "所选技能说明超过 256 KiB，请减少勾选的技能后重试。",
+  "node-tools": "工具权限",
+  "node-tool-calculate": "计算器",
+  "node-tool-utc_time": "查询 UTC 时间",
+  "node-tool-read_skill_reference": "读取已选技能的参考文档",
+  "node-tool-off": "关闭",
+  "node-tool-turn": "每轮选择",
+  "node-tool-allow": "始终允许",
+  "node-tool-consent": "本轮允许使用",
+  "node-tool-used": "已授权 · 调用 {{count}} 次",
+  "node-tool-withheld": "本轮未授权"
 }

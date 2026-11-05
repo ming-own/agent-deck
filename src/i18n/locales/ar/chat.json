@@ -668,5 +668,15 @@
   "session-agents-skill-load-error": "تعذّر تحميل مكتبة المهارات.",
   "session-agents-missing-skill": "{{name}} (غير متاحة)",
   "session-agents-skill-unavailable": "إحدى المهارات المحددة غير متاحة. راجع مهارات هذا الوكيل.",
-  "session-agents-skill-limit": "تتجاوز تعليمات المهارات 256 KiB. اختر مهارات أقل."
+  "session-agents-skill-limit": "تتجاوز تعليمات المهارات 256 KiB. اختر مهارات أقل.",
+  "node-tools": "أذونات الأدوات",
+  "node-tool-calculate": "الآلة الحاسبة",
+  "node-tool-utc_time": "وقت UTC الحالي",
+  "node-tool-read_skill_reference": "قراءة مراجع المهارات المحددة",
+  "node-tool-off": "إيقاف",
+  "node-tool-turn": "اختيار لكل جولة",
+  "node-tool-allow": "السماح دائمًا",
+  "node-tool-consent": "السماح لهذه الجولة",
+  "node-tool-used": "مسموح · عدد الاستدعاءات: {{count}}",
+  "node-tool-withheld": "غير مسموح لهذه الجولة"
 }

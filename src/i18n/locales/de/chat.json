@@ -652,5 +652,15 @@
   "session-agents-skill-load-error": "Die Skill-Bibliothek konnte nicht geladen werden.",
   "session-agents-missing-skill": "{{name}} (nicht verfügbar)",
   "session-agents-skill-unavailable": "Ein ausgewählter Skill ist nicht verfügbar. Prüfe die Skills dieses Agenten.",
-  "session-agents-skill-limit": "Die Skill-Anweisungen überschreiten 256 KiB. Wähle weniger Skills."
+  "session-agents-skill-limit": "Die Skill-Anweisungen überschreiten 256 KiB. Wähle weniger Skills.",
+  "node-tools": "Werkzeugberechtigungen",
+  "node-tool-calculate": "Rechner",
+  "node-tool-utc_time": "Aktuelle UTC-Zeit",
+  "node-tool-read_skill_reference": "Referenzen ausgewählter Skills lesen",
+  "node-tool-off": "Aus",
+  "node-tool-turn": "Pro Runde wählen",
+  "node-tool-allow": "Immer erlauben",
+  "node-tool-consent": "Für diese Runde erlauben",
+  "node-tool-used": "Erlaubt · Aufrufe: {{count}}",
+  "node-tool-withheld": "Für diese Runde gesperrt"
 }

@@ -71,6 +71,7 @@ class AgentStore:
             "role": "",
             "instructions": "",
             "skill_ids": [],
+            "tool_policy": {},
             **json.loads(row["config"]),
         }
 
@@ -94,6 +95,7 @@ class AgentStore:
                 "role": "",
                 "instructions": "",
                 "skill_ids": [],
+                "tool_policy": {},
                 **json.loads(row["snapshot"]),
             }
         }
@@ -172,7 +174,16 @@ class AgentStore:
                 )
             ]
 
-    def begin(self, owner, project, agent_id, revision, request_id, prompt):
+    def begin(
+        self,
+        owner,
+        project,
+        agent_id,
+        revision,
+        request_id,
+        prompt,
+        approved_tools=(),
+    ):
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             self.require_open(db, owner, project)
@@ -189,7 +200,9 @@ class AgentStore:
             if previous:
                 run = self.run(previous)
                 if (
-                    run["prompt"] != prompt
+                    sorted(set(approved_tools))
+                    != run["agent"].get("approved_tools", [])
+                    or run["prompt"] != prompt
                     or run["agent"]["revision"] != revision
                 ):
                     raise Conflict("Request already used for a different turn")
@@ -198,6 +211,17 @@ class AgentStore:
                 raise Conflict(
                     "Agent configuration changed; reload before running"
                 )
+            policy = node["tool_policy"]
+            approved = sorted(set(approved_tools))
+            if any(policy.get(tool) != "turn" for tool in approved):
+                raise Conflict(
+                    "Tool approval exceeds this Agent's permissions"
+                )
+            node["approved_tools"] = approved
+            node["granted_tools"] = sorted(
+                set(approved)
+                | {tool for tool, mode in policy.items() if mode == "allow"}
+            )
             run_id = str(uuid4())
             try:
                 db.execute(
@@ -220,6 +244,20 @@ class AgentStore:
                     "SELECT * FROM agent_runs WHERE id=?", (run_id,)
                 ).fetchone()
             ), True
+
+    def admit_tool_call(self, run_id, tool):
+        """Only count and admit tools granted to this still-running turn."""
+        with self.connect() as db:
+            key = "$.tool_calls." + tool
+            updated = db.execute(
+                "UPDATE agent_runs SET snapshot=json_set(snapshot, ?, "
+                "COALESCE(json_extract(snapshot, ?), 0) + 1) WHERE id=? "
+                "AND status='running' AND EXISTS (SELECT 1 FROM "
+                "json_each(snapshot, '$.granted_tools') WHERE value=?)",
+                (key, key, run_id, tool),
+            )
+            if not updated.rowcount:
+                raise PermissionError("Tool unavailable for this turn")
 
     def record_skill_versions(self, run_id, versions):
         with self.connect() as db:

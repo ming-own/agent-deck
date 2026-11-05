@@ -656,5 +656,15 @@
   "session-agents-skill-load-error": "No se pudo cargar la biblioteca de habilidades.",
   "session-agents-missing-skill": "{{name}} (no disponible)",
   "session-agents-skill-unavailable": "Una habilidad seleccionada no está disponible. Revisa las habilidades del agente.",
-  "session-agents-skill-limit": "Las instrucciones superan los 256 KiB. Selecciona menos habilidades."
+  "session-agents-skill-limit": "Las instrucciones superan los 256 KiB. Selecciona menos habilidades.",
+  "node-tools": "Permisos de herramientas",
+  "node-tool-calculate": "Calculadora",
+  "node-tool-utc_time": "Hora UTC actual",
+  "node-tool-read_skill_reference": "Leer referencias de habilidades seleccionadas",
+  "node-tool-off": "Desactivado",
+  "node-tool-turn": "Elegir en cada turno",
+  "node-tool-allow": "Permitir siempre",
+  "node-tool-consent": "Permitir en este turno",
+  "node-tool-used": "Permitido · Llamadas: {{count}}",
+  "node-tool-withheld": "Sin permiso en este turno"
 }
