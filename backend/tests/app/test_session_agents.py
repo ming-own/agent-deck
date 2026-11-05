@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from app.session_agents.harnesses import Harness
 from app.session_agents.models import AgentConfig, ModelReference
 from app.session_agents.store import AgentStore, Conflict, NotFound
 
@@ -96,13 +97,13 @@ async def test_service_snapshots_and_cancels_owned_run(tmp_path):
     started = asyncio.Event()
     captured = []
 
-    async def runner(agent, history, prompt, connection, email):
-        captured.append((agent, history, connection))
+    async def runner(config, turn):
+        captured.append((config.model_dump(), turn.history, turn.connection))
         started.set()
         await asyncio.Event().wait()
 
     store = AgentStore(tmp_path / "agents.db")
-    service = AgentService(store, runner)
+    service = AgentService(store, {"standard": Harness("test", runner)})
     a = store.create("owner", "s", config())
     body = RunRequest(
         request_id="req",
@@ -134,7 +135,7 @@ async def test_service_rejects_mismatched_connection_and_redacts_errors(
         raise RuntimeError("provider returned secret-token")
 
     store = AgentStore(tmp_path / "agents.db")
-    service = AgentService(store, runner)
+    service = AgentService(store, {"standard": Harness("test", runner)})
     a = store.create("owner", "s", config())
     body = RunRequest(
         request_id="req",
@@ -176,7 +177,7 @@ async def test_delete_session_joins_runs_and_erases_only_owned_records(
             stopped.set()
 
     store = AgentStore(tmp_path / "agents.db")
-    service = AgentService(store, runner)
+    service = AgentService(store, {"standard": Harness("test", runner)})
     a = store.create("owner", "s", config())
     b = store.create("other", "s", config())
     service.start(
@@ -221,7 +222,7 @@ def test_controller_requires_local_capability_and_partitions_accounts(
     monkeypatch.setattr(
         controller,
         "service",
-        lambda: AgentService(AgentStore(tmp_path / "agents.db"), None),
+        lambda: AgentService(AgentStore(tmp_path / "agents.db")),
     )
     app = FastAPI()
     app.include_router(controller.router)
@@ -369,8 +370,10 @@ def test_legacy_configs_load_with_empty_role_without_rewriting_snapshots(
     legacy_snapshot = {
         k: v
         for k, v in run["agent"].items()
-        if k not in {"role", "instructions"}
+        if k not in {"role", "instructions", "harness_id", "harness_version"}
     }
+    assert run["agent"]["harness_id"] == "standard"
+    assert run["agent"]["harness_version"] == "1.0.0"
     serialized = json.dumps(legacy_snapshot)
     with store.connect() as db:
         db.execute(
@@ -378,6 +381,10 @@ def test_legacy_configs_load_with_empty_role_without_rewriting_snapshots(
             (serialized, run["id"]),
         )
     assert store.get("owner", "s", a["id"])["role"] == ""
+    assert store.get("owner", "s", a["id"])["harness_id"] == "standard"
+    assert (
+        "harness_version" not in store.runs("owner", "s", a["id"])[0]["agent"]
+    )
     assert store.runs("owner", "s", a["id"])[0]["agent"]["instructions"] == ""
     with store.connect() as db:
         assert (
@@ -473,3 +480,62 @@ async def test_runner_accumulates_stream_deltas_before_empty_final_chunk(
         "test@example.com",
     )
     assert result == "Hello world"
+
+
+@pytest.mark.asyncio
+async def test_harness_dispatch_uses_recorded_version_and_existing_node_history(
+    tmp_path,
+):
+    from pydantic import ValidationError
+
+    from app.session_agents.models import RunRequest
+    from app.session_agents.service import AgentService
+
+    store = AgentStore(tmp_path / "agents.db")
+    node = store.create("owner", "s", config())
+    with pytest.raises(ValidationError):
+        AgentConfig(**{**config().model_dump(), "harness_id": "unknown"})
+    first, _ = store.begin(
+        "owner", "s", node["id"], 1, "earlier", "Earlier question"
+    )
+    store.finish(first["id"], "completed", output="Earlier answer")
+    captured = []
+
+    async def execute(node_config, turn):
+        captured.append((node_config.harness_id, turn.history, turn.prompt))
+        return "Continued"
+
+    service = AgentService(
+        store, {"standard": Harness("next-version", execute)}
+    )
+    request = RunRequest(
+        request_id="next",
+        expected_revision=1,
+        prompt="Continue",
+        email="test@example.com",
+        connection={
+            "model_type": "gpt-a",
+            "model_platform": "openai",
+            "auth_source": "codex_subscription",
+        },
+    )
+    service.start("owner", "s", node["id"], request)
+    await asyncio.gather(*service.tasks.values())
+    assert captured == [
+        ("standard", [("Earlier question", "Earlier answer")], "Continue")
+    ]
+    runs = store.runs("owner", "s", node["id"])
+    assert [(r["agent"]["harness_version"], r["output"]) for r in runs] == [
+        ("1.0.0", "Earlier answer"),
+        ("next-version", "Continued"),
+    ]
+    replay = AgentService(store, {}).start("owner", "s", node["id"], request)
+    assert replay["agent"]["harness_version"] == "next-version"
+    with pytest.raises(Conflict):
+        AgentService(store, {}).start(
+            "owner",
+            "s",
+            node["id"],
+            request.model_copy(update={"request_id": "fresh"}),
+        )
+    assert len(store.runs("owner", "s", node["id"])) == 2

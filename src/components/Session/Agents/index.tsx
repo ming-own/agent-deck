@@ -239,6 +239,7 @@ function AgentForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
+  const harnessId = node?.harness_id ?? 'standard';
   const [name, setName] = useState(node?.name ?? '');
   const [model, setModel] = useState(node?.model.id ?? '');
   const [role, setRole] = useState(node?.role ?? '');
@@ -263,6 +264,7 @@ function AgentForm({
         setFailed(false);
         try {
           await onSave(name.trim(), choice, {
+            harness_id: harnessId,
             tool_policy: toolPolicy,
             skill_ids: skillIds,
             role: role.trim(),
@@ -304,6 +306,14 @@ function AgentForm({
           ))}
         </SelectContent>
       </Select>
+      <Input
+        readOnly
+        title={t('chat.node-harness')}
+        aria-label={t('chat.node-harness')}
+        value={
+          harnessId === 'standard' ? t('chat.node-harness-standard') : harnessId
+        }
+      />
       {!choices.length && (
         <DsText role="base">{t('chat.session-agents-no-models')}</DsText>
       )}
@@ -392,6 +402,17 @@ function AgentBehaviorDetails({
       </Button>
       <div id={detailsId} hidden={!expanded} className="w-full min-w-0">
         <dl className="flex flex-col gap-ds-stack-related">
+          <div>
+            <DsText as="dt" role="meta" className="text-ds-ink-muted-default">
+              {t('chat.node-harness')}
+            </DsText>
+            <DsText as="dd" role="base">
+              {agent.harness_id === 'standard'
+                ? t('chat.node-harness-standard')
+                : (agent.harness_id ?? t('chat.node-harness-unrecorded'))}
+              {agent.harness_version && ` · v${agent.harness_version}`}
+            </DsText>
+          </div>
           <div>
             <DsText as="dt" role="meta" className="text-ds-ink-muted-default">
               {t('chat.session-agents-role')}

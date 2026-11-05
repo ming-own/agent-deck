@@ -658,5 +658,8 @@
   "node-tool-allow": "一律允許",
   "node-tool-consent": "本輪允許使用",
   "node-tool-used": "已授權 · 呼叫 {{count}} 次",
-  "node-tool-withheld": "本輪未授權"
+  "node-tool-withheld": "本輪未授權",
+  "node-harness": "執行方式（Harness）",
+  "node-harness-standard": "標準執行",
+  "node-harness-unrecorded": "當時未記錄"
 }

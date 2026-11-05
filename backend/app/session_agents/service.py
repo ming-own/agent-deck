@@ -1,16 +1,18 @@
 import asyncio
 import logging
 import traceback
+from types import MappingProxyType
 
-from .models import RunRequest
+from .harnesses import HARNESSES, TurnContext
+from .models import AgentConfig, RunRequest
 from .skills import SkillLimitExceeded, SkillUnavailable, resolve_skills
 from .store import AgentStore, Conflict, NotFound
 
 
 class AgentService:
-    def __init__(self, store: AgentStore, runner):
+    def __init__(self, store: AgentStore, harnesses=HARNESSES):
         self.store = store
-        self.runner = runner
+        self.harnesses = MappingProxyType(dict(harnesses))
         self.tasks: dict[str, asyncio.Task] = {}
 
     def start(self, owner, project, agent_id, body: RunRequest):
@@ -32,6 +34,7 @@ class AgentService:
             body.request_id,
             body.prompt,
             body.approved_tools,
+            harnesses=self.harnesses,
         )
         if created:
             history = self.store.history(owner, project, agent_id)
@@ -44,27 +47,30 @@ class AgentService:
         try:
             async with asyncio.timeout(300):
                 agent = run["agent"]
+                material = ""
                 if agent["skill_ids"]:
                     versions, material = await asyncio.to_thread(
                         resolve_skills, owner, agent["skill_ids"]
                     )
                     self.store.record_skill_versions(run["id"], versions)
-                    agent = {**agent, "skill_material": material}
-                if agent.get("granted_tools"):
-                    agent = {
-                        **agent,
-                        "tool_owner": owner,
-                        "admit_tool": lambda tool: self.store.admit_tool_call(
-                            run["id"], tool
-                        ),
-                    }
-                output = await self.runner(
-                    agent,
-                    history,
-                    run["prompt"],
-                    body.connection,
-                    body.email,
+                config = AgentConfig(
+                    **{key: agent[key] for key in AgentConfig.model_fields}
                 )
+                context = TurnContext(
+                    node_id=agent["id"],
+                    history=history,
+                    prompt=run["prompt"],
+                    connection=body.connection,
+                    email=body.email,
+                    skill_material=material,
+                    granted_tools=tuple(agent["granted_tools"]),
+                    owner=owner,
+                    admit_tool=lambda tool: self.store.admit_tool_call(
+                        run["id"], tool
+                    ),
+                )
+                harness = self.harnesses[config.harness_id]
+                output = await harness.execute(config, context)
             if not output.strip():
                 raise ValueError("empty_response")
             self.store.finish(run["id"], "completed", output=output)

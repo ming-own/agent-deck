@@ -666,5 +666,8 @@
   "node-tool-allow": "Permitir siempre",
   "node-tool-consent": "Permitir en este turno",
   "node-tool-used": "Permitido · Llamadas: {{count}}",
-  "node-tool-withheld": "Sin permiso en este turno"
+  "node-tool-withheld": "Sin permiso en este turno",
+  "node-harness": "Modo de ejecución",
+  "node-harness-standard": "Ejecución estándar",
+  "node-harness-unrecorded": "Sin registrar"
 }

@@ -33,11 +33,9 @@ def owner(
 
 @lru_cache(maxsize=1)
 def service():
-    from app.session_agents.runner import run_text_agent
-
     store = AgentStore(Path.home() / ".eigent" / "session-agents.sqlite3")
     store.interrupt_unfinished()
-    return AgentService(store, run_text_agent)
+    return AgentService(store)
 
 
 def translate(exc):
@@ -86,7 +84,11 @@ async def update_agent(
 ):
     try:
         config = body.model_dump(exclude={"expected_revision"})
-        missing = {"skill_ids", "tool_policy"} - body.model_fields_set
+        missing = {
+            "skill_ids",
+            "tool_policy",
+            "harness_id",
+        } - body.model_fields_set
         if missing:
             current = service().store.get(account, project_id, agent_id)
             config.update({key: current[key] for key in missing})

@@ -5,6 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.service import skill_config_service, skill_service
+from app.session_agents.harnesses import Harness
 from app.session_agents.models import AgentConfig, RunRequest
 from app.session_agents.service import AgentService
 from app.session_agents.skills import (
@@ -75,12 +76,12 @@ async def test_node_skills_are_applied_and_versioned_independently(
 ):
     calls = []
 
-    async def runner(node, history, prompt, connection, email):
-        calls.append(node.get("skill_material", ""))
+    async def runner(config, turn):
+        calls.append(turn.skill_material)
         return "Done"
 
     store = AgentStore(tmp_path / "nodes.db")
-    service = AgentService(store, runner)
+    service = AgentService(store, {"standard": Harness("test", runner)})
     owner = "brain:1"
     a = store.create(owner, "s", agent_config(["audit"]))
     b = store.create(owner, "s", agent_config([]))

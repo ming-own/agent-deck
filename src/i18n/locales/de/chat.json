@@ -662,5 +662,8 @@
   "node-tool-allow": "Immer erlauben",
   "node-tool-consent": "Für diese Runde erlauben",
   "node-tool-used": "Erlaubt · Aufrufe: {{count}}",
-  "node-tool-withheld": "Für diese Runde gesperrt"
+  "node-tool-withheld": "Für diese Runde gesperrt",
+  "node-harness": "Ausführungsmodus",
+  "node-harness-standard": "Standardausführung",
+  "node-harness-unrecorded": "Nicht erfasst"
 }

@@ -670,5 +670,8 @@
   "node-tool-allow": "Всегда разрешать",
   "node-tool-consent": "Разрешить на этот ход",
   "node-tool-used": "Разрешено · Вызовов: {{count}}",
-  "node-tool-withheld": "На этот ход не разрешено"
+  "node-tool-withheld": "На этот ход не разрешено",
+  "node-harness": "Режим выполнения",
+  "node-harness-standard": "Стандартное выполнение",
+  "node-harness-unrecorded": "Не указан"
 }

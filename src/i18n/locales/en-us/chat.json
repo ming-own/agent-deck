@@ -662,5 +662,8 @@
   "node-tool-allow": "Always allow",
   "node-tool-consent": "Allow for this turn",
   "node-tool-used": "Allowed · Calls: {{count}}",
-  "node-tool-withheld": "Not granted this turn"
+  "node-tool-withheld": "Not granted this turn",
+  "node-harness": "Execution harness",
+  "node-harness-standard": "Standard execution",
+  "node-harness-unrecorded": "Not recorded"
 }

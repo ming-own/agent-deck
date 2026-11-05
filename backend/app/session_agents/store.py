@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+from .harnesses import DEFAULT_HARNESS_ID, HARNESSES
 from .models import AgentConfig
 
 
@@ -72,6 +73,7 @@ class AgentStore:
             "instructions": "",
             "skill_ids": [],
             "tool_policy": {},
+            "harness_id": DEFAULT_HARNESS_ID,
             **json.loads(row["config"]),
         }
 
@@ -183,6 +185,8 @@ class AgentStore:
         request_id,
         prompt,
         approved_tools=(),
+        *,
+        harnesses=HARNESSES,
     ):
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -211,6 +215,10 @@ class AgentStore:
                 raise Conflict(
                     "Agent configuration changed; reload before running"
                 )
+            harness = harnesses.get(node["harness_id"])
+            if harness is None:
+                raise Conflict("Selected Harness is unavailable")
+            node["harness_version"] = harness.version
             policy = node["tool_policy"]
             approved = sorted(set(approved_tools))
             if any(policy.get(tool) != "turn" for tool in approved):

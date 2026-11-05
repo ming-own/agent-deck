@@ -8,6 +8,8 @@ from pydantic import (
     model_validator,
 )
 
+from .harnesses import DEFAULT_HARNESS_ID, HARNESSES
+
 
 class ModelReference(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
@@ -40,6 +42,14 @@ class AgentConfig(BaseModel):
     instructions: str = Field(default="", max_length=12000)
     tool_policy: dict[ToolId, ToolMode] = Field(default_factory=dict)
     skill_ids: list[str] = Field(default_factory=list, max_length=32)
+    harness_id: str = DEFAULT_HARNESS_ID
+
+    @field_validator("harness_id")
+    @classmethod
+    def registered_harness(cls, value: str) -> str:
+        if value not in HARNESSES:
+            raise ValueError("Unknown Harness")
+        return value
 
     @field_validator("skill_ids")
     @classmethod

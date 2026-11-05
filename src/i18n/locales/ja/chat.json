@@ -658,5 +658,8 @@
   "node-tool-allow": "常に許可",
   "node-tool-consent": "今回の実行で許可",
   "node-tool-used": "許可済み · 呼び出し {{count}} 回",
-  "node-tool-withheld": "今回は未許可"
+  "node-tool-withheld": "今回は未許可",
+  "node-harness": "実行方式（Harness）",
+  "node-harness-standard": "標準実行",
+  "node-harness-unrecorded": "記録なし"
 }

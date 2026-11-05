@@ -154,6 +154,7 @@ describe('Session Agent instances', () => {
         role: 'Reviewer',
         instructions: 'List risks first.',
         skill_ids: ['audit-package'],
+        harness_id: 'standard',
         tool_policy: { calculate: 'turn' },
       })
     );
@@ -264,6 +265,7 @@ it('edits node instructions while keeping the previous run configuration visible
         instructions: 'List risks.',
         skill_ids: [],
         tool_policy: {},
+        harness_id: 'standard',
       }
     )
   );

@@ -666,5 +666,8 @@
   "node-tool-allow": "Toujours autoriser",
   "node-tool-consent": "Autoriser pour ce tour",
   "node-tool-used": "Autorisé · Appels : {{count}}",
-  "node-tool-withheld": "Non autorisé pour ce tour"
+  "node-tool-withheld": "Non autorisé pour ce tour",
+  "node-harness": "Mode d’exécution",
+  "node-harness-standard": "Exécution standard",
+  "node-harness-unrecorded": "Non enregistré"
 }
