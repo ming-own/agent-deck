@@ -738,5 +738,15 @@
   "workshop-name": "Nombre de plantilla",
   "workshop-fork": "Guardar como plantilla nueva",
   "workshop-version": "Guardar nueva versión",
-  "workshop-saved": "Guardado en el taller"
+  "workshop-saved": "Guardado en el taller",
+  "canvas-links": "Conexiones del nodo",
+  "canvas-link": "Conectar nodos",
+  "canvas-unlink": "Desconectar",
+  "canvas-input": "Entrada",
+  "canvas-output": "Salida",
+  "canvas-no-answer": "Completa un turno en la tarea de origen antes de reenviar una respuesta.",
+  "canvas-branches": "Ramas: {{n}}",
+  "team-members": "Configuración del equipo",
+  "team-message": "Tarea para el equipo",
+  "team-match": "El mensaje contiene «{{word}}»"
 }

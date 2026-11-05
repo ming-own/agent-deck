@@ -730,5 +730,15 @@
   "workshop-name": "テンプレート名",
   "workshop-fork": "新規テンプレートとして保存",
   "workshop-version": "新しいバージョンを保存",
-  "workshop-saved": "ワークショップに保存しました"
+  "workshop-saved": "ワークショップに保存しました",
+  "canvas-links": "ノードの接続",
+  "canvas-link": "ノードを接続",
+  "canvas-unlink": "接続を解除",
+  "canvas-input": "入力",
+  "canvas-output": "出力",
+  "canvas-no-answer": "回答を転送するには、まず送信元のタスクで回答を取得してください。",
+  "canvas-branches": "分岐：{{n}}",
+  "team-members": "チームの構成",
+  "team-message": "チームへのタスク",
+  "team-match": "「{{word}}」を含むメッセージ"
 }

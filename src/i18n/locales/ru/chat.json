@@ -742,5 +742,15 @@
   "workshop-name": "Название шаблона",
   "workshop-fork": "Создать шаблон",
   "workshop-version": "Сохранить новую версию",
-  "workshop-saved": "Сохранено в мастерской"
+  "workshop-saved": "Сохранено в мастерской",
+  "canvas-links": "Связи узла",
+  "canvas-link": "Соединить узлы",
+  "canvas-unlink": "Отключить",
+  "canvas-input": "Вход",
+  "canvas-output": "Выход",
+  "canvas-no-answer": "Получите ответ в исходной задаче перед его передачей.",
+  "canvas-branches": "Ветви: {{n}}",
+  "team-members": "Настройка команды",
+  "team-message": "Задание для команды",
+  "team-match": "Сообщение содержит «{{word}}»"
 }

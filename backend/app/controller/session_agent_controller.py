@@ -21,6 +21,7 @@ from app.session_agents.models import (
     RunSettings,
     SaveTemplate,
     UpdateAgent,
+    UpdateWorkforce,
 )
 from app.session_agents.routing import inbox
 from app.session_agents.service import AgentService
@@ -124,6 +125,37 @@ async def update_agent(
             AgentConfig(**config),
         )
     except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.put("/{project_id}/{agent_id}/links/{target_id}")
+def set_canvas_link(
+    project_id: str,
+    agent_id: str,
+    target_id: str,
+    enabled: bool,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return service().store.set_link(
+            account, project_id, agent_id, target_id, enabled
+        )
+    except (Conflict, NotFound) as exc:
+        raise translate(exc) from exc
+
+
+@router.put("/{project_id}/{agent_id}/workforce")
+def edit_workforce(
+    project_id: str,
+    agent_id: str,
+    body: UpdateWorkforce,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return workshop.update_instance(
+            service().store, (account, project_id), agent_id, body
+        )
+    except (Conflict, NotFound) as exc:
         raise translate(exc) from exc
 
 

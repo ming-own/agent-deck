@@ -57,6 +57,11 @@ class AgentStore:
                     event_id TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS workforce_event ON workforce_events(event_id);
+                CREATE TABLE IF NOT EXISTS canvas_links (
+                    source TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                    target TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+                    PRIMARY KEY(source,target), CHECK(source != target)
+                );
                 CREATE TABLE IF NOT EXISTS agent_positions (
                     agent_id TEXT PRIMARY KEY REFERENCES agents(id) ON DELETE CASCADE,
                     x REAL NOT NULL, y REAL NOT NULL, revision INTEGER NOT NULL
@@ -198,6 +203,7 @@ class AgentStore:
             return [
                 {
                     **self.node(row),
+                    "outputs": json.loads(row["outputs"]),
                     "position": None
                     if row["layout_revision"] is None
                     else {
@@ -207,12 +213,34 @@ class AgentStore:
                     },
                 }
                 for row in db.execute(
-                    "SELECT a.*, p.x, p.y, p.revision AS layout_revision FROM agents a "
+                    "SELECT a.*, p.x, p.y, p.revision AS layout_revision, "
+                    "(SELECT json_group_array(target) FROM canvas_links l WHERE l.source=a.id) AS outputs FROM agents a "
                     "LEFT JOIN agent_positions p ON p.agent_id=a.id "
                     "WHERE a.owner=? AND a.project=? ORDER BY a.rowid",
                     (owner, project),
                 )
             ]
+
+    def set_link(self, owner, project, source, target, enabled):
+        """An explicit handoff path, never an automatic run or permission grant."""
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self.require_open(db, owner, project)
+            for node in (source, target):
+                self.require_task(db, owner, project, node, "default")
+            if source == target:
+                raise Conflict("Choose another node")
+            if enabled:
+                db.execute(
+                    "INSERT OR IGNORE INTO canvas_links VALUES(?,?)",
+                    (source, target),
+                )
+            else:
+                db.execute(
+                    "DELETE FROM canvas_links WHERE source=? AND target=?",
+                    (source, target),
+                )
+            return {"source": source, "target": target, "enabled": enabled}
 
     def move(self, owner, project, agent_id, position):
         with self.connect() as db:
@@ -415,6 +443,15 @@ class AgentStore:
 
     def restart_turn(self, db, scope, row, settings, harnesses):
         old = self.run(row)
+        if old["agent"].get("workforce"):
+            current = self.node(
+                db.execute(
+                    "SELECT * FROM agents WHERE owner=? AND project=? AND id=?",
+                    (*scope, old["agent_id"]),
+                ).fetchone()
+            )
+            if current["workforce"] != old["agent"]["workforce"]:
+                raise Conflict("Team routing changed; start a new turn")
         new_run = self.begin(
             *scope,
             old["agent_id"],

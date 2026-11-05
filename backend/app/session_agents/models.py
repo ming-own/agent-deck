@@ -208,6 +208,11 @@ class WorkshopRoute(BaseModel):
     join: Literal["all_success", "all_finished"] = "all_success"
 
 
+class UpdateWorkforce(WorkshopRoute):
+    name: str = Field(min_length=1, max_length=100)
+    expected_revision: int = Field(ge=1)
+
+
 class SaveTemplate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=100)

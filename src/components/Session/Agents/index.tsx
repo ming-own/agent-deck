@@ -2,7 +2,6 @@ import { MarkDown } from '@/components/ChatBox/MessageItem/MarkDown';
 import { UserMessageCard } from '@/components/ChatBox/MessageItem/UserMessageCard';
 import ContentHeader from '@/components/Layout/ContentHeader';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
 import { Input } from '@/components/ui/input';
@@ -61,6 +60,7 @@ import { AgentCanvas } from './AgentCanvas';
 import { AgentTasks } from './AgentTasks';
 import { AnswerHandoff, AnswerReference } from './AnswerHandoff';
 import { markSessionAgents } from './Launcher';
+import { NodeInspector } from './NodeInspector';
 import { SkillPicker } from './SkillPicker';
 import { TaskRouter, type RouterLocation } from './TaskRouter';
 import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
@@ -194,6 +194,14 @@ function AgentInstances({
     },
     []
   );
+  const editCanvasNode = useCallback(
+    (project: string, button: HTMLButtonElement, item?: SessionAgent) => {
+      setTeam(null);
+      setEditor(null);
+      openEditor(project, button, item);
+    },
+    [openEditor]
+  );
   const saveEditor = async (
     name: string,
     choice: ConfiguredModelChoice,
@@ -227,7 +235,7 @@ function AgentInstances({
   return (
     <section
       aria-label={t('chat.session-agents-title')}
-      className="flex min-h-0 min-w-0 flex-1 flex-col bg-ds-neutral-subtle-default"
+      className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-ds-neutral-subtle-default"
     >
       <ContentHeader
         leading={
@@ -366,8 +374,9 @@ function AgentInstances({
           </Button>
         </div>
       ) : null}
-      {team && !editor && !workshop && (
+      {team && (
         <WorkforceDetails
+          docked={canvas}
           key={team.node.id}
           node={team.node}
           api={teamApi}
@@ -376,6 +385,11 @@ function AgentInstances({
           email={email}
           close={() => setTeam(null)}
           edit={(child, button) => openEditor(team.project, button, child)}
+          updated={(next) => {
+            setTeam({ ...team, node: next });
+            setCanvasEpoch((n) => n + 1);
+            if (team.project === projectId) void refresh();
+          }}
           save={() => setWorkshop(team)}
         />
       )}
@@ -406,6 +420,24 @@ function AgentInstances({
       )}
       {editor && (
         <AgentForm
+          docked={canvas}
+          conversation={
+            canvas && editor.node ? (
+              <CanvasNodeTasks
+                key={editor.node.id}
+                node={editor.node}
+                api={editorApi}
+                choices={choices}
+                email={email}
+                account={account}
+                project={editor.project}
+                modelsLoading={
+                  inventory.loading || inventory.codexModelsLoading
+                }
+                openRouter={setRouter}
+              />
+            ) : undefined
+          }
           key={editor.node ? `edit-${editor.node.id}` : 'create'}
           node={editor.node}
           loadSkills={editorApi.skills}
@@ -431,11 +463,13 @@ function AgentInstances({
       )}
       {canvas && (
         <AgentCanvas
+          choices={choices}
+          email={email}
           openRouter={openCanvasRouter}
           account={account}
           projectId={projectId}
           refreshKey={canvasEpoch}
-          edit={openEditor}
+          edit={editCanvasNode}
         />
       )}
       {!canvas && !loading && !error && !nodes.length && (
@@ -498,7 +532,94 @@ function AgentInstances({
   );
 }
 
+function CanvasNodeTasks({
+  node,
+  api,
+  choices,
+  email,
+  account,
+  project,
+  modelsLoading,
+  openRouter,
+}: {
+  node: SessionAgent;
+  api: ReturnType<typeof sessionAgentApi>;
+  choices: ConfiguredModelChoice[];
+  email: string;
+  account: string;
+  project: string;
+  modelsLoading: boolean;
+  openRouter: (r: RouterLocation) => void;
+}) {
+  const { t } = useTranslation();
+  const [all, setAll] = useState<SessionAgent[]>([]),
+    [failed, setFailed] = useState(false),
+    [epoch, retry] = useState(0);
+  useEffect(() => {
+    let live = true;
+    api
+      .list()
+      .then((rows) => {
+        if (live) {
+          setAll(rows);
+          setFailed(false);
+        }
+      })
+      .catch(() => {
+        if (live) setFailed(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, [api, epoch]);
+  const current = all.find((n) => n.id === node.id);
+  if (failed)
+    return (
+      <Button size="sm" variant="text" onClick={() => retry((v) => v + 1)}>
+        {t('chat.session-agents-load-error')} · {t('chat.session-agents-retry')}
+      </Button>
+    );
+  if (!current)
+    return <DsText role="base">{t('chat.session-agents-loading')}</DsText>;
+  return (
+    <AgentTasks
+      key={current.id}
+      agentId={current.id}
+      api={api}
+      storageKey={
+        'agentdeck:agent-task:' + JSON.stringify([account, project, current.id])
+      }
+      refreshKey={epoch}
+      openRouter={(taskId, name, opener) =>
+        openRouter({
+          project,
+          name: current.name + ' / ' + name,
+          agents: all,
+          origin: { agentId: current.id, taskId },
+          opener,
+        })
+      }
+    >
+      {(taskId) => (
+        <AgentConversation
+          key={taskId}
+          taskId={taskId}
+          node={current}
+          targets={all.filter((n) => n.id !== current.id)}
+          choices={choices}
+          modelsLoading={modelsLoading}
+          api={api}
+          email={email}
+          delivered={() => retry((v) => v + 1)}
+        />
+      )}
+    </AgentTasks>
+  );
+}
+
 function AgentForm({
+  docked,
+  conversation,
   restoreFocus,
   loadSkills,
   node,
@@ -506,6 +627,8 @@ function AgentForm({
   onSave,
   onCancel,
 }: {
+  docked?: boolean;
+  conversation?: ReactNode;
   restoreFocus: () => void;
   node?: SessionAgent;
   loadSkills: ReturnType<typeof sessionAgentApi>['skills'];
@@ -518,6 +641,7 @@ function AgentForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
+  const [view, setView] = useState('general');
   const [harnessId, setHarnessId] = useState(node?.harness_id ?? 'standard');
   const [name, setName] = useState(node?.name ?? '');
   const [model, setModel] = useState(node?.model.id ?? '');
@@ -533,65 +657,74 @@ function AgentForm({
   const savingRef = useRef(false);
   const choice = choices.find((item) => item.id === model);
   return (
-    <Dialog
-      open
-      onOpenChange={(open) => {
-        if (!open && !savingRef.current) onCancel();
-      }}
+    <NodeInspector
+      docked={docked}
+      title={
+        docked && node
+          ? node.name
+          : t(node ? 'chat.session-agents-edit' : 'chat.session-agents-add')
+      }
+      subtitle={docked && node ? node.model.name : undefined}
+      busy={saving}
+      close={onCancel}
+      restoreFocus={restoreFocus}
     >
-      <DialogContent
-        size="md"
-        overlayVariant="dimmed"
-        showCloseButton={!saving}
-        aria-describedby={undefined}
-        onCloseAutoFocus={(e) => {
-          e.preventDefault();
-          restoreFocus();
-        }}
+      <Tabs
+        value={view}
+        onValueChange={setView}
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <DialogHeader
-          title={t(
-            node ? 'chat.session-agents-edit' : 'chat.session-agents-add'
-          )}
-        />
-        <form
-          className="flex min-h-0 flex-col"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            if (!choice || !name.trim() || savingRef.current) return;
-            savingRef.current = true;
-            setSaving(true);
-            setFailed(false);
-            try {
-              await onSave(name.trim(), choice, {
-                harness_id: harnessId,
-                tool_policy: toolPolicy,
-                skill_ids: skillIds,
-                role: role.trim(),
-                instructions: instructions.trim(),
-              });
-            } catch {
-              setFailed(true);
-            } finally {
-              savingRef.current = false;
-              setSaving(false);
-            }
-          }}
-        >
-          <Tabs defaultValue="general" className="flex min-h-0 flex-col">
-            <div className="shrink-0 px-ds-panel-inset">
-              <TabsList
-                appearance="outline"
-                aria-label={t(
-                  node ? 'chat.session-agents-edit' : 'chat.session-agents-add'
-                )}
-              >
-                <TabsTrigger value="general">{t('layout.general')}</TabsTrigger>
-                <TabsTrigger value="capabilities">
-                  {t('layout.capabilities')}
-                </TabsTrigger>
-              </TabsList>
-            </div>
+        <div className="shrink-0 px-ds-panel-inset">
+          <TabsList
+            appearance={docked ? 'border' : 'outline'}
+            aria-label={t(
+              node ? 'chat.session-agents-edit' : 'chat.session-agents-add'
+            )}
+          >
+            {conversation && (
+              <TabsTrigger value="conversation">
+                {t('chat.canvas-chat')}
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="general">{t('layout.general')}</TabsTrigger>
+            <TabsTrigger value="capabilities">
+              {t('layout.capabilities')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        {conversation && (
+          <TabsContent
+            value="conversation"
+            className="m-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          >
+            {conversation}
+          </TabsContent>
+        )}
+        {view !== 'conversation' && (
+          <form
+            className="flex min-h-0 flex-col"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!choice || !name.trim() || savingRef.current) return;
+              savingRef.current = true;
+              setSaving(true);
+              setFailed(false);
+              try {
+                await onSave(name.trim(), choice, {
+                  harness_id: harnessId,
+                  tool_policy: toolPolicy,
+                  skill_ids: skillIds,
+                  role: role.trim(),
+                  instructions: instructions.trim(),
+                });
+              } catch {
+                setFailed(true);
+              } finally {
+                savingRef.current = false;
+                setSaving(false);
+              }
+            }}
+          >
             <div className="scrollbar-always-visible min-h-0 overflow-y-auto p-ds-panel-inset">
               <TabsContent value="general" className="m-0">
                 <Input
@@ -602,7 +735,13 @@ function AgentForm({
                   onChange={(event) => setName(event.target.value)}
                   disabled={saving}
                 />
-                <div className="grid grid-cols-1 gap-ds-control-gap sm:grid-cols-2">
+                <div
+                  className={
+                    docked
+                      ? 'grid grid-cols-1 gap-ds-control-gap'
+                      : 'grid grid-cols-1 gap-ds-control-gap sm:grid-cols-2'
+                  }
+                >
                   <Select
                     value={model}
                     onValueChange={setModel}
@@ -697,28 +836,31 @@ function AgentForm({
                 />
               </TabsContent>
             </div>
-          </Tabs>
-          {failed && (
-            <DsText role="base" aria-live="assertive">
-              {t('chat.session-agents-save-error')}
-            </DsText>
-          )}
-          <div className="flex shrink-0 items-center justify-end gap-ds-control-gap border-x-0 border-t border-b-0 border-solid border-ds-hairline-subtle-default px-ds-panel-inset py-ds-12">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={saving}
-              onClick={onCancel}
-            >
-              {t('chat.session-agents-cancel')}
-            </Button>
-            <Button type="submit" disabled={!name.trim() || !choice || saving}>
-              {t('chat.session-agents-save')}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            {failed && (
+              <DsText role="base" aria-live="assertive">
+                {t('chat.session-agents-save-error')}
+              </DsText>
+            )}
+            <div className="flex shrink-0 items-center justify-end gap-ds-control-gap border-x-0 border-t border-b-0 border-solid border-ds-hairline-subtle-default px-ds-panel-inset py-ds-12">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={saving}
+                onClick={onCancel}
+              >
+                {t('chat.session-agents-cancel')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={!name.trim() || !choice || saving}
+              >
+                {t('chat.session-agents-save')}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Tabs>
+    </NodeInspector>
   );
 }
 
@@ -990,7 +1132,10 @@ function AgentConversation({
           api={api}
           email={email}
           close={() => setHandoff(null)}
-          delivered={delivered}
+          delivered={(id, task) => {
+            setHandoff(null);
+            delivered(id, task);
+          }}
         />
       )}
       {!available && (

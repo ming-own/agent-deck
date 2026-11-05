@@ -730,5 +730,15 @@
   "workshop-name": "模板名称",
   "workshop-fork": "另存为新模板",
   "workshop-version": "保存为新版本",
-  "workshop-saved": "已保存到创意工坊"
+  "workshop-saved": "已保存到创意工坊",
+  "canvas-links": "节点连接",
+  "canvas-link": "连接节点",
+  "canvas-unlink": "断开连接",
+  "canvas-input": "输入",
+  "canvas-output": "输出",
+  "canvas-no-answer": "先在来源任务中完成一轮对话，再转交回答。",
+  "canvas-branches": "{{n}} 条分支",
+  "team-members": "团队编排",
+  "team-message": "交给团队的任务",
+  "team-match": "消息包含「{{word}}」"
 }

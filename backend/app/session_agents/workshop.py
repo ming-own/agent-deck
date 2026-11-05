@@ -4,8 +4,8 @@ import hashlib
 import json
 from uuid import uuid4
 
-from .models import AgentConfig
-from .store import Conflict, NotFound
+from .models import AgentConfig, SaveTemplate
+from .store import Conflict, NotFound, now
 
 BUILTINS = {
     "builtin-agent": ("Agent", {"root": {"name": "Agent", "model": None}}),
@@ -79,12 +79,17 @@ def remap(route, resolve):
 def capture(store, db, scope, source):
     graph, seen = {}, {}
 
+    visiting = set()
+
     def visit(node_id, depth=0):
+        if node_id in visiting:
+            raise Conflict("A team cannot contain itself")
         if node_id in seen:
             return seen[node_id]
         if depth > 4 or len(seen) >= 32:
             raise Conflict("Workforce too large")
         key = f"n{len(seen)}"
+        visiting.add(node_id)
         seen[node_id] = key
         node = store.node(
             db.execute(
@@ -103,6 +108,7 @@ def capture(store, db, scope, source):
             graph[key] = AgentConfig(
                 **{k: node[k] for k in AgentConfig.model_fields}
             ).model_dump()
+        visiting.remove(node_id)
         return key
 
     if source.route:
@@ -133,6 +139,61 @@ def capture(store, db, scope, source):
 
     check("root", 0)
     return graph
+
+
+def update_instance(store, scope, node_id, change):
+    """Edit the live route and validate all containing teams in one transaction."""
+    with store.connect() as db:
+        db.execute("BEGIN IMMEDIATE")
+        store.require_open(db, *scope)
+        row = db.execute(
+            "SELECT * FROM agents WHERE owner=? AND project=? AND id=?",
+            (*scope, node_id),
+        ).fetchone()
+        current = store.node(row)
+        if (
+            not current.get("workforce")
+            or current["revision"] != change.expected_revision
+        ):
+            raise Conflict("Team configuration changed")
+        config = json.loads(row["config"])
+        route = change.model_dump(
+            mode="json", exclude={"name", "expected_revision"}
+        )
+        config.update(name=change.name.strip(), workforce=route)
+        if not config["name"]:
+            raise Conflict("Team name is required")
+        db.execute(
+            "UPDATE agents SET config=?,revision=revision+1,updated_at=? WHERE id=?",
+            (json.dumps(config), now(), node_id),
+        )
+        # Verify the edited node and every team that can now reach it. A rejected
+        # cycle or cross-session target rolls back the entire revision.
+        rows = db.execute(
+            "SELECT id,config FROM agents WHERE owner=? AND project=? AND json_type(config,'$.workforce')='object'",
+            scope,
+        )
+        parents = {}
+        for team in rows:
+            r = json.loads(team["config"])["workforce"]
+            for target in [*r["branches"], r["summary"]]:
+                parents.setdefault(target["agent_id"], set()).add(team["id"])
+        pending = [node_id]
+        checked = set()
+        while pending:
+            root = pending.pop()
+            if root in checked:
+                continue
+            checked.add(root)
+            capture(
+                store, db, scope, SaveTemplate(name=change.name, node_id=root)
+            )
+            pending.extend(parents.get(root, ()))
+        return store.node(
+            db.execute(
+                "SELECT * FROM agents WHERE id=?", (node_id,)
+            ).fetchone()
+        )
 
 
 def save(store, scope, source):

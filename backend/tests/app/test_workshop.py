@@ -205,3 +205,53 @@ async def test_workforce_retry_uses_recorded_success(tmp_path):
     assert done["branches"][0]["id"] == trace["branches"][0]["id"]
     assert done["branches"][1]["id"] != trace["branches"][1]["id"]
     assert done["branches"][1]["task_id"] == trace["branches"][1]["task_id"]
+
+
+def test_edit_any_team_preserves_template_and_rejects_invalid_graph(tmp_path):
+    from app.session_agents.models import UpdateWorkforce
+
+    store = AgentStore(tmp_path / "db")
+    scope = ("o", "p")
+    first, second = [
+        install(store, scope, "builtin-team", model=MODEL) for _ in range(2)
+    ]
+    leaf = install(store, scope, "builtin-agent", model=MODEL)
+
+    def edit(node, target, revision=1):
+        old = node["workforce"]
+        return workshop.update_instance(
+            store,
+            scope,
+            node["id"],
+            UpdateWorkforce(
+                **{
+                    **old,
+                    "branches": [
+                        {
+                            **old["branches"][0],
+                            "agent_id": target["id"],
+                            "contains": "review",
+                        }
+                    ],
+                },
+                name="My team",
+                expected_revision=revision,
+            ),
+        )
+
+    updated = edit(first, second)
+    assert updated["revision"] == 2
+    with pytest.raises(Conflict):
+        edit(first, leaf)
+    with pytest.raises(Conflict):
+        edit(second, first)
+    with pytest.raises(NotFound):
+        edit(
+            second,
+            install(store, ("o", "another"), "builtin-agent", model=MODEL),
+        )
+    assert store.get(*scope, second["id"])["revision"] == 1
+    fresh = install(store, scope, "builtin-team", model=MODEL)
+    assert fresh["workforce"]["branches"][0]["contains"] == ""
+    edit(updated, leaf, 2)
+    assert store.get(*scope, leaf["id"])["revision"] == 1

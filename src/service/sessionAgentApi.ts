@@ -30,6 +30,7 @@ export interface SessionAgent extends AgentBehavior {
   revision: number;
   workforce?: Omit<BatchSpec, 'message'>;
   workforce_member?: boolean;
+  outputs?: string[];
   template_family?: string;
   template_version?: number;
   position?: CanvasPosition | null;
@@ -161,6 +162,28 @@ export function sessionAgentApi(account: string, projectId: string) {
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    updateWorkforce: (
+      node: SessionAgent,
+      name: string,
+      route: NonNullable<SessionAgent['workforce']>
+    ): Promise<SessionAgent> =>
+      fetchPut(
+        `${root}/${node.id}/workforce`,
+        { name, ...route, expected_revision: node.revision },
+        headers,
+        options
+      ),
+    setLink: (
+      source: string,
+      target: string,
+      enabled: boolean
+    ): Promise<{ source: string; target: string; enabled: boolean }> =>
+      fetchPut(
+        `${root}/${source}/links/${target}?enabled=${enabled}`,
+        {},
+        headers,
+        options
+      ),
     workforceTrace: (id: string): Promise<BatchReceipt | null> =>
       fetchGet(`${root}/workshop/runs/${id}`, undefined, headers, options),
     templates: (): Promise<WorkshopTemplate[]> =>

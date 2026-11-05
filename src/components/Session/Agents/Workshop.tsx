@@ -5,6 +5,7 @@ import {
   DialogContentSection,
   DialogHeader,
 } from '@/components/ui/dialog';
+import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +25,7 @@ import type {
 } from '@/service/sessionAgentApi';
 import { modelReference } from '@/service/sessionAgentModels';
 import { useSpaceStore } from '@/store/spaceStore';
+import { Bot, Check, Workflow } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -40,10 +42,16 @@ function Picker({
 }) {
   return (
     <Select value={value} onValueChange={change}>
-      <SelectTrigger title={label} aria-label={label} size="sm">
+      <SelectTrigger
+        title={label}
+        aria-label={label}
+        wrapperClassName="min-w-0"
+        className="w-full"
+        size="sm"
+      >
         <SelectValue placeholder={label} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent fitTrigger>
         {items.map((i) => (
           <SelectItem key={i.id} value={i.id}>
             {i.name}
@@ -191,7 +199,7 @@ export function Workshop({
         showCloseButton={!busy}
       >
         <DialogHeader title={t('chat.workshop')} subtitle={sessionName} />
-        <DialogContentSection>
+        <DialogContentSection className="scrollbar-always-visible pt-0">
           <div className="flex min-w-0 flex-col gap-ds-stack-related">
             <Tabs
               value={tab}
@@ -200,7 +208,7 @@ export function Workshop({
                 setError('');
               }}
             >
-              <TabsList appearance="outline" aria-label={t('chat.workshop')}>
+              <TabsList appearance="border" aria-label={t('chat.workshop')}>
                 <TabsTrigger value="library" disabled={busy}>
                   {t('chat.workshop-library')}
                 </TabsTrigger>
@@ -221,15 +229,43 @@ export function Workshop({
                   >
                     {tab === 'library' ? (
                       <>
-                        <Picker
-                          label={t('chat.workshop-library')}
-                          value={target}
-                          change={setTarget}
-                          items={templates.map((v) => ({
-                            id: v.family + '@' + v.version,
-                            name: v.name + ' · v' + v.version,
-                          }))}
-                        />
+                        <div
+                          role="group"
+                          aria-label={t('chat.workshop-library')}
+                          className="flex flex-col gap-ds-4"
+                        >
+                          {templates.map((v) => {
+                            const id = v.family + '@' + v.version;
+                            const active = target === id;
+                            return (
+                              <Button
+                                key={id}
+                                size="md"
+                                variant={active ? 'secondary' : 'ghost'}
+                                className="w-full justify-start"
+                                aria-pressed={active}
+                                onClick={() => setTarget(id)}
+                              >
+                                <DsIcon
+                                  icon={v.kind === 'workforce' ? Workflow : Bot}
+                                />
+                                <span
+                                  className="min-w-0 flex-1 truncate text-left"
+                                  title={v.name}
+                                >
+                                  {v.name}
+                                </span>
+                                <DsText
+                                  role="meta"
+                                  className="text-ds-ink-muted-default"
+                                >
+                                  v{v.version}
+                                </DsText>
+                                {active && <DsIcon icon={Check} />}
+                              </Button>
+                            );
+                          })}
+                        </div>
                         {selected && (
                           <DsText
                             role="meta"

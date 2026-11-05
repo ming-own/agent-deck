@@ -734,5 +734,15 @@
   "workshop-name": "Template name",
   "workshop-fork": "Save as new template",
   "workshop-version": "Save new version",
-  "workshop-saved": "Saved to Workshop"
+  "workshop-saved": "Saved to Workshop",
+  "canvas-links": "Node connections",
+  "canvas-link": "Connect nodes",
+  "canvas-unlink": "Disconnect",
+  "canvas-input": "Input",
+  "canvas-output": "Output",
+  "canvas-no-answer": "Complete a turn in the source task before forwarding an answer.",
+  "canvas-branches": "Branches: {{n}}",
+  "team-members": "Team configuration",
+  "team-message": "Task for the team",
+  "team-match": "Message contains “{{word}}”"
 }

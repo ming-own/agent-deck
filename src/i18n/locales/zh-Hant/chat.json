@@ -730,5 +730,15 @@
   "workshop-name": "範本名稱",
   "workshop-fork": "另存為新範本",
   "workshop-version": "儲存新版本",
-  "workshop-saved": "已儲存至創意工坊"
+  "workshop-saved": "已儲存至創意工坊",
+  "canvas-links": "節點連線",
+  "canvas-link": "連接節點",
+  "canvas-unlink": "中斷連線",
+  "canvas-input": "輸入",
+  "canvas-output": "輸出",
+  "canvas-no-answer": "先在來源任務中完成一輪對話，再轉交回答。",
+  "canvas-branches": "{{n}} 條分支",
+  "team-members": "團隊編排",
+  "team-message": "交給團隊的任務",
+  "team-match": "訊息包含「{{word}}」"
 }

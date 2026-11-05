@@ -738,5 +738,15 @@
   "workshop-name": "Nome del modello",
   "workshop-fork": "Crea un modello",
   "workshop-version": "Salva nuova versione",
-  "workshop-saved": "Salvato nel laboratorio"
+  "workshop-saved": "Salvato nel laboratorio",
+  "canvas-links": "Connessioni del nodo",
+  "canvas-link": "Collega nodi",
+  "canvas-unlink": "Scollega",
+  "canvas-input": "Ingresso",
+  "canvas-output": "Uscita",
+  "canvas-no-answer": "Completa un turno nel compito di origine prima di inoltrare una risposta.",
+  "canvas-branches": "Rami: {{n}}",
+  "team-members": "Configurazione del team",
+  "team-message": "Compito per il team",
+  "team-match": "Il messaggio contiene «{{word}}»"
 }

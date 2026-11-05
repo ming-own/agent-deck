@@ -730,5 +730,15 @@
   "workshop-name": "템플릿 이름",
   "workshop-fork": "새 템플릿으로 저장",
   "workshop-version": "새 버전 저장",
-  "workshop-saved": "워크숍에 저장됨"
+  "workshop-saved": "워크숍에 저장됨",
+  "canvas-links": "노드 연결",
+  "canvas-link": "노드 연결하기",
+  "canvas-unlink": "연결 해제",
+  "canvas-input": "입력",
+  "canvas-output": "출력",
+  "canvas-no-answer": "답변을 전달하려면 먼저 원본 작업에서 한 차례 대화를 완료하세요.",
+  "canvas-branches": "분기: {{n}}",
+  "team-members": "팀 구성",
+  "team-message": "팀에 맡길 작업",
+  "team-match": "메시지에 “{{word}}” 포함"
 }

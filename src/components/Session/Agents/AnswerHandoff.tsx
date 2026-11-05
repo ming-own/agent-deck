@@ -50,6 +50,7 @@ export function AnswerHandoff({
   source,
   targets,
   allNodes,
+  initialTarget,
   choices,
   api,
   email,
@@ -60,6 +61,7 @@ export function AnswerHandoff({
   source: SessionAgentRun;
   targets: SessionAgent[];
   allNodes?: SessionAgent[];
+  initialTarget?: string;
   choices: ConfiguredModelChoice[];
   api: ReturnType<typeof sessionAgentApi>;
   email: string;
@@ -68,7 +70,7 @@ export function AnswerHandoff({
   opener: HTMLButtonElement;
 }) {
   const { t } = useTranslation();
-  const [agentId, setAgent] = useState('');
+  const [agentId, setAgent] = useState(initialTarget ?? '');
   const target = targets.find((n) => n.id === agentId);
   const [tasks, setTasks] = useState<AgentTask[]>([]);
   const [taskId, setTask] = useState('');

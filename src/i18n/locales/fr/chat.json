@@ -738,5 +738,15 @@
   "workshop-name": "Nom du modèle",
   "workshop-fork": "Créer un modèle",
   "workshop-version": "Enregistrer une version",
-  "workshop-saved": "Enregistré dans l’atelier"
+  "workshop-saved": "Enregistré dans l’atelier",
+  "canvas-links": "Connexions du nœud",
+  "canvas-link": "Relier les nœuds",
+  "canvas-unlink": "Déconnecter",
+  "canvas-input": "Entrée",
+  "canvas-output": "Sortie",
+  "canvas-no-answer": "Terminez un échange dans la tâche source avant de transmettre une réponse.",
+  "canvas-branches": "Branches : {{n}}",
+  "team-members": "Configuration de l’équipe",
+  "team-message": "Tâche pour l’équipe",
+  "team-match": "Le message contient « {{word}} »"
 }

@@ -85,3 +85,30 @@ def test_old_nodes_receive_stable_positions_and_new_nodes_avoid_moved_cards(
     }
     with pytest.raises(ValidationError):
         PositionUpdate(x=0, y=0, expected_revision=0)
+
+
+def test_canvas_connections_persist_without_sharing_tasks(tmp_path):
+    path = tmp_path / "canvas-links.db"
+    store = AgentStore(path)
+    source, target, third = [
+        store.create("a", "one", config())["id"] for _ in range(3)
+    ]
+    foreign = store.create("a", "two", config())["id"]
+    for end in [target, target, third]:
+        store.set_link("a", "one", source, end, True)
+    with pytest.raises(NotFound):
+        store.set_link("a", "one", source, foreign, True)
+    with pytest.raises(NotFound):
+        store.set_link("b", "one", source, target, False)
+    with pytest.raises(Conflict):
+        store.set_link("a", "one", source, source, True)
+    restored = AgentStore(path)
+    a, b, c = restored.list("a", "one")
+    assert (
+        set(a["outputs"]) == {target, third}
+        and not b["outputs"]
+        and not c["outputs"]
+    )
+    assert not restored.runs("a", "one", target)
+    restored.set_link("a", "one", source, target, False)
+    assert restored.list("a", "one")[0]["outputs"] == [third]

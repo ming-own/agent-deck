@@ -750,5 +750,15 @@
   "workshop-name": "اسم القالب",
   "workshop-fork": "حفظ كقالب جديد",
   "workshop-version": "حفظ إصدار جديد",
-  "workshop-saved": "تم الحفظ في الورشة"
+  "workshop-saved": "تم الحفظ في الورشة",
+  "canvas-links": "اتصالات العقدة",
+  "canvas-link": "ربط العقد",
+  "canvas-unlink": "قطع الاتصال",
+  "canvas-input": "إدخال",
+  "canvas-output": "إخراج",
+  "canvas-no-answer": "أكمل جولة في المهمة المصدر قبل إعادة توجيه الإجابة.",
+  "canvas-branches": "الفروع: {{n}}",
+  "team-members": "إعداد الفريق",
+  "team-message": "مهمة للفريق",
+  "team-match": "تحتوي الرسالة على «{{word}}»"
 }

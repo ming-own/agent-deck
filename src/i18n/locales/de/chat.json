@@ -734,5 +734,15 @@
   "workshop-name": "Vorlagenname",
   "workshop-fork": "Als neue Vorlage speichern",
   "workshop-version": "Neue Version speichern",
-  "workshop-saved": "In Werkstatt gespeichert"
+  "workshop-saved": "In Werkstatt gespeichert",
+  "canvas-links": "Knotenverbindungen",
+  "canvas-link": "Knoten verbinden",
+  "canvas-unlink": "Trennen",
+  "canvas-input": "Eingang",
+  "canvas-output": "Ausgang",
+  "canvas-no-answer": "Schließe zuerst eine Runde in der Quellaufgabe ab.",
+  "canvas-branches": "Zweige: {{n}}",
+  "team-members": "Teamkonfiguration",
+  "team-message": "Aufgabe für das Team",
+  "team-match": "Nachricht enthält „{{word}}“"
 }
