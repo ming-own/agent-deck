@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from threading import Lock
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -13,8 +14,10 @@ from app.session_agents.models import (
     BatchRequest,
     CreateTask,
     PositionUpdate,
+    RecoverBatch,
     RouteRequest,
     RunRequest,
+    RunSettings,
     UpdateAgent,
 )
 from app.session_agents.routing import inbox
@@ -41,8 +44,17 @@ def owner(
     return f"desktop:{key}"
 
 
-@lru_cache(maxsize=1)
+_service_lock = Lock()
+
+
 def service():
+    # Sync read handlers and async write handlers can hit first startup together.
+    with _service_lock:
+        return _runtime()
+
+
+@lru_cache(maxsize=1)
+def _runtime():
     store = AgentStore(Path.home() / ".eigent" / "session-agents.sqlite3")
     store.interrupt_unfinished()
     return AgentService(store)
@@ -239,5 +251,49 @@ async def dispatch_batch(
 ):
     try:
         return service().dispatch_batch(account, project_id, body)
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.post("/{project_id}/router/batches/{event_id}/recover")
+async def recover_batch(
+    project_id: str,
+    event_id: str,
+    body: RecoverBatch,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return service().recover_batch((account, project_id), event_id, body)
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.post("/{project_id}/router/batches/{event_id}/stop")
+async def stop_batch(
+    project_id: str,
+    event_id: str,
+    generation: int,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        await service().stop_batch((account, project_id), event_id, generation)
+        return {"ok": True}
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.post("/{project_id}/{agent_id}/runs/{run_id}/confirm")
+async def confirm_queued(
+    project_id: str,
+    agent_id: str,
+    run_id: str,
+    task_id: str,
+    body: RunSettings,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return service().confirm(
+            (account, project_id), agent_id, task_id, run_id, body
+        )
     except (NotFound, Conflict) as exc:
         raise translate(exc) from exc

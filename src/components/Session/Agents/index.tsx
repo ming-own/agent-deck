@@ -865,7 +865,7 @@ function AgentConversation({
   }, [api, node.id, taskId, acknowledge]);
   const send = async () => {
     const text = prompt.trim();
-    if (!text || busy.current || running || !ready) return;
+    if (!text || busy.current || !ready) return;
     followEnd.current = true;
     busy.current = true;
     setSending(true);
@@ -890,6 +890,7 @@ function AgentConversation({
       const result = await api.start(node.id, {
         task_id: taskId,
         request_id: submissionId,
+        queue_if_busy: true,
         expected_revision: node.revision,
         approved_tools: selectedTools,
         prompt: text,
@@ -1021,6 +1022,51 @@ function AgentConversation({
                     : t(`chat.session-agents-status-${run.status}`)}
                 </DsText>
               </div>
+              {(run.status === 'queued' ||
+                run.status === 'confirmation' ||
+                run.can_resume) && (
+                <div className="flex flex-wrap items-center gap-ds-control-gap">
+                  {!running &&
+                    (run.can_resume ||
+                      (run.status === 'confirmation' &&
+                        runs.find(
+                          (r) =>
+                            r.status === 'confirmation' || r.status === 'queued'
+                        )?.id === run.id)) && (
+                      <QueueConfirmation
+                        key={run.id + node.revision}
+                        node={node}
+                        disabled={!available}
+                        confirm={async (tools) => {
+                          await api.confirmQueued(node.id, taskId, run.id, {
+                            expected_revision: node.revision,
+                            connection: resolveAgentConnection(
+                              node.model,
+                              choices
+                            ),
+                            email,
+                            approved_tools: tools,
+                          });
+                          if (alive.current)
+                            setRuns(await api.runs(node.id, taskId));
+                        }}
+                      />
+                    )}
+                  {!run.can_resume && (
+                    <Button
+                      variant="text"
+                      size="xs"
+                      onClick={() =>
+                        void api
+                          .cancel(node.id, run.id, taskId)
+                          .catch(() => setError(true))
+                      }
+                    >
+                      {t('chat.session-agents-cancel')}
+                    </Button>
+                  )}
+                </div>
+              )}
               {run.plan && (
                 <details
                   className="group rounded-ds-field bg-ds-neutral-muted-default px-ds-panel-inset py-ds-8"
@@ -1103,7 +1149,7 @@ function AgentConversation({
             policy={node.tool_policy ?? {}}
             selected={selectedTools}
             onChange={(ids) => setConsent({ revision: node.revision, ids })}
-            disabled={sending || Boolean(running)}
+            disabled={sending}
           />
           <Textarea
             className="resize-none"
@@ -1144,20 +1190,18 @@ function AgentConversation({
             >
               {node.model.name}
             </DsText>
-            {!running && (
+            {(!running || prompt.trim()) && (
               <Button
                 size="sm"
                 buttonContent="icon-only"
-                aria-label={t('chat.session-agents-send')}
-                title={t('chat.session-agents-send')}
+                aria-label={t(
+                  running ? 'chat.queue-add' : 'chat.session-agents-send'
+                )}
+                title={t(
+                  running ? 'chat.queue-add' : 'chat.session-agents-send'
+                )}
                 onClick={() => void send()}
-                disabled={
-                  !ready ||
-                  !available ||
-                  !prompt.trim() ||
-                  Boolean(running) ||
-                  sending
-                }
+                disabled={!ready || !available || !prompt.trim() || sending}
               >
                 <DsIcon icon={ArrowUp} />
               </Button>
@@ -1181,6 +1225,54 @@ function AgentConversation({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function QueueConfirmation({
+  node,
+  disabled,
+  confirm,
+}: {
+  node: SessionAgent;
+  disabled: boolean;
+  confirm: (tools: AgentToolId[]) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [tools, setTools] = useState<AgentToolId[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  return (
+    <div className="flex flex-wrap items-center gap-ds-control-gap">
+      <TurnTools
+        policy={node.tool_policy}
+        selected={tools}
+        onChange={setTools}
+        disabled={busy}
+      />
+      <Button
+        size="xs"
+        variant="secondary"
+        disabled={busy || disabled}
+        onClick={async () => {
+          setBusy(true);
+          setError(false);
+          try {
+            await confirm(tools);
+          } catch {
+            setError(true);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {t('chat.queue-confirm')}
+      </Button>
+      {error && (
+        <DsText role="meta" aria-live="polite">
+          {t('chat.session-agents-request-error')}
+        </DsText>
+      )}
     </div>
   );
 }

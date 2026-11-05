@@ -732,5 +732,11 @@
   "batch-all_success": "عند نجاح جميع الفروع",
   "batch-all_finished": "عند انتهاء الجميع بما في ذلك الإخفاقات",
   "batch-run": "تشغيل الفروع",
-  "batch-conflict": "تحقق من النماذج وإعدادات الوكلاء للفروع والملخص."
+  "batch-conflict": "تحقق من النماذج وإعدادات الوكلاء للفروع والملخص.",
+  "session-agents-status-queued": "في قائمة الانتظار",
+  "session-agents-status-confirmation": "بانتظار التأكيد",
+  "queue-confirm": "تأكيد وتشغيل",
+  "batch-retry": "إعادة محاولة الفروع المتعثرة",
+  "batch-resume": "متابعة التلخيص",
+  "batch-stopped": "متوقف"
 }

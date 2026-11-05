@@ -716,5 +716,11 @@
   "batch-all_success": "Wenn alle erfolgreich sind",
   "batch-all_finished": "Wenn alle fertig sind, auch bei Fehlern",
   "batch-run": "Zweige starten",
-  "batch-conflict": "Modelle und Agent-Einstellungen für Zweige und Zusammenfassung prüfen."
+  "batch-conflict": "Modelle und Agent-Einstellungen für Zweige und Zusammenfassung prüfen.",
+  "session-agents-status-queued": "In Warteschlange",
+  "session-agents-status-confirmation": "Bestätigung ausstehend",
+  "queue-confirm": "Bestätigen und starten",
+  "batch-retry": "Fehlgeschlagene Zweige erneut starten",
+  "batch-resume": "Zusammenfassung fortsetzen",
+  "batch-stopped": "Gestoppt"
 }

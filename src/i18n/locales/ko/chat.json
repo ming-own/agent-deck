@@ -712,5 +712,11 @@
   "batch-all_success": "모든 분기 성공 시",
   "batch-all_finished": "실패를 포함해 모두 종료 시",
   "batch-run": "분기 실행",
-  "batch-conflict": "분기 및 종합에 사용할 모델과 에이전트 설정을 확인하세요."
+  "batch-conflict": "분기 및 종합에 사용할 모델과 에이전트 설정을 확인하세요.",
+  "session-agents-status-queued": "대기열에 추가됨",
+  "session-agents-status-confirmation": "확인 대기",
+  "queue-confirm": "확인 후 실행",
+  "batch-retry": "실패한 분기 재시도",
+  "batch-resume": "종합 재개",
+  "batch-stopped": "중지됨"
 }

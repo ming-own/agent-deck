@@ -724,5 +724,11 @@
   "batch-all_success": "После успеха всех ветвей",
   "batch-all_finished": "После завершения всех, включая ошибки",
   "batch-run": "Запустить ветви",
-  "batch-conflict": "Проверьте модели и настройки агентов для ветвей и сводки."
+  "batch-conflict": "Проверьте модели и настройки агентов для ветвей и сводки.",
+  "session-agents-status-queued": "В очереди",
+  "session-agents-status-confirmation": "Ожидает подтверждения",
+  "queue-confirm": "Подтвердить и запустить",
+  "batch-retry": "Повторить неудачные ветви",
+  "batch-resume": "Продолжить сводку",
+  "batch-stopped": "Остановлено"
 }

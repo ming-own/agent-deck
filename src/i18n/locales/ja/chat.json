@@ -712,5 +712,11 @@
   "batch-all_success": "すべての分岐が成功したら統合",
   "batch-all_finished": "失敗を含めすべて終了したら統合",
   "batch-run": "分岐を実行",
-  "batch-conflict": "分岐と統合に使うモデルとエージェントの設定を確認してください。"
+  "batch-conflict": "分岐と統合に使うモデルとエージェントの設定を確認してください。",
+  "session-agents-status-queued": "待機中",
+  "session-agents-status-confirmation": "確認待ち",
+  "queue-confirm": "確認して実行",
+  "batch-retry": "失敗した分岐を再実行",
+  "batch-resume": "統合を再開",
+  "batch-stopped": "停止済み"
 }

@@ -11,6 +11,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { ConfiguredModelChoice } from '@/lib/configuredModels';
 import type {
+  AgentToolId,
   BatchReceipt,
   BatchSpec,
   BatchTarget,
@@ -20,6 +21,8 @@ import type {
 import { resolveAgentConnection } from '@/service/sessionAgentModels';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BatchActions } from './BatchActions';
+import { TurnTools } from './ToolPermissions';
 
 type Props = {
   api: ReturnType<typeof sessionAgentApi>;
@@ -63,11 +66,17 @@ function Picker({
   );
 }
 
-function BatchRecord({ batch }: { batch: BatchReceipt }) {
+function BatchRecord({
+  batch,
+  children,
+}: {
+  batch: BatchReceipt;
+  children: React.ReactNode;
+}) {
   const { t } = useTranslation();
   const status = (s: string) =>
     t(
-      ['waiting', 'blocked', 'unmatched', 'skipped'].includes(s)
+      ['waiting', 'blocked', 'unmatched', 'skipped', 'stopped'].includes(s)
         ? 'chat.batch-' + s
         : 'chat.session-agents-status-' + s
     );
@@ -104,6 +113,7 @@ function BatchRecord({ batch }: { batch: BatchReceipt }) {
           </DsText>
         </div>
       )}
+      {children}
     </article>
   );
 }
@@ -113,6 +123,7 @@ export function BranchRouter(props: Props) {
     props;
   const { t } = useTranslation();
   const [records, setRecords] = useState<BatchReceipt[] | null>(null);
+  const [grants, setGrants] = useState<Record<string, AgentToolId[]>>({});
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BatchSpec | null>(null);
   const [err, setErr] = useState('');
@@ -140,6 +151,7 @@ export function BranchRouter(props: Props) {
             },
           }
     );
+    setGrants({});
     setEditing(true);
     setErr('');
     pending.current = null;
@@ -184,18 +196,21 @@ export function BranchRouter(props: Props) {
             connection: resolveAgentConnection(a.model, choices),
             email,
             expected_revision: a.revision,
+            approved_tools:
+              id === draft.summary.agent_id ? (grants.summary ?? []) : [],
           };
           revisions[id] = a.revision;
         } catch {
           /* A skipped branch does not need credentials. */
         }
       }
-      const key = JSON.stringify([draft, revisions]);
+      const key = JSON.stringify([draft, revisions, grants]);
       if (pending.current?.key !== key)
         pending.current = { key, id: crypto.randomUUID() };
       const row = await api.dispatchBatch({
         ...draft,
         settings,
+        branch_tools: draft.branches.map((_, i) => grants[i] ?? []),
         event_id: pending.current.id,
       });
       setRecords((old) => [
@@ -250,12 +265,31 @@ export function BranchRouter(props: Props) {
           )
         )}
         {records?.map((batch) => (
-          <BatchRecord key={batch.event_id} batch={batch} />
+          <BatchRecord key={batch.event_id} batch={batch}>
+            <BatchActions
+              key={batch.generation}
+              batch={batch}
+              api={api}
+              email={email}
+              choices={choices}
+              refresh={() => refresh((n) => n + 1)}
+            />
+          </BatchRecord>
         ))}
       </div>
     );
-  const update = (patch: Partial<BatchSpec>) =>
+  const update = (patch: Partial<BatchSpec>) => {
+    if (
+      (patch.branches &&
+        (patch.branches.length !== draft.branches.length ||
+          patch.branches.some(
+            (b, i) => b.agent_id !== draft.branches[i]?.agent_id
+          ))) ||
+      (patch.summary && patch.summary.agent_id !== draft.summary.agent_id)
+    )
+      setGrants({});
     setDraft({ ...draft, ...patch });
+  };
   const patchBranch = (
     i: number,
     patch: Partial<BatchSpec['branches'][number]>
@@ -277,6 +311,14 @@ export function BranchRouter(props: Props) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       maxLength={maxLength}
+    />
+  );
+  const permissions = (agentId: string, key: string) => (
+    <TurnTools
+      policy={agents.find((a) => a.id === agentId)?.tool_policy ?? {}}
+      selected={grants[key] ?? []}
+      onChange={(ids) => setGrants({ ...grants, [key]: ids })}
+      disabled={sending}
     />
   );
   const targetFields = (
@@ -349,6 +391,7 @@ export function BranchRouter(props: Props) {
               )}
             </div>
             {targetFields(b, (patch) => patchBranch(i, patch))}
+            {permissions(b.agent_id, String(i))}
             {input(
               t('chat.batch-contains'),
               b.contains,
@@ -389,6 +432,7 @@ export function BranchRouter(props: Props) {
           {targetFields(draft.summary, (patch) =>
             update({ summary: { ...draft.summary, ...patch } })
           )}
+          {permissions(draft.summary.agent_id, 'summary')}
         </section>
         {err && (
           <DsText role="base" aria-live="assertive">

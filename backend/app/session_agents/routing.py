@@ -103,6 +103,7 @@ def admit_message(store, owner, project, body, harnesses):
             body.message,
             body.approved_tools,
             task_id=destination,
+            queue_if_busy=True,
             db=db,
             connection=body.connection,
             harnesses=harnesses,

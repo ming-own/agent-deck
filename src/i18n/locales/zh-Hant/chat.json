@@ -712,5 +712,11 @@
   "batch-all_success": "全部分支成功後彙總",
   "batch-all_finished": "全部分支結束後彙總（含失敗）",
   "batch-run": "執行分支",
-  "batch-conflict": "請檢查分支與彙總 Agent 的模型及設定。"
+  "batch-conflict": "請檢查分支與彙總 Agent 的模型及設定。",
+  "session-agents-status-queued": "已排隊",
+  "session-agents-status-confirmation": "待確認",
+  "queue-confirm": "確認並執行",
+  "batch-retry": "重試失敗分支",
+  "batch-resume": "繼續彙總",
+  "batch-stopped": "已停止"
 }

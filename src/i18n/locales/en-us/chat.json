@@ -716,5 +716,11 @@
   "batch-all_success": "When all branches succeed",
   "batch-all_finished": "When all finish, including failures",
   "batch-run": "Run branches",
-  "batch-conflict": "Check the models and Agent settings for the matching branches and summary."
+  "batch-conflict": "Check the models and Agent settings for the matching branches and summary.",
+  "session-agents-status-queued": "Queued",
+  "session-agents-status-confirmation": "Awaiting confirmation",
+  "queue-confirm": "Confirm and run",
+  "batch-retry": "Retry failed branches",
+  "batch-resume": "Resume summary",
+  "batch-stopped": "Stopped"
 }

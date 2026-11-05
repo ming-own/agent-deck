@@ -75,7 +75,8 @@ export function TaskRouter({
       try {
         const rows = await api.receipts(location.origin);
         if (current) {
-          if (rows.some((r) => r.status === 'running')) delay = 1500;
+          if (rows.some((r) => ['running', 'queued'].includes(r.status)))
+            delay = 1500;
           setReceipts(rows);
           setReadError(false);
           setLoaded(true);
@@ -232,7 +233,6 @@ export function TaskRouter({
                     <Button
                       size="xs"
                       variant="secondary"
-                      disabled={r.status === 'running'}
                       onClick={() => {
                         setReply(r);
                         setTab('compose');

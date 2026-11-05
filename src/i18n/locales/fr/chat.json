@@ -720,5 +720,11 @@
   "batch-all_success": "Si toutes les branches réussissent",
   "batch-all_finished": "Quand toutes sont terminées, échecs inclus",
   "batch-run": "Lancer les branches",
-  "batch-conflict": "Vérifiez les modèles et les agents pour les branches et la synthèse."
+  "batch-conflict": "Vérifiez les modèles et les agents pour les branches et la synthèse.",
+  "session-agents-status-queued": "En file d’attente",
+  "session-agents-status-confirmation": "À confirmer",
+  "queue-confirm": "Confirmer et lancer",
+  "batch-retry": "Relancer les branches en échec",
+  "batch-resume": "Reprendre la synthèse",
+  "batch-stopped": "Arrêté"
 }

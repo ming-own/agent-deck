@@ -720,5 +720,11 @@
   "batch-all_success": "Cuando todas tengan éxito",
   "batch-all_finished": "Cuando todas terminen, incluidos los fallos",
   "batch-run": "Ejecutar ramas",
-  "batch-conflict": "Revisa los modelos y los agentes de las ramas y del resumen."
+  "batch-conflict": "Revisa los modelos y los agentes de las ramas y del resumen.",
+  "session-agents-status-queued": "En cola",
+  "session-agents-status-confirmation": "Pendiente de confirmación",
+  "queue-confirm": "Confirmar y ejecutar",
+  "batch-retry": "Reintentar ramas fallidas",
+  "batch-resume": "Continuar resumen",
+  "batch-stopped": "Detenido"
 }

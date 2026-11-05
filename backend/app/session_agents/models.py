@@ -105,6 +105,7 @@ class RunSettings(BaseModel):
 
 
 class RunRequest(RunSettings):
+    queue_if_busy: bool = False
     task_id: str = Field(default="default", min_length=1, max_length=100)
     request_id: str = Field(min_length=1, max_length=100)
     source_run_id: UUID | None = None
@@ -169,5 +170,29 @@ class BatchRequest(BaseModel):
     join: Literal["all_success", "all_finished"] = "all_success"
     settings: dict[UUID, RunSettings] = Field(max_length=9)
 
+    branch_tools: list[list[ToolId]] | None = Field(default=None, max_length=8)
+
+    @model_validator(mode="after")
+    def check_branch_tools(self):
+        if self.branch_tools is not None and len(self.branch_tools) != len(
+            self.branches
+        ):
+            raise ValueError("Expected approvals for each branch")
+        return self
+
     def spec(self):
-        return self.model_dump(mode="json", exclude={"settings", "event_id"})
+        return self.model_dump(
+            mode="json", exclude={"settings", "event_id", "branch_tools"}
+        )
+
+
+class RecoverBatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_generation: int = Field(ge=0)
+    request_id: UUID
+    # Keys are the failed attempt IDs the user saw, never an Agent-wide grant.
+    branches: dict[UUID, RunSettings] = Field(
+        default_factory=dict, max_length=8
+    )
+    summary: RunSettings
+    summary_attempt: UUID | None = None

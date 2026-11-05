@@ -712,5 +712,11 @@
   "batch-all_success": "全部分支成功后汇总",
   "batch-all_finished": "全部分支结束后汇总（含失败）",
   "batch-run": "运行分支",
-  "batch-conflict": "请检查命中分支和汇总 Agent 的模型与配置。"
+  "batch-conflict": "请检查命中分支和汇总 Agent 的模型与配置。",
+  "session-agents-status-queued": "已排队",
+  "session-agents-status-confirmation": "待确认",
+  "queue-confirm": "确认并运行",
+  "batch-retry": "重试失败分支",
+  "batch-resume": "继续汇总",
+  "batch-stopped": "已停止"
 }

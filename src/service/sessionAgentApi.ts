@@ -48,6 +48,7 @@ export interface SourceAnswer {
 }
 
 export interface SessionAgentRun {
+  can_resume?: boolean;
   returned_results?: {
     event_id: string;
     run_id: string;
@@ -71,7 +72,13 @@ export interface SessionAgentRun {
   prompt: string;
   output: string;
   plan?: string | null;
-  status: 'running' | 'completed' | 'failed' | 'interrupted';
+  status:
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'interrupted'
+    | 'queued'
+    | 'confirmation';
   error: string | null;
   created_at: string;
   finished_at: string | null;
@@ -126,7 +133,9 @@ type BatchResult = Pick<
 export interface BatchReceipt {
   event_id: string;
   created_at: string;
-  state: SessionAgentRun['status'] | 'waiting' | 'blocked' | 'unmatched';
+  generation: number;
+  state:
+    SessionAgentRun['status'] | 'stopped' | 'waiting' | 'blocked' | 'unmatched';
   spec: BatchSpec;
   branches: (BatchResult | null)[];
   summary: BatchResult | null;
@@ -138,6 +147,22 @@ export function sessionAgentApi(account: string, projectId: string) {
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    recoverBatch: (id: string, body: unknown): Promise<BatchReceipt> =>
+      fetchPost(`${root}/router/batches/${id}/recover`, body, headers, options),
+    stopBatch: (id: string, generation: number) =>
+      fetchPost(
+        `${root}/router/batches/${id}/stop?generation=${generation}`,
+        {},
+        headers,
+        options
+      ),
+    confirmQueued: (agent: string, task: string, id: string, body: unknown) =>
+      fetchPost(
+        `${root}/${agent}/runs/${id}/confirm?task_id=${encodeURIComponent(task)}`,
+        body,
+        headers,
+        options
+      ),
     batches: (): Promise<BatchReceipt[]> =>
       fetchGet(`${root}/router/batches`, undefined, headers, options),
     dispatchBatch: (body: unknown): Promise<BatchReceipt> =>

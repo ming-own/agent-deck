@@ -720,5 +720,11 @@
   "batch-all_success": "Quando tutti i rami riescono",
   "batch-all_finished": "Quando tutti terminano, inclusi gli errori",
   "batch-run": "Esegui rami",
-  "batch-conflict": "Verifica i modelli e gli agenti dei rami e del riepilogo."
+  "batch-conflict": "Verifica i modelli e gli agenti dei rami e del riepilogo.",
+  "session-agents-status-queued": "In coda",
+  "session-agents-status-confirmation": "In attesa di conferma",
+  "queue-confirm": "Conferma e avvia",
+  "batch-retry": "Riprova i rami falliti",
+  "batch-resume": "Riprendi il riepilogo",
+  "batch-stopped": "Arrestato"
 }

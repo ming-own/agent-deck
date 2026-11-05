@@ -64,6 +64,11 @@ class AgentStore:
                     state TEXT NOT NULL, summary_id TEXT REFERENCES agent_runs(id),
                     created_at TEXT NOT NULL, PRIMARY KEY(owner,project,event_id)
                 );
+                CREATE TABLE IF NOT EXISTS route_recoveries (
+                    owner TEXT NOT NULL, project TEXT NOT NULL, event_id TEXT NOT NULL, request_id TEXT NOT NULL,
+                    fingerprint TEXT NOT NULL, PRIMARY KEY(owner,project,event_id,request_id),
+                    FOREIGN KEY(owner,project,event_id) REFERENCES route_batches(owner,project,event_id) ON DELETE CASCADE
+                );
                 CREATE TABLE IF NOT EXISTS route_messages (
                     owner TEXT NOT NULL, project TEXT NOT NULL, event_id TEXT NOT NULL,
                     run_id TEXT UNIQUE NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
@@ -82,6 +87,13 @@ class AgentStore:
             # Existing runs keep their row IDs, outputs and snapshots. A constant
             # default also puts runs from older clients in the default task.
             db.execute("BEGIN IMMEDIATE")
+            if "generation" not in {
+                r["name"]
+                for r in db.execute("PRAGMA table_info(route_batches)")
+            }:
+                db.execute(
+                    "ALTER TABLE route_batches ADD COLUMN generation INTEGER NOT NULL DEFAULT 0"
+                )
             columns = {
                 r["name"] for r in db.execute("PRAGMA table_info(agent_runs)")
             }
@@ -314,16 +326,66 @@ class AgentStore:
         ).fetchone():
             raise NotFound("Task not found")
 
+    @staticmethod
+    def can_resume_turn(db, row):
+        if (
+            row["status"] != "interrupted"
+            or row["error"] != "runtime_restarted"
+        ):
+            return False
+        # Batch attempts must be replaced through their join, including the summary.
+        return not db.execute(
+            """
+          SELECT 1 FROM route_batches b WHERE b.owner=? AND b.project=? AND
+          (b.summary_id=? OR EXISTS (SELECT 1 FROM json_each(b.branch_ids) WHERE value=?))
+          UNION ALL SELECT 1 FROM agent_runs newer WHERE newer.agent_id=? AND newer.task_id=?
+          AND newer.rowid>? AND (newer.status IN ('running','completed','failed') OR newer.request_id=?)
+          LIMIT 1
+        """,
+            (
+                row["owner"],
+                row["project"],
+                row["id"],
+                row["id"],
+                row["agent_id"],
+                row["task_id"],
+                row["rowid"],
+                "resume:" + row["id"],
+            ),
+        ).fetchone()
+
     def runs(self, owner, project, agent_id, task_id="default"):
         with self.connect() as db:
             self.require_task(db, owner, project, agent_id, task_id)
             return [
                 self.run(row)
+                | (
+                    {"can_resume": True}
+                    if self.can_resume_turn(db, row)
+                    else {}
+                )
                 for row in db.execute(
-                    "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND task_id=? ORDER BY rowid",
+                    "SELECT rowid,* FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND task_id=? ORDER BY rowid",
                     (owner, project, agent_id, task_id),
                 )
             ]
+
+    def restart_turn(self, db, scope, row, settings, harnesses):
+        old = self.run(row)
+        return self.begin(
+            *scope,
+            old["agent_id"],
+            settings.expected_revision,
+            "resume:" + old["id"],
+            old["prompt"],
+            settings.approved_tools,
+            task_id=old["task_id"],
+            db=db,
+            connection=settings.connection,
+            source_run_id=(old["source_answer"] or {}).get("id"),
+            before_queue=True,
+            harnesses=harnesses,
+        )[0]
 
     @staticmethod
     def capture_answer(db, owner, project, target_id, source_run_id):
@@ -392,6 +454,55 @@ class AgentStore:
             )
         ]
 
+    @staticmethod
+    def check_connection(node, connection):
+        if connection is not None:
+            model = node["model"]
+            if (
+                connection.model_type != model["model_type"]
+                or connection.model_platform != model["model_platform"]
+                or (connection.auth_source == "codex_subscription")
+                != model["id"].startswith("codex:")
+            ):
+                raise Conflict("Model connection does not match this Agent")
+
+    def execution_node(
+        self,
+        db,
+        owner,
+        project,
+        agent_id,
+        revision,
+        approved_tools,
+        connection,
+        harnesses,
+    ):
+        node = self.node(
+            db.execute(
+                "SELECT * FROM agents WHERE owner=? AND project=? AND id=?",
+                (owner, project, agent_id),
+            ).fetchone()
+        )
+        self.check_connection(node, connection)
+        if node["revision"] != revision:
+            raise Conflict(
+                "Agent configuration changed; reload before running"
+            )
+        harness = harnesses.get(node["harness_id"])
+        if harness is None:
+            raise Conflict("Selected Harness is unavailable")
+        node["harness_version"] = harness.version
+        policy = node["tool_policy"]
+        approved = sorted(set(approved_tools))
+        if any(policy.get(tool) != "turn" for tool in approved):
+            raise Conflict("Tool approval exceeds this Agent's permissions")
+        node["approved_tools"] = approved
+        node["granted_tools"] = sorted(
+            set(approved)
+            | {tool for tool, mode in policy.items() if mode == "allow"}
+        )
+        return node
+
     def begin(
         self,
         owner,
@@ -404,6 +515,8 @@ class AgentStore:
         *,
         task_id="default",
         source_run_id=None,
+        queue_if_busy=False,
+        before_queue=False,
         harnesses=HARNESSES,
         db=None,
         connection=None,
@@ -412,23 +525,6 @@ class AgentStore:
             if not db.in_transaction:
                 db.execute("BEGIN IMMEDIATE")
             self.require_open(db, owner, project)
-            node = self.node(
-                db.execute(
-                    "SELECT * FROM agents WHERE owner=? AND project=? AND id=?",
-                    (owner, project, agent_id),
-                ).fetchone()
-            )
-            if connection is not None:
-                model = node["model"]
-                if (
-                    connection.model_type != model["model_type"]
-                    or connection.model_platform != model["model_platform"]
-                    or (connection.auth_source == "codex_subscription")
-                    != model["id"].startswith("codex:")
-                ):
-                    raise Conflict(
-                        "Model connection does not match this Agent"
-                    )
             self.require_task(db, owner, project, agent_id, task_id)
             previous = db.execute(
                 "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND request_id=?",
@@ -436,34 +532,32 @@ class AgentStore:
             ).fetchone()
             if previous:
                 run = self.run(previous)
+                self.check_connection(run["agent"], connection)
                 if (
                     sorted(set(approved_tools))
-                    != run["agent"].get("approved_tools", [])
+                    != run["agent"].get(
+                        "submission_tools",
+                        run["agent"].get("approved_tools", []),
+                    )
                     or run["task_id"] != task_id
                     or (run["source_answer"] or {}).get("id") != source_run_id
                     or run["prompt"] != prompt
-                    or run["agent"]["revision"] != revision
+                    or run["agent"].get(
+                        "submission_revision", run["agent"]["revision"]
+                    )
+                    != revision
                 ):
                     raise Conflict("Request already used for a different turn")
                 return run, False
-            if node["revision"] != revision:
-                raise Conflict(
-                    "Agent configuration changed; reload before running"
-                )
-            harness = harnesses.get(node["harness_id"])
-            if harness is None:
-                raise Conflict("Selected Harness is unavailable")
-            node["harness_version"] = harness.version
-            policy = node["tool_policy"]
-            approved = sorted(set(approved_tools))
-            if any(policy.get(tool) != "turn" for tool in approved):
-                raise Conflict(
-                    "Tool approval exceeds this Agent's permissions"
-                )
-            node["approved_tools"] = approved
-            node["granted_tools"] = sorted(
-                set(approved)
-                | {tool for tool, mode in policy.items() if mode == "allow"}
+            node = self.execution_node(
+                db,
+                owner,
+                project,
+                agent_id,
+                revision,
+                approved_tools,
+                connection,
+                harnesses,
             )
             source = (
                 self.capture_answer(
@@ -472,15 +566,28 @@ class AgentStore:
                 if source_run_id
                 else None
             )
-            returned = self.pending_returns(
-                db, owner, project, agent_id, task_id
+            busy = self.queue_head(db, owner, project, agent_id, task_id)
+            if busy and before_queue and busy["status"] != "running":
+                busy = None
+            if busy and not queue_if_busy:
+                raise Conflict("Task already has pending work")
+            status = "queued" if busy else "running"
+            if busy:
+                node["submission_revision"] = revision
+                node["submission_tools"] = sorted(set(approved_tools))
+            returned = (
+                []
+                if busy
+                else self.pending_returns(
+                    db, owner, project, agent_id, task_id
+                )
             )
             if returned:
                 node["returned_results"] = returned
             run_id = str(uuid4())
             try:
                 db.execute(
-                    "INSERT INTO agent_runs(id,owner,project,agent_id,request_id,task_id,snapshot,prompt,status,created_at,source_answer) VALUES(?,?,?,?,?,?,?,?,'running',?,?)",
+                    "INSERT INTO agent_runs(id,owner,project,agent_id,request_id,task_id,snapshot,prompt,status,created_at,source_answer) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         run_id,
                         owner,
@@ -490,6 +597,7 @@ class AgentStore:
                         task_id,
                         json.dumps(node),
                         prompt,
+                        status,
                         now(),
                         json.dumps(source, ensure_ascii=False)
                         if source
@@ -498,16 +606,90 @@ class AgentStore:
                 )
             except sqlite3.IntegrityError as exc:
                 raise Conflict("Task already has a running turn") from exc
-            db.executemany(
-                "INSERT INTO route_consumption(event_run_id,recipient_run_id) VALUES(?,?) "
-                "ON CONFLICT(event_run_id) DO UPDATE SET recipient_run_id=excluded.recipient_run_id",
-                [(item["run_id"], run_id) for item in returned],
-            )
+            self.consume_returns(db, returned, run_id)
             return self.run(
                 db.execute(
                     "SELECT * FROM agent_runs WHERE id=?", (run_id,)
                 ).fetchone()
             ), True
+
+    @staticmethod
+    def consume_returns(db, returned, run_id):
+        db.executemany(
+            "INSERT INTO route_consumption(event_run_id,recipient_run_id) VALUES(?,?) "
+            "ON CONFLICT(event_run_id) DO UPDATE SET recipient_run_id=excluded.recipient_run_id",
+            [(item["run_id"], run_id) for item in returned],
+        )
+
+    @staticmethod
+    def queue_head(db, owner, project, agent, task):
+        return db.execute(
+            "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND task_id=? AND status IN ('running','queued','confirmation') ORDER BY (status='running') DESC,rowid LIMIT 1",
+            (owner, project, agent, task),
+        ).fetchone()
+
+    def promote(
+        self, scope, agent, task, run_id, settings, harnesses, expected_status
+    ):
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self.require_open(db, *scope)
+            self.require_task(db, *scope, agent, task)
+            if expected_status == "confirmation":
+                prior = db.execute(
+                    "SELECT rowid,* FROM agent_runs WHERE id=? AND owner=? AND project=? AND agent_id=? AND task_id=?",
+                    (run_id, *scope, agent, task),
+                ).fetchone()
+                if prior and self.can_resume_turn(db, prior):
+                    run = self.restart_turn(
+                        db, scope, prior, settings, harnesses
+                    )
+                    db.execute(
+                        "UPDATE route_messages SET run_id=? WHERE run_id=?",
+                        (run["id"], run_id),
+                    )
+                    return run
+            head = self.queue_head(db, *scope, agent, task)
+            if (
+                not head
+                or head["id"] != run_id
+                or head["status"] != expected_status
+            ):
+                raise Conflict("Only the next pending message can be started")
+            node = self.execution_node(
+                db,
+                *scope,
+                agent,
+                settings.expected_revision,
+                settings.approved_tools,
+                settings.connection,
+                harnesses,
+            )
+            original = json.loads(head["snapshot"])
+            node["submission_revision"] = original.get(
+                "submission_revision", original["revision"]
+            )
+            node["submission_tools"] = original.get("submission_tools", [])
+            returned = self.pending_returns(db, *scope, agent, task)
+            if returned:
+                node["returned_results"] = returned
+            self.consume_returns(db, returned, run_id)
+            db.execute(
+                "UPDATE agent_runs SET status='running',snapshot=? WHERE id=?",
+                (json.dumps(node), run_id),
+            )
+            return self.run(
+                db.execute(
+                    "SELECT * FROM agent_runs WHERE id=?", (run_id,)
+                ).fetchone()
+            )
+
+    def require_confirmation(self, db, run_id=None):
+        query = "UPDATE agent_runs SET status='confirmation', snapshot=json_set(snapshot,'$.approved_tools',json('[]'),'$.granted_tools',json('[]')) WHERE status='queued'"
+        db.execute(
+            query + (" AND id=?" if run_id else ""),
+            (run_id,) if run_id else (),
+        )
 
     def admit_tool_call(self, run_id, tool):
         """Only count and admit tools granted to this still-running turn."""
@@ -552,11 +734,16 @@ class AgentStore:
             )
 
     def history(self, owner, project, agent_id, task_id="default"):
-        return [
-            (self.turn_prompt(run), run["output"])
-            for run in self.runs(owner, project, agent_id, task_id)
-            if run["status"] == "completed"
-        ]
+        # A restored attempt can finish before an earlier-enqueued follow-up.
+        with self.connect() as db:
+            self.require_task(db, owner, project, agent_id, task_id)
+            return [
+                (self.turn_prompt(self.run(row)), row["output"])
+                for row in db.execute(
+                    "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND task_id=? AND status='completed' ORDER BY finished_at,rowid",
+                    (owner, project, agent_id, task_id),
+                )
+            ]
 
     def running_in_session(self, owner, project):
         with self.connect() as db:
@@ -572,6 +759,7 @@ class AgentStore:
                 (now(),),
             )
 
+            self.require_confirmation(db)
             db.execute(
                 "UPDATE route_batches SET state='interrupted' WHERE state='waiting'"
             )
