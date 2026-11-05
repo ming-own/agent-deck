@@ -679,5 +679,12 @@
   "node-task-select": "タスクを選択",
   "node-task-default": "既定のタスク",
   "node-task-new": "新規タスク",
-  "node-task-name": "タスク名"
+  "node-task-name": "タスク名",
+  "handoff-action": "回答を渡す",
+  "handoff-reference": "引用した回答",
+  "handoff-agent": "受け取り先の Agent",
+  "handoff-task": "受け取り先のタスク",
+  "handoff-note": "補足の指示（任意）",
+  "handoff-confirm": "確認して実行",
+  "handoff-conflict": "タスクが実行中か、Agent の設定が変更されました。更新して再試行してください。"
 }

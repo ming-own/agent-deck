@@ -71,6 +71,10 @@ class AgentStore:
                 db.execute(
                     "ALTER TABLE agent_runs ADD COLUMN task_id TEXT NOT NULL DEFAULT 'default'"
                 )
+            if "source_answer" not in columns:
+                db.execute(
+                    "ALTER TABLE agent_runs ADD COLUMN source_answer TEXT"
+                )
             db.execute("DROP INDEX IF EXISTS agent_running")
             db.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS agent_task_running ON agent_runs(agent_id,task_id) WHERE status='running'"
@@ -127,6 +131,9 @@ class AgentStore:
             )
         } | {
             "plan": plan,
+            "source_answer": json.loads(row["source_answer"])
+            if row["source_answer"]
+            else None,
             "agent": {
                 "role": "",
                 "instructions": "",
@@ -299,6 +306,53 @@ class AgentStore:
                 )
             ]
 
+    @staticmethod
+    def capture_answer(db, owner, project, target_id, source_run_id):
+        row = db.execute(
+            "SELECT r.id,r.agent_id,r.task_id,r.output,r.finished_at,r.status,"
+            "json_extract(r.snapshot,'$.name') AS agent_name,t.name AS task_name "
+            "FROM agent_runs r LEFT JOIN agent_tasks t ON t.id=r.task_id AND t.agent_id=r.agent_id "
+            "WHERE r.owner=? AND r.project=? AND r.id=?",
+            (owner, project, source_run_id),
+        ).fetchone()
+        if row is None:
+            raise NotFound("Source run not found")
+        if (
+            row["agent_id"] == target_id
+            or row["status"] != "completed"
+            or not row["output"].strip()
+        ):
+            raise Conflict("Select a completed answer from another Agent")
+        return {
+            k: row[k]
+            for k in (
+                "id",
+                "agent_id",
+                "agent_name",
+                "task_id",
+                "task_name",
+                "finished_at",
+                "output",
+            )
+        }
+
+    @staticmethod
+    def turn_prompt(run):
+        source = run["source_answer"]
+        if source is None:
+            return run["prompt"]
+        # The quote is user-supplied reference material, never a system message.
+        return (
+            "Use the quoted answer as reference material for this task.\n"
+            + json.dumps(
+                {
+                    "quoted_answer": source["output"],
+                    "user_instructions": run["prompt"],
+                },
+                ensure_ascii=False,
+            )
+        )
+
     def begin(
         self,
         owner,
@@ -310,6 +364,7 @@ class AgentStore:
         approved_tools=(),
         *,
         task_id="default",
+        source_run_id=None,
         harnesses=HARNESSES,
     ):
         with self.connect() as db:
@@ -332,6 +387,7 @@ class AgentStore:
                     sorted(set(approved_tools))
                     != run["agent"].get("approved_tools", [])
                     or run["task_id"] != task_id
+                    or (run["source_answer"] or {}).get("id") != source_run_id
                     or run["prompt"] != prompt
                     or run["agent"]["revision"] != revision
                 ):
@@ -356,10 +412,17 @@ class AgentStore:
                 set(approved)
                 | {tool for tool, mode in policy.items() if mode == "allow"}
             )
+            source = (
+                self.capture_answer(
+                    db, owner, project, agent_id, source_run_id
+                )
+                if source_run_id
+                else None
+            )
             run_id = str(uuid4())
             try:
                 db.execute(
-                    "INSERT INTO agent_runs(id,owner,project,agent_id,request_id,task_id,snapshot,prompt,status,created_at) VALUES(?,?,?,?,?,?,?,?,'running',?)",
+                    "INSERT INTO agent_runs(id,owner,project,agent_id,request_id,task_id,snapshot,prompt,status,created_at,source_answer) VALUES(?,?,?,?,?,?,?,?,'running',?,?)",
                     (
                         run_id,
                         owner,
@@ -370,6 +433,9 @@ class AgentStore:
                         json.dumps(node),
                         prompt,
                         now(),
+                        json.dumps(source, ensure_ascii=False)
+                        if source
+                        else None,
                     ),
                 )
             except sqlite3.IntegrityError as exc:
@@ -424,7 +490,7 @@ class AgentStore:
 
     def history(self, owner, project, agent_id, task_id="default"):
         return [
-            (run["prompt"], run["output"])
+            (self.turn_prompt(run), run["output"])
             for run in self.runs(owner, project, agent_id, task_id)
             if run["status"] == "completed"
         ]

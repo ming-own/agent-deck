@@ -7,10 +7,10 @@ from app.session_agents.service import AgentService
 from app.session_agents.store import AgentStore, Conflict, NotFound
 
 
-def node(store):
+def node(store, owner="owner", project="session"):
     return store.create(
-        "owner",
-        "session",
+        owner,
+        project,
         AgentConfig(
             name="Reviewer",
             model={
@@ -36,6 +36,7 @@ def test_pre_task_database_migrates_once_and_keeps_original_turn(tmp_path):
             DROP INDEX agent_task_running;
             DROP TABLE agent_tasks;
             ALTER TABLE agent_runs DROP COLUMN task_id;
+            ALTER TABLE agent_runs DROP COLUMN source_answer;
             CREATE UNIQUE INDEX agent_running ON agent_runs(agent_id) WHERE status='running';
         """)
     for _ in range(2):
@@ -128,3 +129,56 @@ async def test_reopen_and_continue_two_tasks_with_disjoint_model_inputs(
         assert (
             db.execute("SELECT COUNT(*) FROM agent_tasks").fetchone()[0] == 0
         )
+
+
+def test_forward_keeps_the_exact_source_turn_and_target_context(tmp_path):
+    path = tmp_path / "answers.db"
+    store = AgentStore(path)
+    scope = ("owner", "session")
+    source, target = node(store), node(store)
+    task = store.create_task(
+        *scope, target, CreateTask(id=uuid4(), name="cost")
+    )["id"]
+    first, _ = store.begin(*scope, source, 1, "request", "report")
+    store.finish(first["id"], "completed", "cost 120; time 7")
+    args = (*scope, target, 1, "forward-once", "only cost")
+    routed, created = store.begin(
+        *args, task_id=task, source_run_id=first["id"]
+    )
+    assert created and routed["source_answer"]["id"] == first["id"]
+    assert store.begin(*args, task_id=task, source_run_id=first["id"]) == (
+        routed,
+        False,
+    )
+    store.finish(routed["id"], "completed", "120")
+    later, _ = store.begin(*scope, source, 1, "again", "report")
+    with pytest.raises(Conflict):
+        store.begin(
+            *scope, target, 1, "pending", "", source_run_id=later["id"]
+        )
+    store.finish(later["id"], "completed", "cost 195; time 9")
+    with pytest.raises(Conflict):
+        store.begin(*args, task_id=task, source_run_id=later["id"])
+    with pytest.raises(Conflict):
+        store.begin(*scope, source, 1, "self", "", source_run_id=first["id"])
+    for other_scope in [("other", "session"), ("owner", "other")]:
+        other_id = node(store, *other_scope)
+        with pytest.raises(NotFound):
+            store.begin(
+                *other_scope,
+                other_id,
+                1,
+                "outside",
+                "",
+                source_run_id=first["id"],
+            )
+    restored = AgentStore(path)
+    [saved] = restored.runs(*scope, target, task)
+    assert saved["source_answer"] == routed["source_answer"]
+    assert saved["source_answer"]["output"] == "cost 120; time 7"
+    prompt = restored.turn_prompt(saved)
+    assert (
+        "cost 120" in prompt and "only cost" in prompt and "195" not in prompt
+    )
+    assert restored.history(*scope, target, task) == [(prompt, "120")]
+    assert restored.history(*scope, target) == []

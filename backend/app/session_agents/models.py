@@ -102,6 +102,13 @@ class RunRequest(BaseModel):
     task_id: str = Field(default="default", min_length=1, max_length=100)
     request_id: str = Field(min_length=1, max_length=100)
     expected_revision: int = Field(ge=1)
-    prompt: str = Field(min_length=1, max_length=32000)
+    source_run_id: UUID | None = None
+    prompt: str = Field(max_length=32000)
     email: str = Field(min_length=1, max_length=320)
     connection: ModelConnection = Field(repr=False)
+
+    @model_validator(mode="after")
+    def require_input(self):
+        if not self.prompt and self.source_run_id is None:
+            raise ValueError("Message or source answer required")
+        return self

@@ -683,5 +683,12 @@
   "node-task-select": "Aufgabe auswählen",
   "node-task-default": "Standardaufgabe",
   "node-task-new": "Neue Aufgabe",
-  "node-task-name": "Aufgabenname"
+  "node-task-name": "Aufgabenname",
+  "handoff-action": "Antwort weitergeben",
+  "handoff-reference": "Zitierte Antwort",
+  "handoff-agent": "Empfangender Agent",
+  "handoff-task": "Zielaufgabe",
+  "handoff-note": "Zusätzliche Hinweise (optional)",
+  "handoff-confirm": "Bestätigen und ausführen",
+  "handoff-conflict": "Die Aufgabe läuft oder der Agent wurde geändert. Bitte aktualisieren und erneut versuchen."
 }

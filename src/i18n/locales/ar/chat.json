@@ -699,5 +699,12 @@
   "node-task-select": "اختيار مهمة",
   "node-task-default": "المهمة الافتراضية",
   "node-task-new": "مهمة جديدة",
-  "node-task-name": "اسم المهمة"
+  "node-task-name": "اسم المهمة",
+  "handoff-action": "إحالة الإجابة",
+  "handoff-reference": "الإجابة المقتبسة",
+  "handoff-agent": "الوكيل المستلم",
+  "handoff-task": "المهمة المستلمة",
+  "handoff-note": "تعليمات إضافية (اختياري)",
+  "handoff-confirm": "تأكيد وتشغيل",
+  "handoff-conflict": "المهمة قيد التنفيذ أو تغير الوكيل. حدّث قبل إعادة المحاولة."
 }

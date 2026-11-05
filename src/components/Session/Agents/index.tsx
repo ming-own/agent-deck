@@ -38,6 +38,7 @@ import {
   ArrowUp,
   Bot,
   ChevronDown,
+  Forward,
   LayoutGrid,
   ListChecks,
   MessageSquare,
@@ -53,10 +54,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AgentCanvas } from './AgentCanvas';
 import { AgentTasks } from './AgentTasks';
+import { AnswerHandoff, AnswerReference } from './AnswerHandoff';
 import { markSessionAgents } from './Launcher';
 import { SkillPicker } from './SkillPicker';
 import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
@@ -97,6 +100,10 @@ function AgentInstances({
   const inventory = useConfiguredModels();
   const choices = selectableConfiguredModels(inventory);
   const [nodes, setNodes] = useState<SessionAgent[]>([]);
+  const [destination, setDestination] = useState<{
+    agentId: string;
+    taskId: string;
+  } | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -268,7 +275,13 @@ function AgentInstances({
         }
       >
         {node && !canvas && (
-          <Select value={node.id} onValueChange={setSelected}>
+          <Select
+            value={node.id}
+            onValueChange={(id) => {
+              setDestination(null);
+              setSelected(id);
+            }}
+          >
             <SelectTrigger
               aria-label={t('chat.session-agents-select')}
               size="xs"
@@ -350,6 +363,9 @@ function AgentInstances({
           <AgentTasks
             key={node.id}
             agentId={node.id}
+            initialTaskId={
+              destination?.agentId === node.id ? destination.taskId : undefined
+            }
             api={api}
             storageKey={
               'agentdeck:agent-task:' +
@@ -360,6 +376,11 @@ function AgentInstances({
               <AgentConversation
                 key={taskId}
                 taskId={taskId}
+                targets={nodes.filter((other) => other.id !== node.id)}
+                delivered={(agentId, taskId) => {
+                  setDestination({ agentId, taskId });
+                  setSelected(agentId);
+                }}
                 node={node}
                 choices={choices}
                 modelsLoading={
@@ -603,7 +624,9 @@ function AgentForm({
 function AgentBehaviorDetails({
   agent,
   label,
+  action,
 }: {
+  action?: ReactNode;
   agent: SessionAgentRun['agent'];
   label: string;
 }) {
@@ -612,21 +635,24 @@ function AgentBehaviorDetails({
   const detailsId = useId();
   return (
     <div className="flex min-w-0 flex-col items-start gap-ds-stack-related">
-      <Button
-        variant="ghost"
-        size="xs"
-        aria-expanded={expanded}
-        aria-controls={detailsId}
-        onClick={() => setExpanded(!expanded)}
-      >
-        <DsIcon icon={Settings2} recipe="main-compact" />
-        {label}
-        <DsIcon
-          icon={ChevronDown}
-          recipe="main-compact"
-          className={expanded ? 'rotate-180' : undefined}
-        />
-      </Button>
+      <div className="flex flex-wrap items-center gap-ds-control-gap">
+        <Button
+          variant="ghost"
+          size="xs"
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          onClick={() => setExpanded(!expanded)}
+        >
+          <DsIcon icon={Settings2} recipe="main-compact" />
+          {label}
+          <DsIcon
+            icon={ChevronDown}
+            recipe="main-compact"
+            className={expanded ? 'rotate-180' : undefined}
+          />
+        </Button>
+        {action}
+      </div>
       <div id={detailsId} hidden={!expanded} className="w-full min-w-0">
         <dl className="grid gap-ds-12 rounded-ds-field bg-ds-neutral-muted-default p-ds-panel-inset sm:grid-cols-2">
           <div>
@@ -710,6 +736,8 @@ function AgentBehaviorDetails({
 }
 
 function AgentConversation({
+  targets,
+  delivered,
   taskId,
   node,
   choices,
@@ -717,6 +745,8 @@ function AgentConversation({
   api,
   email,
 }: {
+  targets: SessionAgent[];
+  delivered: (agentId: string, taskId: string) => void;
   taskId: string;
   node: SessionAgent;
   choices: ConfiguredModelChoice[];
@@ -725,6 +755,10 @@ function AgentConversation({
   email: string;
 }) {
   const { t } = useTranslation();
+  const [handoff, setHandoff] = useState<{
+    source: SessionAgentRun;
+    opener: HTMLButtonElement;
+  } | null>(null);
   const [runs, setRuns] = useState<SessionAgentRun[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -845,6 +879,17 @@ function AgentConversation({
   };
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      {handoff && (
+        <AnswerHandoff
+          {...handoff}
+          targets={targets}
+          choices={choices}
+          api={api}
+          email={email}
+          close={() => setHandoff(null)}
+          delivered={delivered}
+        />
+      )}
       {!available && (
         <DsText role="base" aria-live="polite">
           {t(
@@ -890,12 +935,17 @@ function AgentConversation({
               key={run.id}
               className="flex min-w-0 flex-col gap-ds-stack-related"
             >
-              <UserMessageCard
-                embedded
-                id={run.id}
-                content={run.prompt}
-                createdAt={run.created_at}
-              />
+              {run.source_answer && (
+                <AnswerReference source={run.source_answer} />
+              )}
+              {run.prompt && (
+                <UserMessageCard
+                  embedded
+                  id={run.id}
+                  content={run.prompt}
+                  createdAt={run.created_at}
+                />
+              )}
               <div className="flex flex-wrap items-center gap-ds-control-gap">
                 <DsIcon icon={Bot} className="text-ds-ink-muted-default" />
                 <DsText
@@ -965,6 +1015,22 @@ function AgentConversation({
                 </DsText>
               )}
               <AgentBehaviorDetails
+                action={
+                  run.status === 'completed' &&
+                  run.output &&
+                  targets.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={(e) =>
+                        setHandoff({ source: run, opener: e.currentTarget })
+                      }
+                    >
+                      <DsIcon icon={Forward} recipe="main-compact" />
+                      {t('chat.handoff-action')}
+                    </Button>
+                  )
+                }
                 agent={run.agent}
                 label={t('chat.session-agents-run-config')}
               />

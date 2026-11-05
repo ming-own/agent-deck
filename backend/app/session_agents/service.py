@@ -35,6 +35,9 @@ class AgentService:
             body.prompt,
             body.approved_tools,
             task_id=body.task_id,
+            source_run_id=str(body.source_run_id)
+            if body.source_run_id
+            else None,
             harnesses=self.harnesses,
         )
         if created:
@@ -62,7 +65,7 @@ class AgentService:
                 context = TurnContext(
                     node_id=agent["id"],
                     history=history,
-                    prompt=run["prompt"],
+                    prompt=self.store.turn_prompt(run),
                     connection=body.connection,
                     email=body.email,
                     skill_material=material,

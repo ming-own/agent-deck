@@ -99,6 +99,72 @@ beforeEach(() => {
 });
 
 describe('Session Agent instances', () => {
+  it('forwards the selected answer only after confirmation and opens its destination task', async () => {
+    const source = {
+      id: 'source-1',
+      task_id: 'default',
+      agent_id: 'a',
+      agent: first,
+      prompt: 'Report',
+      output: 'First cost 120',
+      status: 'completed',
+    };
+    mocks.api.runs.mockImplementation(async (agent) =>
+      agent === 'a' ? [source] : []
+    );
+    mocks.api.tasks.mockImplementation(async (agent) =>
+      agent === 'b'
+        ? [
+            { id: 'default', name: '' },
+            { id: 'cost', name: 'Cost review' },
+          ]
+        : [{ id: 'default', name: '' }]
+    );
+    render(<SessionAgents projectId="one" />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Forward answer' })
+    );
+    let dialog = within(screen.getByRole('dialog'));
+    expect(
+      dialog.getByRole('button', { name: 'Confirm and run' })
+    ).toBeDisabled();
+    fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
+    expect(mocks.api.start).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Forward answer' }));
+    dialog = within(screen.getByRole('dialog'));
+    fireEvent.change(
+      dialog.getByRole('combobox', { name: 'Receiving Agent' }),
+      { target: { value: 'b' } }
+    );
+    await dialog.findByRole('option', { name: 'Cost review' });
+    fireEvent.change(dialog.getByRole('combobox', { name: 'Receiving task' }), {
+      target: { value: 'cost' },
+    });
+    fireEvent.change(
+      dialog.getByRole('textbox', {
+        name: 'Additional instructions (optional)',
+      }),
+      { target: { value: 'Only cost' } }
+    );
+    expect(mocks.api.start).not.toHaveBeenCalled();
+    fireEvent.click(dialog.getByRole('button', { name: 'Confirm and run' }));
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Select task' })).toHaveValue(
+        'cost'
+      )
+    );
+    expect(mocks.api.start).toHaveBeenCalledTimes(1);
+    expect(mocks.api.start).toHaveBeenCalledWith(
+      'b',
+      expect.objectContaining({
+        source_run_id: 'source-1',
+        task_id: 'cost',
+        prompt: 'Only cost',
+        approved_tools: [],
+        connection: expect.objectContaining({ model_type: 'model-b' }),
+      })
+    );
+  });
   it('sends with the selected instance model rather than a session default', async () => {
     render(<SessionAgents projectId="session-one" />);
     fireEvent.change(

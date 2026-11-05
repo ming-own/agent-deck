@@ -687,5 +687,12 @@
   "node-task-select": "Seleccionar tarea",
   "node-task-default": "Tarea predeterminada",
   "node-task-new": "Nueva tarea",
-  "node-task-name": "Nombre de la tarea"
+  "node-task-name": "Nombre de la tarea",
+  "handoff-action": "Transferir respuesta",
+  "handoff-reference": "Respuesta citada",
+  "handoff-agent": "Agente receptor",
+  "handoff-task": "Tarea de destino",
+  "handoff-note": "Instrucciones adicionales (opcional)",
+  "handoff-confirm": "Confirmar y ejecutar",
+  "handoff-conflict": "La tarea está en curso o el agente ha cambiado. Actualiza antes de reintentar."
 }

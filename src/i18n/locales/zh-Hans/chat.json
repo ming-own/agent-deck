@@ -679,5 +679,12 @@
   "node-task-select": "切换任务",
   "node-task-default": "默认任务",
   "node-task-new": "新建任务",
-  "node-task-name": "任务名称"
+  "node-task-name": "任务名称",
+  "handoff-action": "转交回答",
+  "handoff-reference": "引用的回答",
+  "handoff-agent": "接收 Agent",
+  "handoff-task": "接收任务",
+  "handoff-note": "补充说明（可选）",
+  "handoff-confirm": "确认并运行",
+  "handoff-conflict": "目标任务正在运行或节点配置已变更，请刷新后重试。"
 }

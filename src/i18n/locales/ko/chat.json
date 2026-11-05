@@ -679,5 +679,12 @@
   "node-task-select": "작업 선택",
   "node-task-default": "기본 작업",
   "node-task-new": "새 작업",
-  "node-task-name": "작업 이름"
+  "node-task-name": "작업 이름",
+  "handoff-action": "답변 전달",
+  "handoff-reference": "인용한 답변",
+  "handoff-agent": "받는 Agent",
+  "handoff-task": "받는 작업",
+  "handoff-note": "추가 지시(선택 사항)",
+  "handoff-confirm": "확인 후 실행",
+  "handoff-conflict": "작업이 실행 중이거나 Agent가 변경되었습니다. 새로 고친 후 다시 시도하세요."
 }

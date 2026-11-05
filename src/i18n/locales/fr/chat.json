@@ -687,5 +687,12 @@
   "node-task-select": "Sélectionner une tâche",
   "node-task-default": "Tâche par défaut",
   "node-task-new": "Nouvelle tâche",
-  "node-task-name": "Nom de la tâche"
+  "node-task-name": "Nom de la tâche",
+  "handoff-action": "Transmettre la réponse",
+  "handoff-reference": "Réponse citée",
+  "handoff-agent": "Agent destinataire",
+  "handoff-task": "Tâche destinataire",
+  "handoff-note": "Consignes complémentaires (facultatif)",
+  "handoff-confirm": "Confirmer et exécuter",
+  "handoff-conflict": "La tâche est en cours ou l’agent a changé. Actualisez avant de réessayer."
 }

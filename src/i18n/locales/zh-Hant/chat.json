@@ -679,5 +679,12 @@
   "node-task-select": "切換任務",
   "node-task-default": "預設任務",
   "node-task-new": "新增任務",
-  "node-task-name": "任務名稱"
+  "node-task-name": "任務名稱",
+  "handoff-action": "轉交回答",
+  "handoff-reference": "引用的回答",
+  "handoff-agent": "接收 Agent",
+  "handoff-task": "接收任務",
+  "handoff-note": "補充說明（選填）",
+  "handoff-confirm": "確認並執行",
+  "handoff-conflict": "目標任務正在執行或節點設定已變更，請重新整理後再試。"
 }

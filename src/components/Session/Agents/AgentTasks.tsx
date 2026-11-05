@@ -26,16 +26,19 @@ export function AgentTasks({
   agentId,
   api,
   storageKey,
+  initialTaskId,
   children,
 }: {
   agentId: string;
   api: ReturnType<typeof sessionAgentApi>;
   storageKey: string;
+  initialTaskId?: string;
   children: (id: string) => ReactNode;
 }) {
   const { t } = useTranslation();
   const [items, setItems] = useState<AgentTask[]>([defaultTask]);
   const [selected, setSelected] = useState(() => {
+    if (initialTaskId) return initialTaskId;
     try {
       return localStorage.getItem(storageKey) || defaultTask.id;
     } catch {
@@ -71,18 +74,18 @@ export function AgentTasks({
       current = false;
     };
   }, [api, agentId, reload]);
-  const choose = (id: string) => {
-    setSelected(id);
+  useEffect(() => {
+    if (!loaded) return;
     try {
-      localStorage.setItem(storageKey, id);
+      localStorage.setItem(storageKey, selected);
     } catch {
       /* Device preference only. */
     }
-  };
+  }, [storageKey, selected, loaded]);
   return (
     <>
       <div className="mx-auto flex w-full max-w-[736px] min-w-0 shrink-0 items-center gap-ds-control-gap px-ds-panel-inset py-ds-8">
-        <Select value={selected} onValueChange={choose} disabled={!loaded}>
+        <Select value={selected} onValueChange={setSelected} disabled={!loaded}>
           <SelectTrigger
             size="xs"
             variant="secondary"
@@ -151,7 +154,7 @@ export function AgentTasks({
                     ...previous.filter((item) => item.id !== task.id),
                     task,
                   ]);
-                  choose(task.id);
+                  setSelected(task.id);
                   setOpen(false);
                 } catch {
                   setFailed(true);

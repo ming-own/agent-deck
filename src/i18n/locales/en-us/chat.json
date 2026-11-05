@@ -683,5 +683,12 @@
   "node-task-select": "Select task",
   "node-task-default": "Default task",
   "node-task-new": "New task",
-  "node-task-name": "Task name"
+  "node-task-name": "Task name",
+  "handoff-action": "Forward answer",
+  "handoff-reference": "Quoted answer",
+  "handoff-agent": "Receiving Agent",
+  "handoff-task": "Receiving task",
+  "handoff-note": "Additional instructions (optional)",
+  "handoff-confirm": "Confirm and run",
+  "handoff-conflict": "The task is running or the Agent has changed. Refresh before retrying."
 }

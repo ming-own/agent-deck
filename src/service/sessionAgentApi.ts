@@ -37,7 +37,18 @@ export interface AgentTask {
   name: string;
 }
 
+export interface SourceAnswer {
+  id: string;
+  agent_id: string;
+  agent_name: string;
+  task_id: string;
+  task_name: string | null;
+  finished_at: string;
+  output: string;
+}
+
 export interface SessionAgentRun {
+  source_answer?: SourceAnswer | null;
   task_id: string;
   id: string;
   agent_id: string;

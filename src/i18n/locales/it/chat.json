@@ -687,5 +687,12 @@
   "node-task-select": "Seleziona attività",
   "node-task-default": "Attività predefinita",
   "node-task-new": "Nuova attività",
-  "node-task-name": "Nome attività"
+  "node-task-name": "Nome attività",
+  "handoff-action": "Inoltra risposta",
+  "handoff-reference": "Risposta citata",
+  "handoff-agent": "Agente destinatario",
+  "handoff-task": "Attività di destinazione",
+  "handoff-note": "Istruzioni aggiuntive (facoltative)",
+  "handoff-confirm": "Conferma ed esegui",
+  "handoff-conflict": "L’attività è in corso o l’agente è cambiato. Aggiorna prima di riprovare."
 }
