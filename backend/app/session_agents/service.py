@@ -3,17 +3,19 @@ import logging
 import traceback
 from types import MappingProxyType
 
+from . import batches
 from .harnesses import HARNESSES, InvalidPlan, TurnContext
 from .models import AgentConfig, RunRequest
 from .routing import admit_message
 from .skills import SkillLimitExceeded, SkillUnavailable, resolve_skills
-from .store import AgentStore, NotFound
+from .store import AgentStore, Conflict, NotFound
 
 
 class AgentService:
     def __init__(self, store: AgentStore, harnesses=HARNESSES):
         self.store = store
         self.harnesses = MappingProxyType(dict(harnesses))
+        self.joins: set[asyncio.Task] = set()
         self.tasks: dict[str, asyncio.Task] = {}
 
     def start(self, owner, project, agent_id, body: RunRequest):
@@ -44,6 +46,35 @@ class AgentService:
             self.schedule(owner, project, run, body)
         return event
 
+    def dispatch_batch(self, owner, project, body):
+        scope = (owner, project)
+        event, jobs = batches.admit(self.store, scope, body, self.harnesses)
+        if jobs:
+            tasks = [
+                self.schedule(*scope, run, settings) for run, settings in jobs
+            ]
+            waiter = asyncio.create_task(
+                self.collect_batch(scope, body, tasks)
+            )
+            self.joins.add(waiter)
+            waiter.add_done_callback(self.joins.discard)
+        return event
+
+    async def collect_batch(self, scope, body, tasks):
+        await asyncio.gather(*tasks, return_exceptions=True)
+        try:
+            run = batches.join(self.store, scope, body, self.harnesses)
+            if run:
+                self.schedule(
+                    *scope, run, body.settings[body.summary.agent_id]
+                )
+        except (Conflict, NotFound):
+            with self.store.connect() as db:
+                db.execute(
+                    "UPDATE route_batches SET state='blocked' WHERE owner=? AND project=? AND event_id=? AND state='waiting'",
+                    (*scope, str(body.event_id)),
+                )
+
     def schedule(self, owner, project, run, body):
         history = self.store.history(
             owner, project, run["agent_id"], run["task_id"]
@@ -51,6 +82,8 @@ class AgentService:
         self.tasks[run["id"]] = asyncio.create_task(
             self.execute(owner, run, history, body.model_copy(deep=True))
         )
+
+        return self.tasks[run["id"]]
 
     async def execute(self, owner, run, history, body):
         try:
@@ -120,6 +153,7 @@ class AgentService:
             raise NotFound("Run not found")
         task = self.tasks.get(run_id)
         if task:
+            self.store.finish(run_id, "interrupted", error="cancelled")
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
             # Cancellation may happen before execute() enters its try block.

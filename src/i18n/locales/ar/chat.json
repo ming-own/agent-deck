@@ -715,5 +715,22 @@
   "route-return": "رد إلى {{name}}",
   "route-follow": "إضافة توضيح",
   "route-id": "معرّف الرسالة",
-  "route-body": "الرسالة"
+  "route-body": "الرسالة",
+  "batch-tab": "فروع متوازية",
+  "batch-branch": "الفرع {{n}}",
+  "batch-summary": "ملخص النتائج",
+  "batch-waiting": "بانتظار الفروع",
+  "batch-blocked": "تعذر التلخيص",
+  "batch-unmatched": "لا فروع مطابقة",
+  "batch-skipped": "تم التخطي",
+  "batch-help": "يبدأ كل فرع مطابق مهمة مستقلة.",
+  "batch-new": "إعداد الفروع",
+  "batch-remove": "إزالة",
+  "batch-contains": "تحتوي الرسالة على (اتركه فارغًا للتشغيل دائمًا)",
+  "batch-add": "إضافة فرع",
+  "batch-rule": "شرط التلخيص",
+  "batch-all_success": "عند نجاح جميع الفروع",
+  "batch-all_finished": "عند انتهاء الجميع بما في ذلك الإخفاقات",
+  "batch-run": "تشغيل الفروع",
+  "batch-conflict": "تحقق من النماذج وإعدادات الوكلاء للفروع والملخص."
 }

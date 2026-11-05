@@ -695,5 +695,22 @@
   "route-return": "{{name}}에 보낸 답변",
   "route-follow": "추가 설명",
   "route-id": "메시지 ID",
-  "route-body": "메시지"
+  "route-body": "메시지",
+  "batch-tab": "병렬 분기",
+  "batch-branch": "분기 {{n}}",
+  "batch-summary": "결과 종합",
+  "batch-waiting": "분기 결과 대기 중",
+  "batch-blocked": "종합 차단됨",
+  "batch-unmatched": "일치하는 분기 없음",
+  "batch-skipped": "건너뜀",
+  "batch-help": "조건에 맞는 분기마다 독립된 작업을 시작합니다.",
+  "batch-new": "분기 설정",
+  "batch-remove": "제거",
+  "batch-contains": "메시지에 포함된 키워드 (비우면 항상 실행)",
+  "batch-add": "분기 추가",
+  "batch-rule": "종합 조건",
+  "batch-all_success": "모든 분기 성공 시",
+  "batch-all_finished": "실패를 포함해 모두 종료 시",
+  "batch-run": "분기 실행",
+  "batch-conflict": "분기 및 종합에 사용할 모델과 에이전트 설정을 확인하세요."
 }

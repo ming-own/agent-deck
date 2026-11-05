@@ -703,5 +703,22 @@
   "route-return": "Risposta a {{name}}",
   "route-follow": "Aggiungi dettagli",
   "route-id": "ID del messaggio",
-  "route-body": "Messaggio"
+  "route-body": "Messaggio",
+  "batch-tab": "Rami paralleli",
+  "batch-branch": "Ramo {{n}}",
+  "batch-summary": "Riepilogo",
+  "batch-waiting": "In attesa dei rami",
+  "batch-blocked": "Riepilogo bloccato",
+  "batch-unmatched": "Nessun ramo corrispondente",
+  "batch-skipped": "Saltato",
+  "batch-help": "Ogni ramo corrispondente avvia un’attività separata.",
+  "batch-new": "Configura rami",
+  "batch-remove": "Rimuovi",
+  "batch-contains": "Il messaggio contiene (vuoto: esegui sempre)",
+  "batch-add": "Aggiungi ramo",
+  "batch-rule": "Condizione del riepilogo",
+  "batch-all_success": "Quando tutti i rami riescono",
+  "batch-all_finished": "Quando tutti terminano, inclusi gli errori",
+  "batch-run": "Esegui rami",
+  "batch-conflict": "Verifica i modelli e gli agenti dei rami e del riepilogo."
 }

@@ -28,6 +28,7 @@ import {
 import { resolveAgentConnection } from '@/service/sessionAgentModels';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BranchRouter } from './BranchRouter';
 import { TurnTools } from './ToolPermissions';
 
 export interface RouterLocation {
@@ -126,6 +127,11 @@ export function TaskRouter({
               <TabsTrigger value="compose" disabled={sending}>
                 {t('chat.route-send')}
               </TabsTrigger>
+              {!location.origin && (
+                <TabsTrigger value="branches" disabled={sending}>
+                  {t('chat.batch-tab')}
+                </TabsTrigger>
+              )}
               <TabsTrigger value="log" disabled={sending}>
                 {t('chat.route-log')}
               </TabsTrigger>
@@ -159,6 +165,22 @@ export function TaskRouter({
                 }}
               />
             </TabsContent>
+            {!location.origin && (
+              <TabsContent
+                value="branches"
+                className="m-0 data-[state=inactive]:hidden"
+              >
+                <BranchRouter
+                  api={api}
+                  agents={location.agents}
+                  choices={choices}
+                  email={email}
+                  sending={sending}
+                  setSending={setSending}
+                  onTaskCreated={onTaskCreated}
+                />
+              </TabsContent>
+            )}
             <TabsContent
               value="log"
               className="m-0 flex flex-col gap-ds-stack-related data-[state=inactive]:hidden"

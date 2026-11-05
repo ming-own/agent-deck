@@ -703,5 +703,22 @@
   "route-return": "Réponse à {{name}}",
   "route-follow": "Ajouter une précision",
   "route-id": "Identifiant du message",
-  "route-body": "Message"
+  "route-body": "Message",
+  "batch-tab": "Branches parallèles",
+  "batch-branch": "Branche {{n}}",
+  "batch-summary": "Synthèse",
+  "batch-waiting": "En attente des branches",
+  "batch-blocked": "Synthèse bloquée",
+  "batch-unmatched": "Aucune branche correspondante",
+  "batch-skipped": "Ignorée",
+  "batch-help": "Chaque branche retenue lance une tâche distincte.",
+  "batch-new": "Configurer les branches",
+  "batch-remove": "Retirer",
+  "batch-contains": "Le message contient (vide : toujours exécuter)",
+  "batch-add": "Ajouter une branche",
+  "batch-rule": "Condition de synthèse",
+  "batch-all_success": "Si toutes les branches réussissent",
+  "batch-all_finished": "Quand toutes sont terminées, échecs inclus",
+  "batch-run": "Lancer les branches",
+  "batch-conflict": "Vérifiez les modèles et les agents pour les branches et la synthèse."
 }

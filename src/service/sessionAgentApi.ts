@@ -101,12 +101,47 @@ export interface RouteReceipt {
   finished_at: string | null;
 }
 
+export interface BatchTarget {
+  agent_id: string;
+  name: string;
+  instructions: string;
+}
+export interface BatchSpec {
+  branches: (BatchTarget & { contains: string })[];
+  summary: BatchTarget;
+  message: string;
+  join: 'all_success' | 'all_finished';
+}
+type BatchResult = Pick<
+  SessionAgentRun,
+  | 'id'
+  | 'agent_id'
+  | 'task_id'
+  | 'status'
+  | 'output'
+  | 'error'
+  | 'created_at'
+  | 'finished_at'
+>;
+export interface BatchReceipt {
+  event_id: string;
+  created_at: string;
+  state: SessionAgentRun['status'] | 'waiting' | 'blocked' | 'unmatched';
+  spec: BatchSpec;
+  branches: (BatchResult | null)[];
+  summary: BatchResult | null;
+}
+
 /** Capture scope at render/gesture time; fetch also fences account switches. */
 export function sessionAgentApi(account: string, projectId: string) {
   const root = `/session-agents/${encodeURIComponent(projectId)}`;
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    batches: (): Promise<BatchReceipt[]> =>
+      fetchGet(`${root}/router/batches`, undefined, headers, options),
+    dispatchBatch: (body: unknown): Promise<BatchReceipt> =>
+      fetchPost(`${root}/router/batches`, body, headers, options),
     route: (body: unknown): Promise<RouteReceipt> =>
       fetchPost(`${root}/router/messages`, body, headers, options),
     receipts: (origin?: RouteOrigin): Promise<RouteReceipt[]> =>

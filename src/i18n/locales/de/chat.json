@@ -699,5 +699,22 @@
   "route-return": "Antwort an {{name}}",
   "route-follow": "Ergänzen",
   "route-id": "Nachrichten-ID",
-  "route-body": "Nachricht"
+  "route-body": "Nachricht",
+  "batch-tab": "Parallele Zweige",
+  "batch-branch": "Zweig {{n}}",
+  "batch-summary": "Zusammenfassung",
+  "batch-waiting": "Warten auf Zweige",
+  "batch-blocked": "Zusammenfassung blockiert",
+  "batch-unmatched": "Kein passender Zweig",
+  "batch-skipped": "Übersprungen",
+  "batch-help": "Jeder passende Zweig startet eine eigene Aufgabe.",
+  "batch-new": "Zweige einrichten",
+  "batch-remove": "Entfernen",
+  "batch-contains": "Nachricht enthält (leer: immer ausführen)",
+  "batch-add": "Zweig hinzufügen",
+  "batch-rule": "Bedingung",
+  "batch-all_success": "Wenn alle erfolgreich sind",
+  "batch-all_finished": "Wenn alle fertig sind, auch bei Fehlern",
+  "batch-run": "Zweige starten",
+  "batch-conflict": "Modelle und Agent-Einstellungen für Zweige und Zusammenfassung prüfen."
 }

@@ -695,5 +695,22 @@
   "route-return": "{{name}} への返信",
   "route-follow": "補足を送る",
   "route-id": "メッセージ ID",
-  "route-body": "メッセージ"
+  "route-body": "メッセージ",
+  "batch-tab": "並列分岐",
+  "batch-branch": "分岐 {{n}}",
+  "batch-summary": "結果の統合",
+  "batch-waiting": "分岐の結果を待機中",
+  "batch-blocked": "統合できません",
+  "batch-unmatched": "一致する分岐なし",
+  "batch-skipped": "対象外",
+  "batch-help": "条件に一致した分岐ごとに独立したタスクを開始します。",
+  "batch-new": "分岐を設定",
+  "batch-remove": "削除",
+  "batch-contains": "メッセージ内のキーワード（空欄なら常に実行）",
+  "batch-add": "分岐を追加",
+  "batch-rule": "統合条件",
+  "batch-all_success": "すべての分岐が成功したら統合",
+  "batch-all_finished": "失敗を含めすべて終了したら統合",
+  "batch-run": "分岐を実行",
+  "batch-conflict": "分岐と統合に使うモデルとエージェントの設定を確認してください。"
 }

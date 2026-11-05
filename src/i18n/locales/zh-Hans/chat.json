@@ -695,5 +695,22 @@
   "route-return": "回到 {{name}}",
   "route-follow": "补充说明",
   "route-id": "消息编号",
-  "route-body": "消息内容"
+  "route-body": "消息内容",
+  "batch-tab": "并行分支",
+  "batch-branch": "分支 {{n}}",
+  "batch-summary": "结果汇总",
+  "batch-waiting": "等待分支结果",
+  "batch-blocked": "未汇总：执行条件未满足",
+  "batch-unmatched": "没有命中分支",
+  "batch-skipped": "未命中",
+  "batch-help": "每个命中分支会新建一个独立任务。",
+  "batch-new": "配置分支",
+  "batch-remove": "移除",
+  "batch-contains": "消息包含的关键词（留空则始终运行）",
+  "batch-add": "添加分支",
+  "batch-rule": "汇总条件",
+  "batch-all_success": "全部分支成功后汇总",
+  "batch-all_finished": "全部分支结束后汇总（含失败）",
+  "batch-run": "运行分支",
+  "batch-conflict": "请检查命中分支和汇总 Agent 的模型与配置。"
 }

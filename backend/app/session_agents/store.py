@@ -58,6 +58,12 @@ class AgentStore:
                     id TEXT PRIMARY KEY, agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
                     name TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS route_batches (
+                    owner TEXT NOT NULL, project TEXT NOT NULL, event_id TEXT NOT NULL,
+                    fingerprint TEXT NOT NULL, spec TEXT NOT NULL, branch_ids TEXT NOT NULL,
+                    state TEXT NOT NULL, summary_id TEXT REFERENCES agent_runs(id),
+                    created_at TEXT NOT NULL, PRIMARY KEY(owner,project,event_id)
+                );
                 CREATE TABLE IF NOT EXISTS route_messages (
                     owner TEXT NOT NULL, project TEXT NOT NULL, event_id TEXT NOT NULL,
                     run_id TEXT UNIQUE NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
@@ -566,6 +572,10 @@ class AgentStore:
                 (now(),),
             )
 
+            db.execute(
+                "UPDATE route_batches SET state='interrupted' WHERE state='waiting'"
+            )
+
     @staticmethod
     def require_open(db, owner, project):
         if db.execute(
@@ -583,6 +593,10 @@ class AgentStore:
 
     def delete_session(self, owner, project):
         with self.connect() as db:
+            db.execute(
+                "DELETE FROM route_batches WHERE owner=? AND project=?",
+                (owner, project),
+            )
             db.execute(
                 "DELETE FROM agent_runs WHERE owner=? AND project=?",
                 (owner, project),

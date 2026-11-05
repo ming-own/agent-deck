@@ -703,5 +703,22 @@
   "route-return": "Respuesta a {{name}}",
   "route-follow": "Añadir información",
   "route-id": "ID del mensaje",
-  "route-body": "Mensaje"
+  "route-body": "Mensaje",
+  "batch-tab": "Ramas paralelas",
+  "batch-branch": "Rama {{n}}",
+  "batch-summary": "Resumen",
+  "batch-waiting": "Esperando las ramas",
+  "batch-blocked": "Resumen bloqueado",
+  "batch-unmatched": "Ninguna rama coincide",
+  "batch-skipped": "Omitida",
+  "batch-help": "Cada rama coincidente inicia una tarea independiente.",
+  "batch-new": "Configurar ramas",
+  "batch-remove": "Quitar",
+  "batch-contains": "El mensaje contiene (vacío: ejecutar siempre)",
+  "batch-add": "Añadir rama",
+  "batch-rule": "Condición del resumen",
+  "batch-all_success": "Cuando todas tengan éxito",
+  "batch-all_finished": "Cuando todas terminen, incluidos los fallos",
+  "batch-run": "Ejecutar ramas",
+  "batch-conflict": "Revisa los modelos y los agentes de las ramas y del resumen."
 }

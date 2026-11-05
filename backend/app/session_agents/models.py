@@ -146,3 +146,28 @@ class RouteRequest(RunSettings):
                 "Choose a new task, existing task, or prior message"
             )
         return self
+
+
+class BranchTarget(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    agent_id: UUID
+    name: str = Field(min_length=1, max_length=100)
+    instructions: str = Field(default="", max_length=4000)
+
+
+class BranchRule(BranchTarget):
+    # An empty keyword is unconditional; matching is literal and case-insensitive.
+    contains: str = Field(default="", max_length=200)
+
+
+class BatchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    event_id: UUID
+    message: str = Field(min_length=1, max_length=16000)
+    branches: list[BranchRule] = Field(min_length=1, max_length=8)
+    summary: BranchTarget
+    join: Literal["all_success", "all_finished"] = "all_success"
+    settings: dict[UUID, RunSettings] = Field(max_length=9)
+
+    def spec(self):
+        return self.model_dump(mode="json", exclude={"settings", "event_id"})

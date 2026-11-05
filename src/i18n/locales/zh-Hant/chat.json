@@ -695,5 +695,22 @@
   "route-return": "傳回 {{name}}",
   "route-follow": "補充說明",
   "route-id": "訊息編號",
-  "route-body": "訊息內容"
+  "route-body": "訊息內容",
+  "batch-tab": "並行分支",
+  "batch-branch": "分支 {{n}}",
+  "batch-summary": "結果彙總",
+  "batch-waiting": "等待分支結果",
+  "batch-blocked": "未彙總：執行條件未滿足",
+  "batch-unmatched": "沒有符合條件的分支",
+  "batch-skipped": "未符合",
+  "batch-help": "每個符合條件的分支會建立獨立任務。",
+  "batch-new": "設定分支",
+  "batch-remove": "移除",
+  "batch-contains": "訊息包含的關鍵字（留空則一律執行）",
+  "batch-add": "新增分支",
+  "batch-rule": "彙總條件",
+  "batch-all_success": "全部分支成功後彙總",
+  "batch-all_finished": "全部分支結束後彙總（含失敗）",
+  "batch-run": "執行分支",
+  "batch-conflict": "請檢查分支與彙總 Agent 的模型及設定。"
 }

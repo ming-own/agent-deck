@@ -7,8 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.auth import LocalControlPrincipal, require_local_control_principal
+from app.session_agents.batches import batches
 from app.session_agents.models import (
     AgentConfig,
+    BatchRequest,
     CreateTask,
     PositionUpdate,
     RouteRequest,
@@ -217,5 +219,25 @@ async def route_message(
 ):
     try:
         return service().route(account, project_id, body)
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.get("/{project_id}/router/batches")
+def batch_history(project_id: str, account: Annotated[str, Depends(owner)]):
+    try:
+        return batches(service().store, (account, project_id))
+    except NotFound as exc:
+        raise translate(exc) from exc
+
+
+@router.post("/{project_id}/router/batches")
+async def dispatch_batch(
+    project_id: str,
+    body: BatchRequest,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return service().dispatch_batch(account, project_id, body)
     except (NotFound, Conflict) as exc:
         raise translate(exc) from exc

@@ -699,5 +699,22 @@
   "route-return": "Reply to {{name}}",
   "route-follow": "Follow up",
   "route-id": "Message ID",
-  "route-body": "Message"
+  "route-body": "Message",
+  "batch-tab": "Parallel branches",
+  "batch-branch": "Branch {{n}}",
+  "batch-summary": "Summary",
+  "batch-waiting": "Waiting for branches",
+  "batch-blocked": "Summary blocked",
+  "batch-unmatched": "No branches matched",
+  "batch-skipped": "Skipped",
+  "batch-help": "Each matching branch starts a separate task.",
+  "batch-new": "Configure branches",
+  "batch-remove": "Remove",
+  "batch-contains": "Message contains (leave blank to always run)",
+  "batch-add": "Add branch",
+  "batch-rule": "Summary condition",
+  "batch-all_success": "When all branches succeed",
+  "batch-all_finished": "When all finish, including failures",
+  "batch-run": "Run branches",
+  "batch-conflict": "Check the models and Agent settings for the matching branches and summary."
 }
