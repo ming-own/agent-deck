@@ -48,6 +48,14 @@ export interface SourceAnswer {
 }
 
 export interface SessionAgentRun {
+  returned_results?: {
+    event_id: string;
+    run_id: string;
+    agent_name: string;
+    task_name: string | null;
+    message: string;
+    output: string;
+  }[];
   source_answer?: SourceAnswer | null;
   task_id: string;
   id: string;
@@ -69,12 +77,47 @@ export interface SessionAgentRun {
   finished_at: string | null;
 }
 
+export interface RouteOrigin {
+  agentId: string;
+  taskId: string;
+}
+
+export interface RouteReceipt {
+  event_id: string;
+  reply_to: string | null;
+  run_id: string;
+  origin_agent_id: string | null;
+  origin_task_id: string | null;
+  origin_name: string | null;
+  origin_task_name: string | null;
+  target_agent_id: string;
+  target_task_id: string;
+  target_name: string;
+  target_task_name: string | null;
+  message: string;
+  output: string;
+  status: SessionAgentRun['status'];
+  created_at: string;
+  finished_at: string | null;
+}
+
 /** Capture scope at render/gesture time; fetch also fences account switches. */
 export function sessionAgentApi(account: string, projectId: string) {
   const root = `/session-agents/${encodeURIComponent(projectId)}`;
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    route: (body: unknown): Promise<RouteReceipt> =>
+      fetchPost(`${root}/router/messages`, body, headers, options),
+    receipts: (origin?: RouteOrigin): Promise<RouteReceipt[]> =>
+      fetchGet(
+        `${root}/router/messages`,
+        origin
+          ? { origin_agent_id: origin.agentId, origin_task_id: origin.taskId }
+          : undefined,
+        headers,
+        options
+      ),
     skills: (): Promise<SkillOption[]> =>
       fetchGet(`${root}/skill-catalog`, undefined, headers, options),
     list: (): Promise<SessionAgent[]> =>

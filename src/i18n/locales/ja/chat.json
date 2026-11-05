@@ -686,5 +686,14 @@
   "handoff-task": "受け取り先のタスク",
   "handoff-note": "補足の指示（任意）",
   "handoff-confirm": "確認して実行",
-  "handoff-conflict": "タスクが実行中か、Agent の設定が変更されました。更新して再試行してください。"
+  "handoff-conflict": "タスクが実行中か、Agent の設定が変更されました。更新して再試行してください。",
+  "route-node": "ルーター",
+  "route-messages": "ルーターのメッセージ",
+  "route-send": "メッセージを送信",
+  "route-log": "配信履歴",
+  "route-empty": "メッセージはまだありません。",
+  "route-return": "{{name}} への返信",
+  "route-follow": "補足を送る",
+  "route-id": "メッセージ ID",
+  "route-body": "メッセージ"
 }

@@ -706,5 +706,14 @@
   "handoff-task": "المهمة المستلمة",
   "handoff-note": "تعليمات إضافية (اختياري)",
   "handoff-confirm": "تأكيد وتشغيل",
-  "handoff-conflict": "المهمة قيد التنفيذ أو تغير الوكيل. حدّث قبل إعادة المحاولة."
+  "handoff-conflict": "المهمة قيد التنفيذ أو تغير الوكيل. حدّث قبل إعادة المحاولة.",
+  "route-node": "الموجّه",
+  "route-messages": "رسائل التوجيه",
+  "route-send": "إرسال رسالة",
+  "route-log": "سجل التسليم",
+  "route-empty": "لا توجد رسائل بعد.",
+  "route-return": "رد إلى {{name}}",
+  "route-follow": "إضافة توضيح",
+  "route-id": "معرّف الرسالة",
+  "route-body": "الرسالة"
 }

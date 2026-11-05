@@ -62,6 +62,7 @@ import { AgentTasks } from './AgentTasks';
 import { AnswerHandoff, AnswerReference } from './AnswerHandoff';
 import { markSessionAgents } from './Launcher';
 import { SkillPicker } from './SkillPicker';
+import { TaskRouter, type RouterLocation } from './TaskRouter';
 import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
 
 const harnessLabels: Record<string, string> = {
@@ -116,6 +117,17 @@ function AgentInstances({
       return false;
     }
   });
+  const [taskEpoch, setTaskEpoch] = useState(0);
+  const [router, setRouter] = useState<RouterLocation | null>(null);
+  const openCanvasRouter = useCallback(
+    (
+      project: string,
+      name: string,
+      agents: SessionAgent[],
+      opener: HTMLButtonElement
+    ) => setRouter({ project, name, agents, opener }),
+    []
+  );
   const [canvasEpoch, setCanvasEpoch] = useState(0);
   const [editor, setEditor] = useState<{
     project: string;
@@ -339,8 +351,19 @@ function AgentInstances({
           onSave={saveEditor}
         />
       )}
+      {router && (
+        <TaskRouter
+          location={router}
+          onTaskCreated={() => setTaskEpoch((n) => n + 1)}
+          account={account}
+          choices={choices}
+          email={email}
+          close={() => setRouter(null)}
+        />
+      )}
       {canvas && (
         <AgentCanvas
+          openRouter={openCanvasRouter}
           account={account}
           projectId={projectId}
           refreshKey={canvasEpoch}
@@ -363,6 +386,16 @@ function AgentInstances({
           <AgentTasks
             key={node.id}
             agentId={node.id}
+            refreshKey={taskEpoch}
+            openRouter={(taskId, name, opener) =>
+              setRouter({
+                project: projectId,
+                name: node.name + ' / ' + name,
+                agents: nodes,
+                origin: { agentId: node.id, taskId },
+                opener,
+              })
+            }
             initialTaskId={
               destination?.agentId === node.id ? destination.taskId : undefined
             }
@@ -935,6 +968,27 @@ function AgentConversation({
               key={run.id}
               className="flex min-w-0 flex-col gap-ds-stack-related"
             >
+              {!!run.returned_results?.length && (
+                <details className="rounded-ds-field bg-ds-neutral-muted-default px-ds-panel-inset py-ds-8">
+                  <summary className="cursor-pointer text-ds-text-base">
+                    {t('chat.route-messages')} · {run.returned_results.length}
+                  </summary>
+                  {run.returned_results.map((item) => (
+                    <div key={item.event_id} className="pt-ds-8">
+                      <DsText role="meta" weight="semibold">
+                        {item.agent_name} /{' '}
+                        {item.task_name || t('chat.node-task-default')}
+                      </DsText>
+                      <DsText
+                        role="base"
+                        className="break-words whitespace-pre-wrap"
+                      >
+                        {item.output}
+                      </DsText>
+                    </div>
+                  ))}
+                </details>
+              )}
               {run.source_answer && (
                 <AnswerReference source={run.source_answer} />
               )}

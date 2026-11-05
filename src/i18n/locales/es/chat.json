@@ -694,5 +694,14 @@
   "handoff-task": "Tarea de destino",
   "handoff-note": "Instrucciones adicionales (opcional)",
   "handoff-confirm": "Confirmar y ejecutar",
-  "handoff-conflict": "La tarea está en curso o el agente ha cambiado. Actualiza antes de reintentar."
+  "handoff-conflict": "La tarea está en curso o el agente ha cambiado. Actualiza antes de reintentar.",
+  "route-node": "Enrutador",
+  "route-messages": "Mensajes del enrutador",
+  "route-send": "Enviar mensaje",
+  "route-log": "Registro de entregas",
+  "route-empty": "Todavía no hay mensajes.",
+  "route-return": "Respuesta a {{name}}",
+  "route-follow": "Añadir información",
+  "route-id": "ID del mensaje",
+  "route-body": "Mensaje"
 }

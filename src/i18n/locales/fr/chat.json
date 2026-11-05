@@ -694,5 +694,14 @@
   "handoff-task": "Tâche destinataire",
   "handoff-note": "Consignes complémentaires (facultatif)",
   "handoff-confirm": "Confirmer et exécuter",
-  "handoff-conflict": "La tâche est en cours ou l’agent a changé. Actualisez avant de réessayer."
+  "handoff-conflict": "La tâche est en cours ou l’agent a changé. Actualisez avant de réessayer.",
+  "route-node": "Routeur",
+  "route-messages": "Messages du routeur",
+  "route-send": "Envoyer un message",
+  "route-log": "Journal de livraison",
+  "route-empty": "Aucun message.",
+  "route-return": "Réponse à {{name}}",
+  "route-follow": "Ajouter une précision",
+  "route-id": "Identifiant du message",
+  "route-body": "Message"
 }

@@ -686,5 +686,14 @@
   "handoff-task": "받는 작업",
   "handoff-note": "추가 지시(선택 사항)",
   "handoff-confirm": "확인 후 실행",
-  "handoff-conflict": "작업이 실행 중이거나 Agent가 변경되었습니다. 새로 고친 후 다시 시도하세요."
+  "handoff-conflict": "작업이 실행 중이거나 Agent가 변경되었습니다. 새로 고친 후 다시 시도하세요.",
+  "route-node": "라우터",
+  "route-messages": "라우팅 메시지",
+  "route-send": "메시지 보내기",
+  "route-log": "전송 기록",
+  "route-empty": "아직 메시지가 없습니다.",
+  "route-return": "{{name}}에 보낸 답변",
+  "route-follow": "추가 설명",
+  "route-id": "메시지 ID",
+  "route-body": "메시지"
 }

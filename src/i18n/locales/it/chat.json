@@ -694,5 +694,14 @@
   "handoff-task": "Attività di destinazione",
   "handoff-note": "Istruzioni aggiuntive (facoltative)",
   "handoff-confirm": "Conferma ed esegui",
-  "handoff-conflict": "L’attività è in corso o l’agente è cambiato. Aggiorna prima di riprovare."
+  "handoff-conflict": "L’attività è in corso o l’agente è cambiato. Aggiorna prima di riprovare.",
+  "route-node": "Router",
+  "route-messages": "Messaggi del router",
+  "route-send": "Invia messaggio",
+  "route-log": "Registro consegne",
+  "route-empty": "Nessun messaggio.",
+  "route-return": "Risposta a {{name}}",
+  "route-follow": "Aggiungi dettagli",
+  "route-id": "ID del messaggio",
+  "route-body": "Messaggio"
 }

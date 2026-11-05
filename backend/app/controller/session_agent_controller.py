@@ -11,9 +11,11 @@ from app.session_agents.models import (
     AgentConfig,
     CreateTask,
     PositionUpdate,
+    RouteRequest,
     RunRequest,
     UpdateAgent,
 )
+from app.session_agents.routing import inbox
 from app.session_agents.service import AgentService
 from app.session_agents.skills import available_skills
 from app.session_agents.store import AgentStore, Conflict, NotFound
@@ -183,4 +185,37 @@ async def cancel_run(
         await service().cancel(account, project_id, agent_id, run_id, task_id)
         return {"ok": True}
     except NotFound as exc:
+        raise translate(exc) from exc
+
+
+@router.get("/{project_id}/router/messages")
+def route_inbox(
+    project_id: str,
+    account: Annotated[str, Depends(owner)],
+    origin_agent_id: str | None = None,
+    origin_task_id: str | None = None,
+):
+    if (origin_agent_id is None) != (origin_task_id is None):
+        raise HTTPException(422, "Incomplete origin")
+    try:
+        return inbox(
+            service().store,
+            account,
+            project_id,
+            origin_agent_id,
+            origin_task_id,
+        )
+    except NotFound as exc:
+        raise translate(exc) from exc
+
+
+@router.post("/{project_id}/router/messages")
+async def route_message(
+    project_id: str,
+    body: RouteRequest,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return service().route(account, project_id, body)
+    except (NotFound, Conflict) as exc:
         raise translate(exc) from exc

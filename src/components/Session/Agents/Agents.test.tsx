@@ -11,6 +11,8 @@ import { SessionAgents } from './index';
 
 const mocks = vi.hoisted(() => ({
   api: {
+    receipts: vi.fn(),
+    route: vi.fn(),
     list: vi.fn(),
     tasks: vi.fn(),
     createTask: vi.fn(),
@@ -99,6 +101,63 @@ beforeEach(() => {
 });
 
 describe('Session Agent instances', () => {
+  it('replies through the original route and reuses the same event on an uncertain response', async () => {
+    const original = {
+      event_id: 'original',
+      origin_agent_id: 'a',
+      origin_task_id: 'default',
+      origin_name: 'Research',
+      target_agent_id: 'b',
+      target_task_id: 'A',
+      target_task_name: 'Budget A',
+      target_name: 'Writer',
+      status: 'completed',
+      message: 'Review',
+      output: 'Result',
+      created_at: '2026-11-05T00:00:00Z',
+    };
+    mocks.api.receipts.mockResolvedValue([original]);
+    mocks.api.route
+      .mockRejectedValueOnce(new Error('response lost'))
+      .mockResolvedValue({
+        ...original,
+        event_id: 'follow',
+        reply_to: 'original',
+      });
+    render(<SessionAgents projectId="s" />);
+    const launcher = await screen.findByRole('button', {
+      name: 'Route messages',
+    });
+    await waitFor(() => expect(launcher).toBeEnabled());
+    fireEvent.click(launcher);
+    const dialog = within(screen.getByRole('dialog'));
+    fireEvent.click(await dialog.findByRole('button', { name: 'Follow up' }));
+    fireEvent.change(dialog.getByRole('textbox', { name: 'Follow up' }), {
+      target: { value: 'Add 5' },
+    });
+    fireEvent.click(dialog.getByRole('button', { name: 'Send message' }));
+    await waitFor(() => expect(mocks.api.route).toHaveBeenCalledTimes(1));
+    const body = mocks.api.route.mock.calls[0][0];
+    expect(body).toMatchObject({
+      reply_to: 'original',
+      origin_agent_id: 'a',
+      origin_task_id: 'default',
+      target_agent_id: 'b',
+      message: 'Add 5',
+      approved_tools: [],
+    });
+    expect(body).not.toHaveProperty('task_id');
+    await waitFor(() =>
+      expect(dialog.getByRole('button', { name: 'Send message' })).toBeEnabled()
+    );
+    fireEvent.click(dialog.getByRole('button', { name: 'Send message' }));
+    await waitFor(() => expect(mocks.api.route).toHaveBeenCalledTimes(2));
+    expect(mocks.api.route.mock.calls[1][0].event_id).toBe(body.event_id);
+    expect(mocks.api.receipts).toHaveBeenCalledWith({
+      agentId: 'a',
+      taskId: 'default',
+    });
+  });
   it('forwards the selected answer only after confirmation and opens its destination task', async () => {
     const source = {
       id: 'source-1',

@@ -690,5 +690,14 @@
   "handoff-task": "Receiving task",
   "handoff-note": "Additional instructions (optional)",
   "handoff-confirm": "Confirm and run",
-  "handoff-conflict": "The task is running or the Agent has changed. Refresh before retrying."
+  "handoff-conflict": "The task is running or the Agent has changed. Refresh before retrying.",
+  "route-node": "Router",
+  "route-messages": "Route messages",
+  "route-send": "Send message",
+  "route-log": "Delivery log",
+  "route-empty": "No messages yet.",
+  "route-return": "Reply to {{name}}",
+  "route-follow": "Follow up",
+  "route-id": "Message ID",
+  "route-body": "Message"
 }

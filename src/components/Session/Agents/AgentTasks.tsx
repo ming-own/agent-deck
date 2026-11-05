@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { AgentTask, sessionAgentApi } from '@/service/sessionAgentApi';
-import { Plus } from 'lucide-react';
+import { Plus, Workflow } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,12 +27,16 @@ export function AgentTasks({
   api,
   storageKey,
   initialTaskId,
+  openRouter,
+  refreshKey,
   children,
 }: {
   agentId: string;
   api: ReturnType<typeof sessionAgentApi>;
   storageKey: string;
   initialTaskId?: string;
+  refreshKey: number;
+  openRouter: (taskId: string, name: string, opener: HTMLButtonElement) => void;
   children: (id: string) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -73,7 +77,7 @@ export function AgentTasks({
     return () => {
       current = false;
     };
-  }, [api, agentId, reload]);
+  }, [api, agentId, reload, refreshKey]);
   useEffect(() => {
     if (!loaded) return;
     try {
@@ -196,6 +200,22 @@ export function AgentTasks({
             </form>
           </DialogContent>
         </Dialog>
+        <Button
+          size="xs"
+          variant="ghost"
+          disabled={!loaded}
+          onClick={(e) =>
+            openRouter(
+              selected,
+              items.find((x) => x.id === selected)?.name ||
+                t('chat.node-task-default'),
+              e.currentTarget
+            )
+          }
+        >
+          <DsIcon icon={Workflow} recipe="main-compact" />
+          {t('chat.route-messages')}
+        </Button>
         {loadFailed && (
           <Button
             variant="text"

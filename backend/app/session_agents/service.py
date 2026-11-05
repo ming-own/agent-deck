@@ -5,8 +5,9 @@ from types import MappingProxyType
 
 from .harnesses import HARNESSES, InvalidPlan, TurnContext
 from .models import AgentConfig, RunRequest
+from .routing import admit_message
 from .skills import SkillLimitExceeded, SkillUnavailable, resolve_skills
-from .store import AgentStore, Conflict, NotFound
+from .store import AgentStore, NotFound
 
 
 class AgentService:
@@ -16,16 +17,6 @@ class AgentService:
         self.tasks: dict[str, asyncio.Task] = {}
 
     def start(self, owner, project, agent_id, body: RunRequest):
-        node = self.store.get(owner, project, agent_id)
-        reference = node["model"]
-        connection = body.connection
-        if (
-            connection.model_type != reference["model_type"]
-            or connection.model_platform != reference["model_platform"]
-            or (connection.auth_source == "codex_subscription")
-            != reference["id"].startswith("codex:")
-        ):
-            raise Conflict("Model connection does not match this Agent")
         run, created = self.store.begin(
             owner,
             project,
@@ -39,15 +30,27 @@ class AgentService:
             if body.source_run_id
             else None,
             harnesses=self.harnesses,
+            connection=body.connection,
         )
         if created:
-            history = self.store.history(
-                owner, project, agent_id, run["task_id"]
-            )
-            self.tasks[run["id"]] = asyncio.create_task(
-                self.execute(owner, run, history, body.model_copy(deep=True))
-            )
+            self.schedule(owner, project, run, body)
         return run
+
+    def route(self, owner, project, body):
+        event, run = admit_message(
+            self.store, owner, project, body, self.harnesses
+        )
+        if run is not None:
+            self.schedule(owner, project, run, body)
+        return event
+
+    def schedule(self, owner, project, run, body):
+        history = self.store.history(
+            owner, project, run["agent_id"], run["task_id"]
+        )
+        self.tasks[run["id"]] = asyncio.create_task(
+            self.execute(owner, run, history, body.model_copy(deep=True))
+        )
 
     async def execute(self, owner, run, history, body):
         try:

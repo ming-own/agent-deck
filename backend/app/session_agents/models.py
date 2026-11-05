@@ -96,19 +96,53 @@ class CreateTask(BaseModel):
     name: str = Field(min_length=1, max_length=100)
 
 
-class RunRequest(BaseModel):
+class RunSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     approved_tools: list[ToolId] = Field(default_factory=list, max_length=3)
-    task_id: str = Field(default="default", min_length=1, max_length=100)
-    request_id: str = Field(min_length=1, max_length=100)
     expected_revision: int = Field(ge=1)
-    source_run_id: UUID | None = None
-    prompt: str = Field(max_length=32000)
     email: str = Field(min_length=1, max_length=320)
     connection: ModelConnection = Field(repr=False)
+
+
+class RunRequest(RunSettings):
+    task_id: str = Field(default="default", min_length=1, max_length=100)
+    request_id: str = Field(min_length=1, max_length=100)
+    source_run_id: UUID | None = None
+    prompt: str = Field(max_length=32000)
 
     @model_validator(mode="after")
     def require_input(self):
         if not self.prompt and self.source_run_id is None:
             raise ValueError("Message or source answer required")
+        return self
+
+
+class RouteRequest(RunSettings):
+    event_id: UUID
+    target_agent_id: UUID
+    origin_agent_id: UUID | None = None
+    origin_task_id: str | None = Field(
+        default=None, min_length=1, max_length=100
+    )
+    task_id: str | None = Field(default=None, min_length=1, max_length=100)
+    new_task_name: str | None = Field(
+        default=None, min_length=1, max_length=100
+    )
+    reply_to: UUID | None = None
+    message: str = Field(min_length=1, max_length=32000)
+
+    @model_validator(mode="after")
+    def validate_addresses(self):
+        if (self.origin_agent_id is None) != (self.origin_task_id is None):
+            raise ValueError("Origin requires both Agent and task")
+        if (
+            sum(
+                v is not None
+                for v in (self.task_id, self.new_task_name, self.reply_to)
+            )
+            != 1
+        ):
+            raise ValueError(
+                "Choose a new task, existing task, or prior message"
+            )
         return self

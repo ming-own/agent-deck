@@ -686,5 +686,14 @@
   "handoff-task": "接收任務",
   "handoff-note": "補充說明（選填）",
   "handoff-confirm": "確認並執行",
-  "handoff-conflict": "目標任務正在執行或節點設定已變更，請重新整理後再試。"
+  "handoff-conflict": "目標任務正在執行或節點設定已變更，請重新整理後再試。",
+  "route-node": "路由節點",
+  "route-messages": "路由訊息",
+  "route-send": "傳送訊息",
+  "route-log": "投遞紀錄",
+  "route-empty": "尚無路由訊息。",
+  "route-return": "傳回 {{name}}",
+  "route-follow": "補充說明",
+  "route-id": "訊息編號",
+  "route-body": "訊息內容"
 }

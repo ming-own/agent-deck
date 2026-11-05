@@ -690,5 +690,14 @@
   "handoff-task": "Zielaufgabe",
   "handoff-note": "Zusätzliche Hinweise (optional)",
   "handoff-confirm": "Bestätigen und ausführen",
-  "handoff-conflict": "Die Aufgabe läuft oder der Agent wurde geändert. Bitte aktualisieren und erneut versuchen."
+  "handoff-conflict": "Die Aufgabe läuft oder der Agent wurde geändert. Bitte aktualisieren und erneut versuchen.",
+  "route-node": "Router",
+  "route-messages": "Router-Nachrichten",
+  "route-send": "Nachricht senden",
+  "route-log": "Zustellverlauf",
+  "route-empty": "Noch keine Nachrichten.",
+  "route-return": "Antwort an {{name}}",
+  "route-follow": "Ergänzen",
+  "route-id": "Nachrichten-ID",
+  "route-body": "Nachricht"
 }

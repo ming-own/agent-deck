@@ -35,6 +35,7 @@ import {
   Minus,
   Pencil,
   Plus,
+  Workflow,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -59,7 +60,16 @@ type AgentNode = Node<
   { project: string; agent: SessionAgent; edit: EditNode },
   'agentCard'
 >;
-type BoardNode = AreaNode | AgentNode;
+type OpenRouter = (
+  project: string,
+  name: string,
+  agents: SessionAgent[],
+  opener: HTMLButtonElement
+) => void;
+type RouterNode = Node<{ region: Region; openRouter: OpenRouter }, 'router'>;
+type BoardNode = AreaNode | AgentNode | RouterNode;
+// A pinned router occupies the strip above the editable Agent layout.
+const ROUTER_STRIP = 52;
 
 // Flow-space geometry, in unscaled world coordinates. Cards live inside their parent region.
 const CARD_W = 224,
@@ -169,12 +179,38 @@ function AgentCard({ data, selected }: NodeProps<AgentNode>) {
     </div>
   );
 }
-const types = { sessionArea: SessionArea, agentCard: AgentCard };
+function RouterCard({ data }: NodeProps<RouterNode>) {
+  const { t } = useTranslation();
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      className="nodrag nopan pointer-events-auto"
+      onClick={(e) =>
+        data.openRouter(
+          data.region.id,
+          data.region.name,
+          data.region.agents,
+          e.currentTarget
+        )
+      }
+    >
+      <DsIcon icon={Workflow} />
+      {t('chat.route-node')}
+    </Button>
+  );
+}
+const types = {
+  sessionArea: SessionArea,
+  agentCard: AgentCard,
+  router: RouterCard,
+};
 function buildBoard(
   regions: Region[],
   current: string,
   edit: EditNode,
-  offsets: Record<string, XYPosition>
+  offsets: Record<string, XYPosition>,
+  openRouter: OpenRouter
 ): BoardNode[] {
   const nodes: BoardNode[] = [];
   let y = 0;
@@ -199,29 +235,39 @@ function buildBoard(
         type: 'sessionArea',
         position: { x, y },
         width,
-        height,
+        height: height + ROUTER_STRIP,
         draggable: false,
         selectable: false,
         focusable: false,
         data: { region, edit, current: region.id === current },
+      });
+      nodes.push({
+        id: 'router:' + region.id,
+        type: 'router',
+        parentId,
+        position: { x: PAD, y: HEADER },
+        draggable: false,
+        selectable: false,
+        focusable: false,
+        data: { region, openRouter },
       });
       region.agents.forEach((a, j) =>
         nodes.push({
           id: a.id,
           type: 'agentCard',
           parentId,
-          position: { x: positions[j].x, y: positions[j].y },
+          position: { x: positions[j].x, y: positions[j].y + ROUTER_STRIP },
           width: CARD_W,
           height: CARD_H,
           extent: [
-            [PAD, HEADER],
-            [1_000_000 + CARD_W, 1_000_000 + CARD_H],
+            [PAD, HEADER + ROUTER_STRIP],
+            [1_000_000 + CARD_W, 1_000_000 + CARD_H + ROUTER_STRIP],
           ],
           ariaLabel: a.name,
           data: { agent: a, project: region.id, edit },
         })
       );
-      rowHeight = Math.max(rowHeight, height);
+      rowHeight = Math.max(rowHeight, height + ROUTER_STRIP);
       x += width + GUTTER;
     }
     y += rowHeight + GUTTER;
@@ -249,6 +295,7 @@ export function AgentCanvas(props: {
   account: string;
   projectId: string;
   refreshKey: number;
+  openRouter: OpenRouter;
   edit: EditNode;
 }) {
   return (
@@ -262,11 +309,13 @@ function CanvasBody({
   account,
   projectId,
   refreshKey,
+  openRouter,
   edit,
 }: {
   account: string;
   projectId: string;
   refreshKey: number;
+  openRouter: OpenRouter;
   edit: EditNode;
 }) {
   const { t } = useTranslation();
@@ -350,8 +399,8 @@ function CanvasBody({
     [sessions, byProject, failedProjects]
   );
   const base = useMemo(
-    () => buildBoard(regions, projectId, edit, offsets),
-    [regions, projectId, edit, offsets]
+    () => buildBoard(regions, projectId, edit, offsets, openRouter),
+    [regions, projectId, edit, offsets, openRouter]
   );
   const nodes = useMemo(
     () =>
@@ -439,7 +488,7 @@ function CanvasBody({
       if (n?.type !== 'agentCard') continue;
       const pos = {
         x: Math.round(ch.position.x),
-        y: Math.round(ch.position.y),
+        y: Math.round(ch.position.y - ROUTER_STRIP),
       };
       setOffsets((old) => ({ ...old, [n.id]: pos }));
       if (!ch.dragging) void save(n, pos);

@@ -2,7 +2,7 @@
 
 import json
 import sqlite3
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -58,6 +58,18 @@ class AgentStore:
                     id TEXT PRIMARY KEY, agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
                     name TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS route_messages (
+                    owner TEXT NOT NULL, project TEXT NOT NULL, event_id TEXT NOT NULL,
+                    run_id TEXT UNIQUE NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
+                    origin_agent_id TEXT, origin_task_id TEXT, origin_name TEXT, origin_task_name TEXT,
+                    target_task_name TEXT, reply_to TEXT, fingerprint TEXT NOT NULL,
+                    PRIMARY KEY(owner,project,event_id)
+                );
+                CREATE TABLE IF NOT EXISTS route_consumption (
+                    event_run_id TEXT PRIMARY KEY REFERENCES agent_runs(id) ON DELETE CASCADE,
+                    recipient_run_id TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS route_inbox ON route_messages(owner,project,origin_agent_id,origin_task_id);
                 CREATE INDEX IF NOT EXISTS agent_tasks_by_node ON agent_tasks(agent_id);
             """)
 
@@ -131,6 +143,7 @@ class AgentStore:
             )
         } | {
             "plan": plan,
+            "returned_results": snapshot.pop("returned_results", []),
             "source_answer": json.loads(row["source_answer"])
             if row["source_answer"]
             else None,
@@ -339,19 +352,39 @@ class AgentStore:
     @staticmethod
     def turn_prompt(run):
         source = run["source_answer"]
-        if source is None:
+        returned = run.get("returned_results", [])
+        if source is None and not returned:
             return run["prompt"]
-        # The quote is user-supplied reference material, never a system message.
-        return (
-            "Use the quoted answer as reference material for this task.\n"
-            + json.dumps(
-                {
-                    "quoted_answer": source["output"],
-                    "user_instructions": run["prompt"],
-                },
-                ensure_ascii=False,
-            )
+        # Quotes and returned outputs are reference data at user priority.
+        data = {}
+        if source:
+            data["quoted_answer"] = source["output"]
+        if returned:
+            data["returned_results"] = returned
+        data["user_instructions"] = run["prompt"]
+        instruction = (
+            "Use the quoted answer as reference material for this task."
+            if not returned
+            else "Use the supplied results as reference material for this task."
         )
+        return instruction + "\n" + json.dumps(data, ensure_ascii=False)
+
+    @staticmethod
+    def pending_returns(db, owner, project, agent_id, task_id):
+        return [
+            dict(row)
+            for row in db.execute(
+                """SELECT m.event_id, r.id AS run_id, json_extract(r.snapshot,'$.name') AS agent_name,
+                      m.target_task_name AS task_name, r.prompt AS message, r.output
+               FROM route_messages m JOIN agent_runs r ON r.id=m.run_id
+               LEFT JOIN route_consumption c ON c.event_run_id=r.id
+               LEFT JOIN agent_runs recipient ON recipient.id=c.recipient_run_id
+               WHERE m.owner=? AND m.project=? AND m.origin_agent_id=? AND m.origin_task_id=?
+                 AND r.status='completed' AND (recipient.status IS NULL OR recipient.status IN ('failed','interrupted'))
+               ORDER BY r.finished_at,r.rowid""",
+                (owner, project, agent_id, task_id),
+            )
+        ]
 
     def begin(
         self,
@@ -366,9 +399,12 @@ class AgentStore:
         task_id="default",
         source_run_id=None,
         harnesses=HARNESSES,
+        db=None,
+        connection=None,
     ):
-        with self.connect() as db:
-            db.execute("BEGIN IMMEDIATE")
+        with self.connect() if db is None else nullcontext(db) as db:
+            if not db.in_transaction:
+                db.execute("BEGIN IMMEDIATE")
             self.require_open(db, owner, project)
             node = self.node(
                 db.execute(
@@ -376,6 +412,17 @@ class AgentStore:
                     (owner, project, agent_id),
                 ).fetchone()
             )
+            if connection is not None:
+                model = node["model"]
+                if (
+                    connection.model_type != model["model_type"]
+                    or connection.model_platform != model["model_platform"]
+                    or (connection.auth_source == "codex_subscription")
+                    != model["id"].startswith("codex:")
+                ):
+                    raise Conflict(
+                        "Model connection does not match this Agent"
+                    )
             self.require_task(db, owner, project, agent_id, task_id)
             previous = db.execute(
                 "SELECT * FROM agent_runs WHERE owner=? AND project=? AND agent_id=? AND request_id=?",
@@ -419,6 +466,11 @@ class AgentStore:
                 if source_run_id
                 else None
             )
+            returned = self.pending_returns(
+                db, owner, project, agent_id, task_id
+            )
+            if returned:
+                node["returned_results"] = returned
             run_id = str(uuid4())
             try:
                 db.execute(
@@ -440,6 +492,11 @@ class AgentStore:
                 )
             except sqlite3.IntegrityError as exc:
                 raise Conflict("Task already has a running turn") from exc
+            db.executemany(
+                "INSERT INTO route_consumption(event_run_id,recipient_run_id) VALUES(?,?) "
+                "ON CONFLICT(event_run_id) DO UPDATE SET recipient_run_id=excluded.recipient_run_id",
+                [(item["run_id"], run_id) for item in returned],
+            )
             return self.run(
                 db.execute(
                     "SELECT * FROM agent_runs WHERE id=?", (run_id,)
