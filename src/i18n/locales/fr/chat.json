@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "Tester",
+  "trial-input": "Tâche à exécuter",
+  "trial-skipped": "Ignoré",
+  "trial-linear": "Choisissez un chemin sans boucle avec au plus une sortie par nœud (32 nœuds maximum).",
   "welcome-to-eigent": "Bienvenue chez AgentDeck",
   "how-can-i-help-you": "Comment puis-je vous aider aujourd'hui ?",
   "ask-placeholder": "Que devez-vous accomplir aujourd'hui ?",

@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "Testlauf",
+  "trial-input": "Aufgabe eingeben",
+  "trial-skipped": "Übersprungen",
+  "trial-linear": "Wähle einen Pfad ohne Schleifen mit höchstens einem Ausgang pro Knoten (bis zu 32 Knoten).",
   "welcome-to-eigent": "Willkommen bei AgentDeck",
   "how-can-i-help-you": "Wie kann ich Ihnen heute helfen?",
   "ask-placeholder": "Fragen Sie AgentDeck, Ihre Aufgaben zu automatisieren",

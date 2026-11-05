@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "Esecuzione di prova",
+  "trial-input": "Inserisci attività",
+  "trial-skipped": "Saltato",
+  "trial-linear": "Scegli un percorso senza cicli con al massimo una uscita per nodo (fino a 32 nodi).",
   "welcome-to-eigent": "Benvenuto in AgentDeck",
   "how-can-i-help-you": "Come posso aiutarti oggi?",
   "ask-placeholder": "Cosa devi realizzare oggi?",

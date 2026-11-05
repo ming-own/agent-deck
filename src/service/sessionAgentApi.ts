@@ -37,6 +37,21 @@ export interface SessionAgent extends AgentBehavior {
   created_at: string;
   updated_at: string;
 }
+export interface CanvasTrial {
+  id: string;
+  prompt: string;
+  status: 'running' | 'completed' | 'interrupted' | 'failed';
+  steps: {
+    agent_id: string;
+    name: string;
+    run_id: string | null;
+    task_id?: string;
+    status: CanvasTrial['status'] | 'waiting' | 'skipped';
+    output: string;
+    error?: string | null;
+  }[];
+}
+
 export interface AgentTask {
   id: string;
   name: string;
@@ -162,6 +177,10 @@ export function sessionAgentApi(account: string, projectId: string) {
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    latestTrial: (): Promise<CanvasTrial | null> =>
+      fetchGet(`${root}/canvas/trials/latest`, undefined, headers, options),
+    startTrial: (body: Record<string, unknown>): Promise<CanvasTrial> =>
+      fetchPost(`${root}/canvas/trials`, body, headers, options),
     updateWorkforce: (
       node: SessionAgent,
       name: string,

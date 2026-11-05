@@ -107,6 +107,14 @@ class RunSettings(BaseModel):
     connection: ModelConnection = Field(repr=False)
 
 
+class CanvasTrialRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    id: UUID
+    prompt: str = Field(min_length=1, max_length=32000)
+    path: list[UUID] = Field(min_length=1, max_length=32)
+    settings: dict[UUID, RunSettings] = Field(max_length=32)
+
+
 class RunRequest(RunSettings):
     queue_if_busy: bool = False
     task_id: str = Field(default="default", min_length=1, max_length=100)

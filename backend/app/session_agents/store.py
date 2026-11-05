@@ -57,6 +57,11 @@ class AgentStore:
                     event_id TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS workforce_event ON workforce_events(event_id);
+                CREATE TABLE IF NOT EXISTS canvas_trials (
+                    owner TEXT NOT NULL, project TEXT NOT NULL, id TEXT NOT NULL, prompt TEXT NOT NULL,
+                    steps TEXT NOT NULL, status TEXT NOT NULL, failed_index INTEGER,
+                    PRIMARY KEY(owner,project,id)
+                );
                 CREATE TABLE IF NOT EXISTS canvas_links (
                     source TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
                     target TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
@@ -845,6 +850,9 @@ class AgentStore:
                 (now(),),
             )
 
+            db.execute(
+                "UPDATE canvas_trials SET status='interrupted' WHERE status='running'"
+            )
             self.require_confirmation(db)
             db.execute(
                 "UPDATE route_batches SET state='interrupted' WHERE state='waiting'"
@@ -867,6 +875,10 @@ class AgentStore:
 
     def delete_session(self, owner, project):
         with self.connect() as db:
+            db.execute(
+                "DELETE FROM canvas_trials WHERE owner=? AND project=?",
+                (owner, project),
+            )
             db.execute(
                 "DELETE FROM route_batches WHERE owner=? AND project=?",
                 (owner, project),

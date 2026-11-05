@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "테스트 실행",
+  "trial-input": "작업 입력",
+  "trial-skipped": "건너뜀",
+  "trial-linear": "순환 없이 노드마다 출력 대상이 하나 이하인 경로를 선택하세요(최대 32개 노드).",
   "welcome-to-eigent": "Eigent에 오신 것을 환영합니다",
   "how-can-i-help-you": "무엇을 도와드릴까요?",
   "ask-placeholder": "오늘 무엇을 달성하고 싶으신가요?",

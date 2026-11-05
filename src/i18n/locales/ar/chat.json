@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "تشغيل تجريبي",
+  "trial-input": "أدخل المهمة",
+  "trial-skipped": "تم التخطي",
+  "trial-linear": "اختر مسارًا بلا حلقات وبمخرج واحد على الأكثر لكل عقدة (حتى 32 عقدة).",
   "welcome-to-eigent": "AgentDeck أهلاً بك في",
   "how-can-i-help-you": "كيف يمكنني مساعدتك اليوم؟",
   "ask-placeholder": "ما الذي تحتاج إلى تحقيقه اليوم؟",

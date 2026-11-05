@@ -48,6 +48,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CanvasLinks } from './CanvasLinks';
+import { CanvasTrials, TrialAction, TrialResult } from './CanvasTrial';
 
 type EditNode = (
   project: string,
@@ -187,6 +188,7 @@ function AgentCard({ data, selected }: NodeProps<AgentNode>) {
         >
           {a.name}
         </DsText>
+        <TrialAction project={data.project} agent={a} />
         <Button
           className="nodrag nopan"
           size="xs"
@@ -211,10 +213,12 @@ function AgentCard({ data, selected }: NodeProps<AgentNode>) {
           <DsIcon icon={Settings2} recipe="main-compact" />
         </Button>
       </div>
-      <DsText role="base" className="truncate" title={a.model.name}>
-        {a.model.name}
-        {a.template_version ? ' · v' + a.template_version : ''}
-      </DsText>
+      <TrialResult project={data.project} agent={a}>
+        <DsText role="base" className="truncate" title={a.model.name}>
+          {a.model.name}
+          {a.template_version ? ' · v' + a.template_version : ''}
+        </DsText>
+      </TrialResult>
       {a.workforce ? (
         <Button
           size="xs"
@@ -729,161 +733,169 @@ function CanvasBody({
     }
   };
   return (
-    <div
-      className="relative min-h-0 min-w-0 flex-1 bg-ds-neutral-muted-default"
-      aria-label={t('chat.canvas-title')}
+    <CanvasTrials
+      key={account}
+      account={account}
+      regions={regions}
+      choices={choices}
+      email={email}
     >
-      {link && source && (
-        <CanvasLinks
-          key={link.project + source.id}
-          initialTarget={link.target}
-          source={source}
-          nodes={byProject?.[link.project] ?? []}
-          api={linkApi}
-          choices={choices}
-          email={email}
-          close={() => setLink(null)}
-          persist={(target, on) =>
-            updateLink(link.project, source.id, target, on)
-          }
-        />
-      )}
-      {error && (
-        <div
-          role="alert"
-          className="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-ds-control-gap bg-ds-neutral-subtle-default p-ds-8"
-        >
-          <DsText role="base">{t('chat.canvas-sync-error')}</DsText>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setAttempt((v) => v + 1)}
-          >
-            {t('chat.session-agents-retry')}
-          </Button>
-        </div>
-      )}
-      {byProject ? (
-        <ReactFlow<BoardNode>
-          nodes={nodes}
-          edges={edges}
-          onEdgeClick={(_, edge) => {
-            if (!edge.data?.structural && edge.data?.project)
-              showLinks(String(edge.data.project), edge.source, edge.target);
-          }}
-          isValidConnection={({ source, target }) =>
-            !!source &&
-            source !== target &&
-            regions.some(
-              (r) =>
-                r.agents.some((a) => a.id === source) &&
-                r.agents.some((a) => a.id === target)
-            )
-          }
-          onConnect={({ source, target }) => {
-            const r = regions.find(
-              (g) =>
-                g.agents.some((a) => a.id === source) &&
-                g.agents.some((a) => a.id === target)
-            );
-            if (r && source && target && source !== target)
-              void updateLink(r.id, source, target, true).catch(() =>
-                setError(true)
-              );
-          }}
-          nodeTypes={types}
-          onNodeClick={(e, n) => {
-            if (
-              n.type !== 'agentCard' ||
-              (e.target as Element).closest('button,.react-flow__handle')
-            )
-              return;
-            const opener = e.currentTarget.querySelector<HTMLButtonElement>(
-              'button[data-node-config]'
-            );
-            if (opener) edit(n.data.project, opener, n.data.agent);
-          }}
-          onNodesChange={change}
-          onInit={() => setInitialized(true)}
-          onMoveEnd={(_, v) => {
-            if (restored.current === key) {
-              try {
-                localStorage.setItem(key, JSON.stringify(v));
-              } catch {
-                /* camera preference is optional */
-              }
+      <div
+        className="relative min-h-0 min-w-0 flex-1 bg-ds-neutral-muted-default"
+        aria-label={t('chat.canvas-title')}
+      >
+        {link && source && (
+          <CanvasLinks
+            key={link.project + source.id}
+            initialTarget={link.target}
+            source={source}
+            nodes={byProject?.[link.project] ?? []}
+            api={linkApi}
+            choices={choices}
+            email={email}
+            close={() => setLink(null)}
+            persist={(target, on) =>
+              updateLink(link.project, source.id, target, on)
             }
-          }}
-          minZoom={0.15}
-          maxZoom={2}
-          nodesConnectable
-          deleteKeyCode={null}
-          multiSelectionKeyCode={null}
-          zoomOnDoubleClick={false}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background
-            variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1}
-            color="var(--ds-hairline-default-default)"
           />
-          <Panel position="top-left">
-            <Select value="" onValueChange={(id) => focus(id)}>
-              <SelectTrigger size="xs" aria-label={t('chat.canvas-locate')}>
-                <SelectValue placeholder={t('chat.canvas-locate')} />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((session) => (
-                  <SelectItem key={session.id} value={session.id}>
-                    {session.name}
-                  </SelectItem>
+        )}
+        {error && (
+          <div
+            role="alert"
+            className="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-ds-control-gap bg-ds-neutral-subtle-default p-ds-8"
+          >
+            <DsText role="base">{t('chat.canvas-sync-error')}</DsText>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setAttempt((v) => v + 1)}
+            >
+              {t('chat.session-agents-retry')}
+            </Button>
+          </div>
+        )}
+        {byProject ? (
+          <ReactFlow<BoardNode>
+            nodes={nodes}
+            edges={edges}
+            onEdgeClick={(_, edge) => {
+              if (!edge.data?.structural && edge.data?.project)
+                showLinks(String(edge.data.project), edge.source, edge.target);
+            }}
+            isValidConnection={({ source, target }) =>
+              !!source &&
+              source !== target &&
+              regions.some(
+                (r) =>
+                  r.agents.some((a) => a.id === source) &&
+                  r.agents.some((a) => a.id === target)
+              )
+            }
+            onConnect={({ source, target }) => {
+              const r = regions.find(
+                (g) =>
+                  g.agents.some((a) => a.id === source) &&
+                  g.agents.some((a) => a.id === target)
+              );
+              if (r && source && target && source !== target)
+                void updateLink(r.id, source, target, true).catch(() =>
+                  setError(true)
+                );
+            }}
+            nodeTypes={types}
+            onNodeClick={(e, n) => {
+              if (
+                n.type !== 'agentCard' ||
+                (e.target as Element).closest('button,.react-flow__handle')
+              )
+                return;
+              const opener = e.currentTarget.querySelector<HTMLButtonElement>(
+                'button[data-node-config]'
+              );
+              if (opener) edit(n.data.project, opener, n.data.agent);
+            }}
+            onNodesChange={change}
+            onInit={() => setInitialized(true)}
+            onMoveEnd={(_, v) => {
+              if (restored.current === key) {
+                try {
+                  localStorage.setItem(key, JSON.stringify(v));
+                } catch {
+                  /* camera preference is optional */
+                }
+              }
+            }}
+            minZoom={0.15}
+            maxZoom={2}
+            nodesConnectable
+            deleteKeyCode={null}
+            multiSelectionKeyCode={null}
+            zoomOnDoubleClick={false}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={20}
+              size={1}
+              color="var(--ds-hairline-default-default)"
+            />
+            <Panel position="top-left">
+              <Select value="" onValueChange={(id) => focus(id)}>
+                <SelectTrigger size="xs" aria-label={t('chat.canvas-locate')}>
+                  <SelectValue placeholder={t('chat.canvas-locate')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map((session) => (
+                    <SelectItem key={session.id} value={session.id}>
+                      {session.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Panel>
+            <Panel position="bottom-left">
+              <div className="flex items-center gap-ds-4 rounded-ds-field bg-ds-neutral-subtle-default p-ds-4 shadow-ds-elevation-control">
+                {[
+                  {
+                    icon: Minus,
+                    label: 'layout.zoom-out',
+                    action: () => flow.zoomOut(),
+                  },
+                  {
+                    icon: Plus,
+                    label: 'layout.zoom-in',
+                    action: () => flow.zoomIn(),
+                  },
+                  { icon: Focus, label: 'chat.canvas-current', action: focus },
+                  {
+                    icon: Maximize,
+                    label: 'chat.canvas-fit',
+                    action: () => flow.fitView({ padding: 0.12 }),
+                  },
+                ].map(({ icon, label, action }) => (
+                  <Button
+                    key={label}
+                    size="sm"
+                    variant="ghost"
+                    buttonContent="icon-only"
+                    title={t(label)}
+                    aria-label={t(label)}
+                    onClick={() => void action()}
+                  >
+                    <DsIcon icon={icon} />
+                  </Button>
                 ))}
-              </SelectContent>
-            </Select>
-          </Panel>
-          <Panel position="bottom-left">
-            <div className="flex items-center gap-ds-4 rounded-ds-field bg-ds-neutral-subtle-default p-ds-4 shadow-ds-elevation-control">
-              {[
-                {
-                  icon: Minus,
-                  label: 'layout.zoom-out',
-                  action: () => flow.zoomOut(),
-                },
-                {
-                  icon: Plus,
-                  label: 'layout.zoom-in',
-                  action: () => flow.zoomIn(),
-                },
-                { icon: Focus, label: 'chat.canvas-current', action: focus },
-                {
-                  icon: Maximize,
-                  label: 'chat.canvas-fit',
-                  action: () => flow.fitView({ padding: 0.12 }),
-                },
-              ].map(({ icon, label, action }) => (
-                <Button
-                  key={label}
-                  size="sm"
-                  variant="ghost"
-                  buttonContent="icon-only"
-                  title={t(label)}
-                  aria-label={t(label)}
-                  onClick={() => void action()}
-                >
-                  <DsIcon icon={icon} />
-                </Button>
-              ))}
-            </div>
-          </Panel>
-        </ReactFlow>
-      ) : (
-        !error && (
-          <DsText role="base" aria-live="polite" className="p-ds-panel-inset">
-            {t('chat.session-agents-loading')}
-          </DsText>
-        )
-      )}
-    </div>
+              </div>
+            </Panel>
+          </ReactFlow>
+        ) : (
+          !error && (
+            <DsText role="base" aria-live="polite" className="p-ds-panel-inset">
+              {t('chat.session-agents-loading')}
+            </DsText>
+          )
+        )}
+      </div>
+    </CanvasTrials>
   );
 }

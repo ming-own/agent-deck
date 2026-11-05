@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "テスト実行",
+  "trial-input": "タスクを入力",
+  "trial-skipped": "スキップ",
+  "trial-linear": "ループがなく、各ノードの出力先が最大 1 つの経路を選んでください（最大 32 ノード）。",
   "welcome-to-eigent": "Eigentへようこそ",
   "how-can-i-help-you": "本日はどのようなご用件でしょうか？",
   "ask-placeholder": "本日は何を達成したいですか？",

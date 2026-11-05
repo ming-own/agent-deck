@@ -8,10 +8,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.auth import LocalControlPrincipal, require_local_control_principal
-from app.session_agents import batches, workshop
+from app.session_agents import batches, canvas_trials, workshop
 from app.session_agents.models import (
     AgentConfig,
     BatchRequest,
+    CanvasTrialRequest,
     CreateTask,
     InstallTemplate,
     PositionUpdate,
@@ -98,6 +99,28 @@ async def delete_session(
 ):
     await service().delete_session(account, project_id)
     return {"ok": True}
+
+
+@router.post("/{project_id}/canvas/trials")
+async def start_canvas_trial(
+    project_id: str,
+    body: CanvasTrialRequest,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return canvas_trials.start(service(), (account, project_id), body)
+    except (Conflict, NotFound) as exc:
+        raise translate(exc) from exc
+
+
+@router.get("/{project_id}/canvas/trials/latest")
+def latest_canvas_trial(
+    project_id: str, account: Annotated[str, Depends(owner)]
+):
+    try:
+        return canvas_trials.latest(service().store, (account, project_id))
+    except NotFound as exc:
+        raise translate(exc) from exc
 
 
 @router.put("/{project_id}/{agent_id}")

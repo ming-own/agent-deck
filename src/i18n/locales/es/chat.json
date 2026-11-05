@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "Ejecución de prueba",
+  "trial-input": "Introduce la tarea",
+  "trial-skipped": "Omitido",
+  "trial-linear": "Elige una ruta sin ciclos con una salida por nodo como máximo (hasta 32 nodos).",
   "welcome-to-eigent": "¡Bienvenido a AgentDeck!",
   "how-can-i-help-you": "¿Cómo puedo ayudarte hoy?",
   "ask-placeholder": "¿Qué necesitas lograr hoy?",

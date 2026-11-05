@@ -1,4 +1,8 @@
 {
+  "canvas-trial": "Test run",
+  "trial-input": "Task input",
+  "trial-skipped": "Skipped",
+  "trial-linear": "Choose a path with one output per node and no loops (up to 32 nodes).",
   "welcome-to-eigent": "Welcome to AgentDeck",
   "how-can-i-help-you": "How can I help you today?",
   "ask-placeholder": "Ask AgentDeck to automate your tasks",
