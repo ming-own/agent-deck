@@ -609,7 +609,7 @@
   "space-model-fallback": "El modelo de este espacio ya no está disponible, así que esta sesión usa tu modelo predeterminado.",
   "session-agents-title": "Agents",
   "session-agents-add": "Add Agent",
-  "session-agents-description": "Each Agent has its own model and conversation in this session. This first version supports text conversation; tools and Skills will follow. Model changes apply to the next turn and retain this Agent’s history.",
+  "session-agents-description": "Cada agente de esta sesión tiene su propio modelo, rol, habilidades y conversación.",
   "session-agents-loading": "Loading Agents…",
   "session-agents-load-error": "Could not load this session. Check the local service and retry.",
   "session-agents-retry": "Refresh",
@@ -648,6 +648,13 @@
   "session-agents-instructions": "Instructions",
   "session-agents-default-role": "General assistant",
   "session-agents-no-instructions": "No additional instructions",
-  "session-agents-behavior": "Role and instructions",
-  "session-agents-run-config": "Run configuration"
+  "session-agents-behavior": "Rol, instrucciones y habilidades",
+  "session-agents-run-config": "Run configuration",
+  "session-agents-skills": "Habilidades",
+  "session-agents-skill-loading": "Cargando habilidades…",
+  "session-agents-skill-empty": "No hay habilidades disponibles para este agente.",
+  "session-agents-skill-load-error": "No se pudo cargar la biblioteca de habilidades.",
+  "session-agents-missing-skill": "{{name}} (no disponible)",
+  "session-agents-skill-unavailable": "Una habilidad seleccionada no está disponible. Revisa las habilidades del agente.",
+  "session-agents-skill-limit": "Las instrucciones superan los 256 KiB. Selecciona menos habilidades."
 }

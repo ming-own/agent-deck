@@ -613,7 +613,7 @@
   "space-model-fallback": "Модель этого пространства больше недоступна, поэтому в этой сессии используется ваша модель по умолчанию.",
   "session-agents-title": "Agents",
   "session-agents-add": "Add Agent",
-  "session-agents-description": "Each Agent has its own model and conversation in this session. This first version supports text conversation; tools and Skills will follow. Model changes apply to the next turn and retain this Agent’s history.",
+  "session-agents-description": "У каждого агента в сеансе свои модель, роль, навыки и история диалога.",
   "session-agents-loading": "Loading Agents…",
   "session-agents-load-error": "Could not load this session. Check the local service and retry.",
   "session-agents-retry": "Refresh",
@@ -652,6 +652,13 @@
   "session-agents-instructions": "Instructions",
   "session-agents-default-role": "General assistant",
   "session-agents-no-instructions": "No additional instructions",
-  "session-agents-behavior": "Role and instructions",
-  "session-agents-run-config": "Run configuration"
+  "session-agents-behavior": "Роль, инструкции и навыки",
+  "session-agents-run-config": "Run configuration",
+  "session-agents-skills": "Навыки",
+  "session-agents-skill-loading": "Загрузка навыков…",
+  "session-agents-skill-empty": "У этого агента нет доступных навыков.",
+  "session-agents-skill-load-error": "Не удалось загрузить библиотеку навыков.",
+  "session-agents-missing-skill": "{{name}} (недоступен)",
+  "session-agents-skill-unavailable": "Выбранный навык недоступен. Проверьте навыки агента.",
+  "session-agents-skill-limit": "Объём инструкций превышает 256 КиБ. Выберите меньше навыков."
 }

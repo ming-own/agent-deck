@@ -395,6 +395,7 @@ async def test_runner_uses_each_nodes_role_and_instructions(monkeypatch):
             "name": "A",
             "role": "Researcher",
             "instructions": "Cite sources.\nUse Chinese.",
+            "skill_material": "Use the audit checklist.",
         },
         [],
         "Hello",
@@ -403,6 +404,7 @@ async def test_runner_uses_each_nodes_role_and_instructions(monkeypatch):
     )
     system = constructor.call_args.kwargs["system_message"]
     assert "Researcher" in system and "Cite sources.\nUse Chinese." in system
+    assert "Use the audit checklist." in system
     assert factory.call_args.args[2] == system
     await runner.run_text_agent(
         {"id": "b", "name": "B"}, [], "Hello", connection, "test@example.com"

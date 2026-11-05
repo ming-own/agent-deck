@@ -70,6 +70,7 @@ class AgentStore:
             "updated_at": row["updated_at"],
             "role": "",
             "instructions": "",
+            "skill_ids": [],
             **json.loads(row["config"]),
         }
 
@@ -92,6 +93,7 @@ class AgentStore:
             "agent": {
                 "role": "",
                 "instructions": "",
+                "skill_ids": [],
                 **json.loads(row["snapshot"]),
             }
         }
@@ -218,6 +220,13 @@ class AgentStore:
                     "SELECT * FROM agent_runs WHERE id=?", (run_id,)
                 ).fetchone()
             ), True
+
+    def record_skill_versions(self, run_id, versions):
+        with self.connect() as db:
+            db.execute(
+                "UPDATE agent_runs SET snapshot=json_set(snapshot, '$.skill_versions', json(?)) WHERE id=? AND status='running'",
+                (json.dumps(versions), run_id),
+            )
 
     def finish(self, run_id, status, output="", error=None):
         if status not in {"completed", "failed", "interrupted"}:

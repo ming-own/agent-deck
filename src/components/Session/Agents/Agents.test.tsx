@@ -1,10 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionAgents } from './index';
 
 const mocks = vi.hoisted(() => ({
   api: {
     list: vi.fn(),
+    skills: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     runs: vi.fn(),
@@ -72,6 +79,7 @@ const second = node('b', 'Writer', 'model-b');
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.api.skills.mockResolvedValue([{ id: 'audit-package', name: 'Audit' }]);
   mocks.api.list.mockResolvedValue([first, second]);
   mocks.api.runs.mockResolvedValue([]);
   mocks.api.start.mockImplementation(async (id, body) => ({
@@ -132,11 +140,13 @@ describe('Session Agent instances', () => {
       screen.getByRole('textbox', { name: 'Instructions (optional)' }),
       { target: { value: 'List risks first.' } }
     );
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Audit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     await waitFor(() =>
       expect(mocks.api.create).toHaveBeenCalledWith('Reviewer', second.model, {
         role: 'Reviewer',
         instructions: 'List risks first.',
+        skill_ids: ['audit-package'],
       })
     );
     expect(
@@ -241,7 +251,7 @@ it('edits node instructions while keeping the previous run configuration visible
       configured,
       'Research',
       first.model,
-      { role: 'Reviewer', instructions: 'List risks.' }
+      { role: 'Reviewer', instructions: 'List risks.', skill_ids: [] }
     )
   );
   fireEvent.click(
@@ -249,6 +259,7 @@ it('edits node instructions while keeping the previous run configuration visible
   );
   expect(screen.getByText('Cite sources.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
+  await screen.findByRole('checkbox', { name: 'Audit' });
   expect(
     screen.getByRole('textbox', { name: 'Instructions (optional)' })
   ).toHaveValue('List risks.');
@@ -269,7 +280,36 @@ it('keeps unsaved instructions in the form after a failed save and cancels witho
   ).toHaveValue('Unsaved draft');
   fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
   fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
+  await screen.findByRole('checkbox', { name: 'Audit' });
   expect(
     screen.getByRole('textbox', { name: 'Instructions (optional)' })
   ).toHaveValue('');
+});
+
+it('preserves a missing skill across a catalog failure and lets the user remove it', async () => {
+  const configured = { ...first, skill_ids: ['retired'] };
+  mocks.api.list.mockResolvedValue([configured]);
+  mocks.api.skills.mockRejectedValueOnce(new Error('offline'));
+  mocks.api.update.mockResolvedValue({
+    ...configured,
+    skill_ids: [],
+    revision: 2,
+  });
+  render(<SessionAgents projectId="s" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Edit Agent' }));
+  const alert = await screen.findByRole('alert');
+  expect(screen.getByRole('checkbox', { name: 'retired' })).toBeChecked();
+  fireEvent.click(within(alert).getByRole('button', { name: 'Refresh' }));
+  fireEvent.click(
+    await screen.findByRole('checkbox', { name: 'retired (unavailable)' })
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
+  await waitFor(() =>
+    expect(mocks.api.update).toHaveBeenCalledWith(
+      configured,
+      'Research',
+      first.model,
+      expect.objectContaining({ skill_ids: [] })
+    )
+  );
 });

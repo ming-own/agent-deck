@@ -1,7 +1,13 @@
 import { fetchGet, fetchPost, fetchPut } from '@/api/http';
 import type { AgentModelReference } from './sessionAgentModels';
 
+export interface SkillOption {
+  id: string;
+  name: string;
+}
+
 export interface AgentBehavior {
+  skill_ids: string[];
   role: string;
   instructions: string;
 }
@@ -18,7 +24,9 @@ export interface SessionAgentRun {
   id: string;
   agent_id: string;
   request_id: string;
-  agent: SessionAgent;
+  agent: SessionAgent & {
+    skill_versions?: (SkillOption & { sha256: string })[];
+  };
   prompt: string;
   output: string;
   status: 'running' | 'completed' | 'failed' | 'interrupted';
@@ -33,6 +41,8 @@ export function sessionAgentApi(account: string, projectId: string) {
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    skills: (): Promise<SkillOption[]> =>
+      fetchGet(`${root}/skill-catalog`, undefined, headers, options),
     list: (): Promise<SessionAgent[]> =>
       fetchGet(root, undefined, headers, options),
     create: (

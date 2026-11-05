@@ -601,7 +601,7 @@
   "space-model-fallback": "このスペースのモデルは利用できなくなったため、このセッションではデフォルトモデルを使用します。",
   "session-agents-title": "Agents",
   "session-agents-add": "Add Agent",
-  "session-agents-description": "Each Agent has its own model and conversation in this session. This first version supports text conversation; tools and Skills will follow. Model changes apply to the next turn and retain this Agent’s history.",
+  "session-agents-description": "このセッションでは、エージェントごとにモデル、役割、スキルを設定でき、会話履歴も個別に保存されます。",
   "session-agents-loading": "Loading Agents…",
   "session-agents-load-error": "Could not load this session. Check the local service and retry.",
   "session-agents-retry": "Refresh",
@@ -640,6 +640,13 @@
   "session-agents-instructions": "Instructions",
   "session-agents-default-role": "General assistant",
   "session-agents-no-instructions": "No additional instructions",
-  "session-agents-behavior": "Role and instructions",
-  "session-agents-run-config": "Run configuration"
+  "session-agents-behavior": "役割、指示、スキル",
+  "session-agents-run-config": "Run configuration",
+  "session-agents-skills": "スキル",
+  "session-agents-skill-loading": "スキルを読み込み中…",
+  "session-agents-skill-empty": "このエージェントで使用できるスキルはありません。",
+  "session-agents-skill-load-error": "スキルライブラリを読み込めませんでした。",
+  "session-agents-missing-skill": "{{name}}（利用不可）",
+  "session-agents-skill-unavailable": "選択したスキルが利用できません。スキルの設定を確認してください。",
+  "session-agents-skill-limit": "スキルの指示が 256 KiB を超えています。選択するスキルを減らしてください。"
 }

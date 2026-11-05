@@ -605,7 +605,7 @@
   "space-model-fallback": "This Space's model is no longer available, so this session uses your default model.",
   "session-agents-title": "Agents",
   "session-agents-add": "Add Agent",
-  "session-agents-description": "Each Agent has its own model and conversation in this session. This first version supports text conversation; tools and Skills will follow. Model changes apply to the next turn and retain this Agent’s history.",
+  "session-agents-description": "Configure each Agent’s model, role and skills for its own conversation in this session.",
   "session-agents-loading": "Loading Agents…",
   "session-agents-load-error": "Could not load this session. Check the local service and retry.",
   "session-agents-retry": "Refresh",
@@ -644,6 +644,13 @@
   "session-agents-instructions": "Instructions",
   "session-agents-default-role": "General assistant",
   "session-agents-no-instructions": "No additional instructions",
-  "session-agents-behavior": "Role and instructions",
-  "session-agents-run-config": "Run configuration"
+  "session-agents-behavior": "Role, instructions and skills",
+  "session-agents-run-config": "Run configuration",
+  "session-agents-skills": "Skills",
+  "session-agents-skill-loading": "Loading skills…",
+  "session-agents-skill-empty": "No skills available for this Agent.",
+  "session-agents-skill-load-error": "Could not load the skill library.",
+  "session-agents-missing-skill": "{{name}} (unavailable)",
+  "session-agents-skill-unavailable": "A selected skill is unavailable. Check this Agent’s skills before sending again.",
+  "session-agents-skill-limit": "The selected skill instructions exceed 256 KiB. Select fewer skills and try again."
 }

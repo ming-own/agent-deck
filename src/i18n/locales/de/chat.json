@@ -605,7 +605,7 @@
   "space-model-fallback": "Das Modell dieses Bereichs ist nicht mehr verfügbar, daher verwendet diese Sitzung dein Standardmodell.",
   "session-agents-title": "Agents",
   "session-agents-add": "Add Agent",
-  "session-agents-description": "Each Agent has its own model and conversation in this session. This first version supports text conversation; tools and Skills will follow. Model changes apply to the next turn and retain this Agent’s history.",
+  "session-agents-description": "Jeder Agent in dieser Sitzung hat ein eigenes Modell, eine Rolle, Skills und einen eigenen Gesprächsverlauf.",
   "session-agents-loading": "Loading Agents…",
   "session-agents-load-error": "Could not load this session. Check the local service and retry.",
   "session-agents-retry": "Refresh",
@@ -644,6 +644,13 @@
   "session-agents-instructions": "Instructions",
   "session-agents-default-role": "General assistant",
   "session-agents-no-instructions": "No additional instructions",
-  "session-agents-behavior": "Role and instructions",
-  "session-agents-run-config": "Run configuration"
+  "session-agents-behavior": "Rolle, Anweisungen und Skills",
+  "session-agents-run-config": "Run configuration",
+  "session-agents-skills": "Skills",
+  "session-agents-skill-loading": "Skills werden geladen…",
+  "session-agents-skill-empty": "Für diesen Agenten sind keine Skills verfügbar.",
+  "session-agents-skill-load-error": "Die Skill-Bibliothek konnte nicht geladen werden.",
+  "session-agents-missing-skill": "{{name}} (nicht verfügbar)",
+  "session-agents-skill-unavailable": "Ein ausgewählter Skill ist nicht verfügbar. Prüfe die Skills dieses Agenten.",
+  "session-agents-skill-limit": "Die Skill-Anweisungen überschreiten 256 KiB. Wähle weniger Skills."
 }

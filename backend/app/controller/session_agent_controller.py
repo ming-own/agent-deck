@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.auth import LocalControlPrincipal, require_local_control_principal
 from app.session_agents.models import AgentConfig, RunRequest, UpdateAgent
 from app.session_agents.service import AgentService
+from app.session_agents.skills import available_skills
 from app.session_agents.store import AgentStore, Conflict, NotFound
 
 router = APIRouter(prefix="/session-agents")
@@ -50,6 +51,14 @@ async def list_agents(
     return service().store.list(account, project_id)
 
 
+@router.get("/{project_id}/skill-catalog")
+def skill_catalog(project_id: str, account: Annotated[str, Depends(owner)]):
+    try:
+        return available_skills(account)
+    except (OSError, ValueError, TypeError, AttributeError) as exc:
+        raise HTTPException(503, "Skill catalog unavailable") from exc
+
+
 @router.post("/{project_id}")
 async def create_agent(
     project_id: str, body: AgentConfig, account: Annotated[str, Depends(owner)]
@@ -76,12 +85,17 @@ async def update_agent(
     account: Annotated[str, Depends(owner)],
 ):
     try:
+        config = body.model_dump(exclude={"expected_revision"})
+        if "skill_ids" not in body.model_fields_set:
+            config["skill_ids"] = service().store.get(
+                account, project_id, agent_id
+            )["skill_ids"]
         return service().store.update(
             account,
             project_id,
             agent_id,
             body.expected_revision,
-            AgentConfig(**body.model_dump(exclude={"expected_revision"})),
+            AgentConfig(**config),
         )
     except (NotFound, Conflict) as exc:
         raise translate(exc) from exc

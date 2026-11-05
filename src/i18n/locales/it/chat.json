@@ -609,7 +609,7 @@
   "space-model-fallback": "Il modello di questo spazio non è più disponibile, quindi questa sessione usa il tuo modello predefinito.",
   "session-agents-title": "Agents",
   "session-agents-add": "Add Agent",
-  "session-agents-description": "Each Agent has its own model and conversation in this session. This first version supports text conversation; tools and Skills will follow. Model changes apply to the next turn and retain this Agent’s history.",
+  "session-agents-description": "Ogni agente in questa sessione ha il proprio modello, ruolo, competenze e conversazione.",
   "session-agents-loading": "Loading Agents…",
   "session-agents-load-error": "Could not load this session. Check the local service and retry.",
   "session-agents-retry": "Refresh",
@@ -648,6 +648,13 @@
   "session-agents-instructions": "Instructions",
   "session-agents-default-role": "General assistant",
   "session-agents-no-instructions": "No additional instructions",
-  "session-agents-behavior": "Role and instructions",
-  "session-agents-run-config": "Run configuration"
+  "session-agents-behavior": "Ruolo, istruzioni e competenze",
+  "session-agents-run-config": "Run configuration",
+  "session-agents-skills": "Competenze",
+  "session-agents-skill-loading": "Caricamento delle competenze…",
+  "session-agents-skill-empty": "Nessuna competenza disponibile per questo agente.",
+  "session-agents-skill-load-error": "Impossibile caricare la libreria delle competenze.",
+  "session-agents-missing-skill": "{{name}} (non disponibile)",
+  "session-agents-skill-unavailable": "Una competenza selezionata non è disponibile. Controlla le competenze di questo agente.",
+  "session-agents-skill-limit": "Le istruzioni superano 256 KiB. Seleziona meno competenze."
 }

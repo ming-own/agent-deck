@@ -601,7 +601,7 @@
   "space-model-fallback": "此空間的模型已無法使用，本工作階段將使用您的預設模型。",
   "session-agents-title": "Agent 实例",
   "session-agents-add": "添加 Agent",
-  "session-agents-description": "每个 Agent 独立选择模型，并在本会话内保留自己的对话。当前支持文本对话，工具和 Skill 将后续接入。模型修改从下一次运行生效，并保留该 Agent 的历史。",
+  "session-agents-description": "在本次對話中，每個 Agent 可獨立設定模型、角色和技能，並保留自己的對話記錄。",
   "session-agents-loading": "正在加载 Agent…",
   "session-agents-load-error": "无法加载会话，请检查本地服务后重试。",
   "session-agents-retry": "刷新",
@@ -640,6 +640,13 @@
   "session-agents-instructions": "指令",
   "session-agents-default-role": "通用助手",
   "session-agents-no-instructions": "未設定額外指令",
-  "session-agents-behavior": "角色與指令",
-  "session-agents-run-config": "本次執行設定"
+  "session-agents-behavior": "角色、指令與技能",
+  "session-agents-run-config": "本次執行設定",
+  "session-agents-skills": "技能",
+  "session-agents-skill-loading": "正在載入技能…",
+  "session-agents-skill-empty": "目前沒有此 Agent 可用的技能。",
+  "session-agents-skill-load-error": "無法載入技能庫。",
+  "session-agents-missing-skill": "{{name}}（無法使用）",
+  "session-agents-skill-unavailable": "所選技能已無法使用，請編輯此 Agent 的技能後重新傳送。",
+  "session-agents-skill-limit": "所選技能說明超過 256 KiB，請減少勾選的技能後再試一次。"
 }

@@ -267,16 +267,23 @@ def example_skills_metadata() -> list[dict]:
     return skills
 
 
-def skills_scan() -> list[dict]:
+def skills_scan(*, sync_examples: bool = True) -> list[dict]:
     """Scan skills directory and return list of skills with metadata."""
-    sync_example_skills()
+    if sync_examples:
+        sync_example_skills()
     if not SKILLS_ROOT.exists():
         return []
     skills = []
     for entry in SKILLS_ROOT.iterdir():
-        if not entry.is_dir() or entry.name.startswith("."):
+        if (
+            entry.is_symlink()
+            or not entry.is_dir()
+            or entry.name.startswith(".")
+        ):
             continue
         skill_path = entry / SKILL_FILE
+        if skill_path.is_symlink() or not skill_path.is_file():
+            continue
         try:
             raw = skill_path.read_text(encoding="utf-8")
             meta = _parse_skill_frontmatter(raw)

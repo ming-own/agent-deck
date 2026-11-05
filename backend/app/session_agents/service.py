@@ -3,6 +3,7 @@ import logging
 import traceback
 
 from .models import RunRequest
+from .skills import SkillLimitExceeded, SkillUnavailable, resolve_skills
 from .store import AgentStore, Conflict, NotFound
 
 
@@ -34,15 +35,22 @@ class AgentService:
         if created:
             history = self.store.history(owner, project, agent_id)
             self.tasks[run["id"]] = asyncio.create_task(
-                self.execute(run, history, body.model_copy(deep=True))
+                self.execute(owner, run, history, body.model_copy(deep=True))
             )
         return run
 
-    async def execute(self, run, history, body):
+    async def execute(self, owner, run, history, body):
         try:
             async with asyncio.timeout(300):
+                agent = run["agent"]
+                if agent["skill_ids"]:
+                    versions, material = await asyncio.to_thread(
+                        resolve_skills, owner, agent["skill_ids"]
+                    )
+                    self.store.record_skill_versions(run["id"], versions)
+                    agent = {**agent, "skill_material": material}
                 output = await self.runner(
-                    run["agent"],
+                    agent,
                     history,
                     run["prompt"],
                     body.connection,
@@ -53,6 +61,10 @@ class AgentService:
             self.store.finish(run["id"], "completed", output=output)
         except asyncio.CancelledError:
             self.store.finish(run["id"], "interrupted", error="cancelled")
+        except SkillUnavailable:
+            self.store.finish(run["id"], "failed", error="skill_unavailable")
+        except SkillLimitExceeded:
+            self.store.finish(run["id"], "failed", error="skill_limit")
         except TimeoutError:
             self.store.finish(run["id"], "failed", error="model_timeout")
         except Exception as exc:

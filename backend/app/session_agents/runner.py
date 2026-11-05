@@ -52,6 +52,8 @@ async def run_text_agent(node, history, prompt, connection, email):
         system += f"\n\nYour role:\n{node['role']}"
     if node.get("instructions"):
         system += f"\n\nInstructions:\n{node['instructions']}"
+    if node.get("skill_material"):
+        system += "\n\nSelected skill instructions:\n" + node["skill_material"]
     build = create_model_builder(node["name"], node["id"], system, options)
     # Token resolution may do bounded synchronous local I/O. Join construction
     # on cancellation so a late SDK client is never leaked.

@@ -621,7 +621,7 @@
   "space-model-fallback": "نموذج هذه المساحة لم يعد متاحاً، لذا تستخدم هذه الجلسة نموذجك الافتراضي.",
   "session-agents-title": "Agents",
   "session-agents-add": "Add Agent",
-  "session-agents-description": "Each Agent has its own model and conversation in this session. This first version supports text conversation; tools and Skills will follow. Model changes apply to the next turn and retain this Agent’s history.",
+  "session-agents-description": "لكل وكيل في هذه الجلسة نموذج ودور ومهارات ومحادثة خاصة به.",
   "session-agents-loading": "Loading Agents…",
   "session-agents-load-error": "Could not load this session. Check the local service and retry.",
   "session-agents-retry": "Refresh",
@@ -660,6 +660,13 @@
   "session-agents-instructions": "Instructions",
   "session-agents-default-role": "General assistant",
   "session-agents-no-instructions": "No additional instructions",
-  "session-agents-behavior": "Role and instructions",
-  "session-agents-run-config": "Run configuration"
+  "session-agents-behavior": "الدور والتعليمات والمهارات",
+  "session-agents-run-config": "Run configuration",
+  "session-agents-skills": "المهارات",
+  "session-agents-skill-loading": "جارٍ تحميل المهارات…",
+  "session-agents-skill-empty": "لا تتوفر مهارات لهذا الوكيل.",
+  "session-agents-skill-load-error": "تعذّر تحميل مكتبة المهارات.",
+  "session-agents-missing-skill": "{{name}} (غير متاحة)",
+  "session-agents-skill-unavailable": "إحدى المهارات المحددة غير متاحة. راجع مهارات هذا الوكيل.",
+  "session-agents-skill-limit": "تتجاوز تعليمات المهارات 256 KiB. اختر مهارات أقل."
 }

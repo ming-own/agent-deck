@@ -35,6 +35,7 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SkillPicker } from './SkillPicker';
 
 export function SessionAgents({ projectId }: { projectId: string }) {
   const auth = useAuthStore();
@@ -168,6 +169,7 @@ function AgentInstances({
       {creating && (
         <AgentForm
           key="create"
+          loadSkills={api.skills}
           choices={choices}
           onSave={create}
           onCancel={() => setCreating(false)}
@@ -217,12 +219,14 @@ function AgentInstances({
 }
 
 function AgentForm({
+  loadSkills,
   node,
   choices,
   onSave,
   onCancel,
 }: {
   node?: SessionAgent;
+  loadSkills: ReturnType<typeof sessionAgentApi>['skills'];
   choices: ConfiguredModelChoice[];
   onSave: (
     name: string,
@@ -236,6 +240,7 @@ function AgentForm({
   const [model, setModel] = useState(node?.model.id ?? '');
   const [role, setRole] = useState(node?.role ?? '');
   const [instructions, setInstructions] = useState(node?.instructions ?? '');
+  const [skillIds, setSkillIds] = useState(node?.skill_ids ?? []);
   const helpId = useId();
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -252,6 +257,7 @@ function AgentForm({
         setFailed(false);
         try {
           await onSave(name.trim(), choice, {
+            skill_ids: skillIds,
             role: role.trim(),
             instructions: instructions.trim(),
           });
@@ -323,6 +329,12 @@ function AgentForm({
       >
         {t('chat.session-agents-instructions-help')}
       </DsText>
+      <SkillPicker
+        load={loadSkills}
+        selected={skillIds}
+        onChange={setSkillIds}
+        disabled={saving}
+      />
       {failed && (
         <DsText role="base" aria-live="assertive">
           {t('chat.session-agents-save-error')}
@@ -349,7 +361,7 @@ function AgentBehaviorDetails({
   agent,
   label,
 }: {
-  agent: AgentBehavior;
+  agent: SessionAgentRun['agent'];
   label: string;
 }) {
   const { t } = useTranslation();
@@ -392,6 +404,20 @@ function AgentBehaviorDetails({
               {agent.instructions || t('chat.session-agents-no-instructions')}
             </DsText>
           </div>
+          {!!agent.skill_ids?.length && (
+            <div>
+              <DsText as="dt" role="meta" className="text-ds-ink-muted-default">
+                {t('chat.session-agents-skills')}
+              </DsText>
+              <DsText as="dd" role="base" className="break-words">
+                {agent.skill_versions
+                  ?.map(
+                    (skill) => `${skill.name} · ${skill.sha256.slice(0, 8)}`
+                  )
+                  .join(', ') ?? agent.skill_ids.join(', ')}
+              </DsText>
+            </div>
+          )}
         </dl>
       </div>
     </div>
@@ -523,6 +549,7 @@ function AgentConversation({
       {editing && (
         <AgentForm
           key={node.revision}
+          loadSkills={api.skills}
           node={node}
           choices={choices}
           onCancel={() => setEditing(false)}
@@ -574,7 +601,15 @@ function AgentConversation({
               </DsText>
             )}
             {run.status === 'failed' && (
-              <DsText role="base">{t('chat.session-agents-run-error')}</DsText>
+              <DsText role="base">
+                {t(
+                  run.error === 'skill_unavailable'
+                    ? 'chat.session-agents-skill-unavailable'
+                    : run.error === 'skill_limit'
+                      ? 'chat.session-agents-skill-limit'
+                      : 'chat.session-agents-run-error'
+                )}
+              </DsText>
             )}
             {run.status === 'interrupted' && (
               <DsText role="base">

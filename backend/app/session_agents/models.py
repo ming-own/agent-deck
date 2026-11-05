@@ -1,6 +1,12 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 
 class ModelReference(BaseModel):
@@ -28,6 +34,20 @@ class AgentConfig(BaseModel):
     model: ModelReference
     role: str = Field(default="", max_length=200)
     instructions: str = Field(default="", max_length=12000)
+    skill_ids: list[str] = Field(default_factory=list, max_length=32)
+
+    @field_validator("skill_ids")
+    @classmethod
+    def package_ids(cls, ids: list[str]) -> list[str]:
+        if len(set(ids)) != len(ids) or any(
+            not value
+            or len(value) > 255
+            or value.startswith(".")
+            or any(c in value for c in ("/", "\\", "\x00"))
+            for value in ids
+        ):
+            raise ValueError("Expected unique skill package names")
+        return ids
 
 
 class UpdateAgent(AgentConfig):

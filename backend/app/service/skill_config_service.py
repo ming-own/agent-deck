@@ -160,6 +160,18 @@ def skill_config_load(
     return _ensure_skills_key(config)
 
 
+def skill_config_for_execution(user_id: str) -> dict:
+    """Read the same account policy as Settings, failing closed on corrupt data."""
+    path = _config_path(user_id)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    if not isinstance(data, dict) or not isinstance(data.get("skills"), dict):
+        raise ValueError("Invalid skills configuration")
+    return data["skills"]
+
+
 def skill_config_init(
     user_id: str | int, legacy_user_id: str | int | None = None
 ) -> dict:
