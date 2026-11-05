@@ -730,5 +730,17 @@
   "queue-confirm": "Подтвердить и запустить",
   "batch-retry": "Повторить неудачные ветви",
   "batch-resume": "Продолжить сводку",
-  "batch-stopped": "Остановлено"
+  "batch-stopped": "Остановлено",
+  "workshop": "Мастерская",
+  "workshop-library": "Шаблоны",
+  "workshop-save": "Сохранить как шаблон",
+  "workshop-built-in": "Встроенный шаблон",
+  "workshop-custom": "Свой шаблон",
+  "workshop-from": "На основе",
+  "workshop-install": "Добавить в сеанс",
+  "workshop-source": "Источник шаблона",
+  "workshop-name": "Название шаблона",
+  "workshop-fork": "Создать шаблон",
+  "workshop-version": "Сохранить новую версию",
+  "workshop-saved": "Сохранено в мастерской"
 }

@@ -718,5 +718,17 @@
   "queue-confirm": "确认并运行",
   "batch-retry": "重试失败分支",
   "batch-resume": "继续汇总",
-  "batch-stopped": "已停止"
+  "batch-stopped": "已停止",
+  "workshop": "创意工坊",
+  "workshop-library": "模板库",
+  "workshop-save": "保存为模板",
+  "workshop-built-in": "内置模板",
+  "workshop-custom": "自定义模板",
+  "workshop-from": "派生自",
+  "workshop-install": "添加到此会话",
+  "workshop-source": "模板来源",
+  "workshop-name": "模板名称",
+  "workshop-fork": "另存为新模板",
+  "workshop-version": "保存为新版本",
+  "workshop-saved": "已保存到创意工坊"
 }

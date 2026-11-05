@@ -738,5 +738,17 @@
   "queue-confirm": "تأكيد وتشغيل",
   "batch-retry": "إعادة محاولة الفروع المتعثرة",
   "batch-resume": "متابعة التلخيص",
-  "batch-stopped": "متوقف"
+  "batch-stopped": "متوقف",
+  "workshop": "ورشة العمل",
+  "workshop-library": "القوالب",
+  "workshop-save": "حفظ كقالب",
+  "workshop-built-in": "قالب مدمج",
+  "workshop-custom": "قالب خاص",
+  "workshop-from": "مشتق من",
+  "workshop-install": "إضافة إلى الجلسة",
+  "workshop-source": "مصدر القالب",
+  "workshop-name": "اسم القالب",
+  "workshop-fork": "حفظ كقالب جديد",
+  "workshop-version": "حفظ إصدار جديد",
+  "workshop-saved": "تم الحفظ في الورشة"
 }

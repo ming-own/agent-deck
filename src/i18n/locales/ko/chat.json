@@ -718,5 +718,17 @@
   "queue-confirm": "확인 후 실행",
   "batch-retry": "실패한 분기 재시도",
   "batch-resume": "종합 재개",
-  "batch-stopped": "중지됨"
+  "batch-stopped": "중지됨",
+  "workshop": "워크숍",
+  "workshop-library": "템플릿 목록",
+  "workshop-save": "템플릿으로 저장",
+  "workshop-built-in": "내장 템플릿",
+  "workshop-custom": "사용자 템플릿",
+  "workshop-from": "원본",
+  "workshop-install": "이 세션에 추가",
+  "workshop-source": "템플릿 원본",
+  "workshop-name": "템플릿 이름",
+  "workshop-fork": "새 템플릿으로 저장",
+  "workshop-version": "새 버전 저장",
+  "workshop-saved": "워크숍에 저장됨"
 }

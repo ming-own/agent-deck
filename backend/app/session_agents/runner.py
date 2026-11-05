@@ -77,7 +77,7 @@ async def run_text_agent(
         > 200000
     ):
         raise ValueError("history_limit")
-    settings = connection.model_dump()
+    settings = connection.model_dump(exclude={"members"})
     for key in ("extra_params", "model_config_dict"):
         settings[key] = _node_model_settings(settings.get(key))
     options = Chat(

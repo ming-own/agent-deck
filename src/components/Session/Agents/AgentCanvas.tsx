@@ -104,7 +104,7 @@ function SessionArea({ data }: NodeProps<AreaNode>) {
           {data.region.name}
         </DsText>
         <DsText role="meta" className="text-ds-ink-muted-default">
-          {data.region.agents.length}
+          {data.region.agents.filter((a) => !a.workforce_member).length}
         </DsText>
         <Button
           className="nodrag nopan pointer-events-auto ml-auto"
@@ -129,13 +129,14 @@ function SessionArea({ data }: NodeProps<AreaNode>) {
           {t('chat.session-agents-retry')}
         </Button>
       )}
-      {!data.region.failed && !data.region.agents.length && (
-        <div className="flex flex-1 items-center justify-center px-ds-panel-inset pb-ds-panel-inset">
-          <DsText role="base" className="text-ds-ink-muted-default">
-            {t('chat.session-agents-empty')}
-          </DsText>
-        </div>
-      )}
+      {!data.region.failed &&
+        !data.region.agents.filter((a) => !a.workforce_member).length && (
+          <div className="flex flex-1 items-center justify-center px-ds-panel-inset pb-ds-panel-inset">
+            <DsText role="base" className="text-ds-ink-muted-default">
+              {t('chat.session-agents-empty')}
+            </DsText>
+          </div>
+        )}
     </div>
   );
 }
@@ -147,7 +148,7 @@ function AgentCard({ data, selected }: NodeProps<AgentNode>) {
       className={`flex h-full min-w-0 flex-col justify-center gap-ds-6 rounded-ds-card border border-x border-y border-solid bg-ds-neutral-subtle-default px-ds-12 shadow-ds-elevation-control ${selected ? 'border-ds-accent-strong-default' : 'border-ds-hairline-default-default'}`}
     >
       <div className="flex min-w-0 items-center gap-ds-control-gap">
-        <DsIcon icon={Bot} />
+        <DsIcon icon={a.workforce ? Workflow : Bot} />
         <DsText
           role="body-large"
           weight="semibold"
@@ -172,9 +173,11 @@ function AgentCard({ data, selected }: NodeProps<AgentNode>) {
         {a.model.name}
       </DsText>
       <DsText role="meta" className="truncate text-ds-ink-muted-default">
-        {a.harness_id === 'plan_execute'
-          ? t('chat.node-harness-plan-execute')
-          : t('chat.node-harness-standard')}
+        {a.workforce
+          ? a.workforce.branches.map((b) => b.name).join(' / ')
+          : a.harness_id === 'plan_execute'
+            ? t('chat.node-harness-plan-execute')
+            : t('chat.node-harness-standard')}
       </DsText>
     </div>
   );
@@ -218,12 +221,13 @@ function buildBoard(
     let x = 0,
       rowHeight = 0;
     for (const region of regions.slice(i, i + 2)) {
-      const positions = region.agents.map(
+      const visible = region.agents.filter((a) => !a.workforce_member);
+      const positions = visible.map(
         (agent, j) => offsets[agent.id] ?? agent.position ?? initialPosition(j)
       );
       const width = positions.reduce(
         (w, pos) => Math.max(w, pos.x + CARD_W + 64),
-        region.agents.length > 1 ? 560 : 352
+        visible.length > 1 ? 560 : 352
       );
       const height = positions.reduce(
         (h, pos) => Math.max(h, pos.y + CARD_H + 64),
@@ -251,7 +255,7 @@ function buildBoard(
         focusable: false,
         data: { region, openRouter },
       });
-      region.agents.forEach((a, j) =>
+      visible.forEach((a, j) =>
         nodes.push({
           id: a.id,
           type: 'agentCard',

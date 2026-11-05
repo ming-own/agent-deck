@@ -9,6 +9,7 @@ from .models import AgentConfig, RunRequest
 from .routing import admit_message
 from .skills import SkillLimitExceeded, SkillUnavailable, resolve_skills
 from .store import AgentStore, Conflict, NotFound, now
+from .workforce import WorkforceFailed, execute_team
 
 
 class AgentService:
@@ -50,6 +51,7 @@ class AgentService:
 
     def dispatch_batch(self, owner, project, body):
         scope = (owner, project)
+        batches.require_external(self.store, scope, body.event_id)
         event, jobs = batches.admit(self.store, scope, body, self.harnesses)
         if jobs:
             self.watch_batch(scope, body, jobs, event["generation"])
@@ -67,6 +69,7 @@ class AgentService:
             waiter.add_done_callback(self.joins.discard)
 
     def recover_batch(self, scope, event_id, action):
+        batches.require_external(self.store, scope, event_id)
         record, jobs, body = batches.recover(
             self.store, scope, event_id, action, self.harnesses
         )
@@ -74,7 +77,9 @@ class AgentService:
             self.watch_batch(scope, body, jobs, record["generation"])
         return record
 
-    async def stop_batch(self, scope, event_id, generation):
+    async def stop_batch(self, scope, event_id, generation, *, internal=False):
+        if not internal:
+            batches.require_external(self.store, scope, event_id)
         targets = batches.stop(self.store, scope, event_id, generation)
         await asyncio.gather(
             *(
@@ -108,7 +113,9 @@ class AgentService:
             owner, project, run["agent_id"], run["task_id"]
         )
         self.tasks[run["id"]] = asyncio.create_task(
-            self.execute(owner, run, history, body.model_copy(deep=True))
+            self.execute(
+                owner, project, run, history, body.model_copy(deep=True)
+            )
         )
 
         self.tasks[run["id"]].add_done_callback(
@@ -173,37 +180,42 @@ class AgentService:
                 self.queued_settings.pop(row["id"], None)
                 self.store.require_confirmation(db, row["id"])
 
-    async def execute(self, owner, run, history, body):
+    async def execute(self, owner, project, run, history, body):
         try:
             async with asyncio.timeout(300):
                 agent = run["agent"]
-                material = ""
-                if agent["skill_ids"]:
-                    versions, material = await asyncio.to_thread(
-                        resolve_skills, owner, agent["skill_ids"]
+                if agent.get("workforce"):
+                    output = await execute_team(
+                        self, (owner, project), run, history, body
                     )
-                    self.store.record_skill_versions(run["id"], versions)
-                config = AgentConfig(
-                    **{key: agent[key] for key in AgentConfig.model_fields}
-                )
-                context = TurnContext(
-                    node_id=agent["id"],
-                    history=history,
-                    prompt=self.store.turn_prompt(run),
-                    connection=body.connection,
-                    email=body.email,
-                    skill_material=material,
-                    granted_tools=tuple(agent["granted_tools"]),
-                    owner=owner,
-                    record_plan=lambda plan: self.store.record_plan(
-                        run["id"], plan
-                    ),
-                    admit_tool=lambda tool: self.store.admit_tool_call(
-                        run["id"], tool
-                    ),
-                )
-                harness = self.harnesses[config.harness_id]
-                output = await harness.execute(config, context)
+                else:
+                    material = ""
+                    if agent["skill_ids"]:
+                        versions, material = await asyncio.to_thread(
+                            resolve_skills, owner, agent["skill_ids"]
+                        )
+                        self.store.record_skill_versions(run["id"], versions)
+                    config = AgentConfig(
+                        **{key: agent[key] for key in AgentConfig.model_fields}
+                    )
+                    context = TurnContext(
+                        node_id=agent["id"],
+                        history=history,
+                        prompt=self.store.turn_prompt(run),
+                        connection=body.connection,
+                        email=body.email,
+                        skill_material=material,
+                        granted_tools=tuple(agent["granted_tools"]),
+                        owner=owner,
+                        record_plan=lambda plan: self.store.record_plan(
+                            run["id"], plan
+                        ),
+                        admit_tool=lambda tool: self.store.admit_tool_call(
+                            run["id"], tool
+                        ),
+                    )
+                    harness = self.harnesses[config.harness_id]
+                    output = await harness.execute(config, context)
             if not output.strip():
                 raise ValueError("empty_response")
             self.store.finish(run["id"], "completed", output=output)
@@ -213,6 +225,8 @@ class AgentService:
             self.store.finish(
                 run["id"], "interrupted", error="runtime_restarted"
             )
+        except WorkforceFailed as exc:
+            self.store.finish(run["id"], "failed", error=str(exc))
         except InvalidPlan:
             self.store.finish(run["id"], "failed", error="invalid_plan")
         except SkillUnavailable:

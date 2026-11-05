@@ -8,7 +8,7 @@ import type {
   SessionAgent,
   sessionAgentApi,
 } from '@/service/sessionAgentApi';
-import { resolveAgentConnection } from '@/service/sessionAgentModels';
+import { resolveNodeConnection } from '@/service/sessionAgentModels';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TurnTools } from './ToolPermissions';
@@ -62,7 +62,7 @@ export function BatchActions({
     return {
       expected_revision: agent.revision,
       email,
-      connection: resolveAgentConnection(agent.model, choices),
+      connection: resolveNodeConnection(agent, choices, agents ?? [], email),
       approved_tools: grants[key] ?? [],
     };
   }

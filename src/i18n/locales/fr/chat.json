@@ -726,5 +726,17 @@
   "queue-confirm": "Confirmer et lancer",
   "batch-retry": "Relancer les branches en échec",
   "batch-resume": "Reprendre la synthèse",
-  "batch-stopped": "Arrêté"
+  "batch-stopped": "Arrêté",
+  "workshop": "Atelier",
+  "workshop-library": "Modèles de l’atelier",
+  "workshop-save": "Enregistrer comme modèle",
+  "workshop-built-in": "Modèle intégré",
+  "workshop-custom": "Modèle personnalisé",
+  "workshop-from": "Dérivé de",
+  "workshop-install": "Ajouter à cette session",
+  "workshop-source": "Source du modèle",
+  "workshop-name": "Nom du modèle",
+  "workshop-fork": "Créer un modèle",
+  "workshop-version": "Enregistrer une version",
+  "workshop-saved": "Enregistré dans l’atelier"
 }

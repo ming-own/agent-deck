@@ -38,13 +38,32 @@ class AgentStore:
                     created_at TEXT NOT NULL, updated_at TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS agents_scope ON agents(owner, project);
+                CREATE TABLE IF NOT EXISTS workshop_versions (
+                    owner TEXT NOT NULL, family TEXT NOT NULL, version INTEGER NOT NULL,
+                    name TEXT NOT NULL, kind TEXT NOT NULL, graph TEXT NOT NULL,
+                    base_family TEXT, base_version INTEGER, PRIMARY KEY(owner,family,version)
+                );
+                CREATE TABLE IF NOT EXISTS workshop_saves (
+                    owner TEXT NOT NULL, project TEXT NOT NULL, request_id TEXT NOT NULL,
+                    fingerprint TEXT NOT NULL, family TEXT NOT NULL, version INTEGER NOT NULL,
+                    PRIMARY KEY(owner,project,request_id)
+                );
+                CREATE TABLE IF NOT EXISTS workshop_installs (
+                    root TEXT PRIMARY KEY REFERENCES agents(id) ON DELETE CASCADE,
+                    family TEXT NOT NULL, version INTEGER NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS workforce_events (
+                    run_id TEXT PRIMARY KEY REFERENCES agent_runs(id) ON DELETE CASCADE,
+                    event_id TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS workforce_event ON workforce_events(event_id);
                 CREATE TABLE IF NOT EXISTS agent_positions (
                     agent_id TEXT PRIMARY KEY REFERENCES agents(id) ON DELETE CASCADE,
                     x REAL NOT NULL, y REAL NOT NULL, revision INTEGER NOT NULL
                 );
                 INSERT OR IGNORE INTO agent_positions(agent_id,x,y,revision)
                     SELECT id, 24 + (slot % 2) * 256, 72 + (slot / 2) * 132, 0
-                    FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY owner,project ORDER BY rowid)-1 AS slot FROM agents)
+                    FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY owner,project ORDER BY rowid)-1 AS slot FROM agents WHERE COALESCE(json_extract(config,'$.workforce_member'),0)=0)
                     WHERE id NOT IN (SELECT agent_id FROM agent_positions);
                 CREATE TABLE IF NOT EXISTS agent_runs (
                     id TEXT PRIMARY KEY, owner TEXT NOT NULL, project TEXT NOT NULL,
@@ -228,53 +247,77 @@ class AgentStore:
             )
 
     def create(self, owner, project, config: AgentConfig):
-        agent_id, timestamp = str(uuid4()), now()
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             self.require_open(db, owner, project)
-            db.execute(
-                "INSERT INTO agents VALUES(?,?,?,?,?,?,?)",
-                (
-                    agent_id,
-                    owner,
-                    project,
-                    config.model_dump_json(),
-                    1,
-                    timestamp,
-                    timestamp,
-                ),
-            )
-            # Choose a free starting cell, including nodes moved off the original grid.
-            occupied = db.execute(
-                "SELECT x,y FROM agent_positions p JOIN agents a ON a.id=p.agent_id WHERE owner=? AND project=?",
-                (owner, project),
-            ).fetchall()
-            slot = 0
-            while True:
-                x, y = 24 + slot % 2 * 256, 72 + slot // 2 * 132
-                if all(
-                    abs(x - row["x"]) >= 224 or abs(y - row["y"]) >= 100
-                    for row in occupied
-                ):
-                    break
-                slot += 1
-            db.execute(
-                "INSERT INTO agent_positions VALUES(?,?,?,0)", (agent_id, x, y)
+            agent_id = self.insert_node(
+                db, owner, project, config.model_dump()
             )
         return self.get(owner, project, agent_id)
 
+    def insert_node(self, db, owner, project, config):
+        agent_id, timestamp = str(uuid4()), now()
+        db.execute(
+            "INSERT INTO agents VALUES(?,?,?,?,?,?,?)",
+            (
+                agent_id,
+                owner,
+                project,
+                json.dumps(config, ensure_ascii=False),
+                1,
+                timestamp,
+                timestamp,
+            ),
+        )
+        if config.get("workforce_member"):
+            return agent_id
+        # Choose a free starting cell, including nodes moved off the original grid.
+        occupied = db.execute(
+            "SELECT x,y FROM agent_positions p JOIN agents a ON a.id=p.agent_id WHERE owner=? AND project=?",
+            (owner, project),
+        ).fetchall()
+        slot = 0
+        while True:
+            x, y = 24 + slot % 2 * 256, 72 + slot // 2 * 132
+            if all(
+                abs(x - row["x"]) >= 224 or abs(y - row["y"]) >= 100
+                for row in occupied
+            ):
+                break
+            slot += 1
+        db.execute(
+            "INSERT INTO agent_positions VALUES(?,?,?,0)", (agent_id, x, y)
+        )
+        return agent_id
+
     def update(self, owner, project, agent_id, revision, config: AgentConfig):
         with self.connect() as db:
-            self.node(
+            current = self.node(
                 db.execute(
                     "SELECT * FROM agents WHERE owner=? AND project=? AND id=?",
                     (owner, project, agent_id),
                 ).fetchone()
             )
+            if current.get("workforce"):
+                raise Conflict("Edit individual Workforce members")
             changed = db.execute(
                 "UPDATE agents SET config=?, revision=revision+1, updated_at=? WHERE owner=? AND project=? AND id=? AND revision=?",
                 (
-                    config.model_dump_json(),
+                    json.dumps(
+                        {
+                            **config.model_dump(),
+                            **{
+                                k: current[k]
+                                for k in (
+                                    "workforce_member",
+                                    "install_id",
+                                    "template_family",
+                                    "template_version",
+                                )
+                                if k in current
+                            },
+                        }
+                    ),
                     now(),
                     owner,
                     project,
@@ -328,9 +371,9 @@ class AgentStore:
 
     @staticmethod
     def can_resume_turn(db, row):
-        if (
-            row["status"] != "interrupted"
-            or row["error"] != "runtime_restarted"
+        if (row["status"], row["error"]) not in (
+            ("interrupted", "runtime_restarted"),
+            ("failed", "workforce_branch_failed"),
         ):
             return False
         # Batch attempts must be replaced through their join, including the summary.
@@ -372,7 +415,7 @@ class AgentStore:
 
     def restart_turn(self, db, scope, row, settings, harnesses):
         old = self.run(row)
-        return self.begin(
+        new_run = self.begin(
             *scope,
             old["agent_id"],
             settings.expected_revision,
@@ -386,6 +429,12 @@ class AgentStore:
             before_queue=True,
             harnesses=harnesses,
         )[0]
+
+        db.execute(
+            "INSERT OR IGNORE INTO workforce_events(run_id,event_id) SELECT ?,event_id FROM workforce_events WHERE run_id=?",
+            (new_run["id"], old["id"]),
+        )
+        return new_run
 
     @staticmethod
     def capture_answer(db, owner, project, target_id, source_run_id):

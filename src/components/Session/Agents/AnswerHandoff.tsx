@@ -23,7 +23,7 @@ import type {
   SourceAnswer,
   sessionAgentApi,
 } from '@/service/sessionAgentApi';
-import { resolveAgentConnection } from '@/service/sessionAgentModels';
+import { resolveNodeConnection } from '@/service/sessionAgentModels';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TurnTools } from './ToolPermissions';
@@ -49,6 +49,7 @@ export function AnswerReference({ source }: { source: SourceAnswer }) {
 export function AnswerHandoff({
   source,
   targets,
+  allNodes,
   choices,
   api,
   email,
@@ -58,6 +59,7 @@ export function AnswerHandoff({
 }: {
   source: SessionAgentRun;
   targets: SessionAgent[];
+  allNodes?: SessionAgent[];
   choices: ConfiguredModelChoice[];
   api: ReturnType<typeof sessionAgentApi>;
   email: string;
@@ -96,10 +98,15 @@ export function AnswerHandoff({
       current = false;
     };
   }, [api, agentId, attempt]);
-  let connection: ReturnType<typeof resolveAgentConnection> | undefined;
+  let connection: ReturnType<typeof resolveNodeConnection> | undefined;
   if (target) {
     try {
-      connection = resolveAgentConnection(target.model, choices);
+      connection = resolveNodeConnection(
+        target,
+        choices,
+        allNodes ?? targets,
+        email
+      );
     } catch {
       /* Display the model status in the dialog. */
     }

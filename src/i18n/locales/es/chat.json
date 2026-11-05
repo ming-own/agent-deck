@@ -726,5 +726,17 @@
   "queue-confirm": "Confirmar y ejecutar",
   "batch-retry": "Reintentar ramas fallidas",
   "batch-resume": "Continuar resumen",
-  "batch-stopped": "Detenido"
+  "batch-stopped": "Detenido",
+  "workshop": "Taller",
+  "workshop-library": "Plantillas",
+  "workshop-save": "Guardar como plantilla",
+  "workshop-built-in": "Plantilla integrada",
+  "workshop-custom": "Plantilla propia",
+  "workshop-from": "Derivada de",
+  "workshop-install": "Añadir a esta sesión",
+  "workshop-source": "Origen",
+  "workshop-name": "Nombre de plantilla",
+  "workshop-fork": "Guardar como plantilla nueva",
+  "workshop-version": "Guardar nueva versión",
+  "workshop-saved": "Guardado en el taller"
 }

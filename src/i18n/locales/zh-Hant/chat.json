@@ -718,5 +718,17 @@
   "queue-confirm": "確認並執行",
   "batch-retry": "重試失敗分支",
   "batch-resume": "繼續彙總",
-  "batch-stopped": "已停止"
+  "batch-stopped": "已停止",
+  "workshop": "創意工坊",
+  "workshop-library": "範本庫",
+  "workshop-save": "儲存為範本",
+  "workshop-built-in": "內建範本",
+  "workshop-custom": "自訂範本",
+  "workshop-from": "衍生自",
+  "workshop-install": "加入此工作階段",
+  "workshop-source": "範本來源",
+  "workshop-name": "範本名稱",
+  "workshop-fork": "另存為新範本",
+  "workshop-version": "儲存新版本",
+  "workshop-saved": "已儲存至創意工坊"
 }

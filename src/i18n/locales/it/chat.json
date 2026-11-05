@@ -726,5 +726,17 @@
   "queue-confirm": "Conferma e avvia",
   "batch-retry": "Riprova i rami falliti",
   "batch-resume": "Riprendi il riepilogo",
-  "batch-stopped": "Arrestato"
+  "batch-stopped": "Arrestato",
+  "workshop": "Laboratorio",
+  "workshop-library": "Modelli",
+  "workshop-save": "Salva come modello",
+  "workshop-built-in": "Modello integrato",
+  "workshop-custom": "Modello personale",
+  "workshop-from": "Derivato da",
+  "workshop-install": "Aggiungi alla sessione",
+  "workshop-source": "Origine del modello",
+  "workshop-name": "Nome del modello",
+  "workshop-fork": "Crea un modello",
+  "workshop-version": "Salva nuova versione",
+  "workshop-saved": "Salvato nel laboratorio"
 }

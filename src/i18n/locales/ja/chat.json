@@ -718,5 +718,17 @@
   "queue-confirm": "確認して実行",
   "batch-retry": "失敗した分岐を再実行",
   "batch-resume": "統合を再開",
-  "batch-stopped": "停止済み"
+  "batch-stopped": "停止済み",
+  "workshop": "ワークショップ",
+  "workshop-library": "テンプレート一覧",
+  "workshop-save": "テンプレートに保存",
+  "workshop-built-in": "標準テンプレート",
+  "workshop-custom": "カスタムテンプレート",
+  "workshop-from": "派生元",
+  "workshop-install": "このセッションに追加",
+  "workshop-source": "保存元",
+  "workshop-name": "テンプレート名",
+  "workshop-fork": "新規テンプレートとして保存",
+  "workshop-version": "新しいバージョンを保存",
+  "workshop-saved": "ワークショップに保存しました"
 }

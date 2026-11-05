@@ -28,6 +28,10 @@ export interface SessionAgent extends AgentBehavior {
   name: string;
   model: AgentModelReference;
   revision: number;
+  workforce?: Omit<BatchSpec, 'message'>;
+  workforce_member?: boolean;
+  template_family?: string;
+  template_version?: number;
   position?: CanvasPosition | null;
   created_at: string;
   updated_at: string;
@@ -141,12 +145,30 @@ export interface BatchReceipt {
   summary: BatchResult | null;
 }
 
+export interface WorkshopTemplate {
+  family: string;
+  version: number;
+  name: string;
+  kind: 'agent' | 'workforce';
+  builtin?: boolean;
+  base_family?: string;
+  base_version?: number;
+}
+
 /** Capture scope at render/gesture time; fetch also fences account switches. */
 export function sessionAgentApi(account: string, projectId: string) {
   const root = `/session-agents/${encodeURIComponent(projectId)}`;
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    workforceTrace: (id: string): Promise<BatchReceipt | null> =>
+      fetchGet(`${root}/workshop/runs/${id}`, undefined, headers, options),
+    templates: (): Promise<WorkshopTemplate[]> =>
+      fetchGet(`${root}/workshop/templates`, undefined, headers, options),
+    saveTemplate: (body: unknown): Promise<WorkshopTemplate> =>
+      fetchPost(`${root}/workshop/templates`, body, headers, options),
+    installTemplate: (body: unknown): Promise<SessionAgent> =>
+      fetchPost(`${root}/workshop/instances`, body, headers, options),
     recoverBatch: (id: string, body: unknown): Promise<BatchReceipt> =>
       fetchPost(`${root}/router/batches/${id}/recover`, body, headers, options),
     stopBatch: (id: string, generation: number) =>

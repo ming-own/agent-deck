@@ -31,6 +31,26 @@ def start_task(store, db, scope, target, settings, prompt, harnesses):
     return run
 
 
+def workforce_trace(store, scope, run_id):
+    with store.connect() as db:
+        row = db.execute(
+            "SELECT b.* FROM workforce_events e JOIN route_batches b ON b.event_id=e.event_id "
+            "JOIN agent_runs r ON r.id=e.run_id AND r.owner=b.owner AND r.project=b.project "
+            "WHERE b.owner=? AND b.project=? AND e.run_id=?",
+            (*scope, str(run_id)),
+        ).fetchone()
+        return receipt(db, row) if row else None
+
+
+def require_external(store, scope, event):
+    with store.connect() as db:
+        if db.execute(
+            "SELECT 1 FROM workforce_events e JOIN agent_runs r ON r.id=e.run_id WHERE r.owner=? AND r.project=? AND e.event_id=?",
+            (*scope, str(event)),
+        ).fetchone():
+            raise Conflict("Manage this execution from its Workforce task")
+
+
 def receipt(db, row):
     spec = json.loads(row["spec"])
     ids = json.loads(row["branch_ids"])
@@ -70,7 +90,7 @@ def batches(store, scope):
             receipt(db, row)
             for row in db.execute(
                 """
-                SELECT * FROM route_batches WHERE owner=? AND project=? AND (
+                SELECT * FROM route_batches WHERE owner=? AND project=? AND NOT EXISTS (SELECT 1 FROM workforce_events e WHERE e.event_id=route_batches.event_id AND e.run_id IN (SELECT id FROM agent_runs WHERE owner=route_batches.owner AND project=route_batches.project)) AND (
                     state IN ('waiting','blocked','interrupted','stopped')
                     OR rowid IN (
                         SELECT rowid FROM route_batches WHERE owner=? AND project=?
@@ -86,7 +106,7 @@ def batches(store, scope):
         ]
 
 
-def admit(store, scope, body, harnesses):
+def admit(store, scope, body, harnesses, *, match_text=None):
     spec = body.spec()
     logical = {
         **spec,
@@ -116,7 +136,12 @@ def admit(store, scope, body, harnesses):
         for target in [*body.branches, body.summary]:
             store.require_task(db, *scope, str(target.agent_id), "default")
         for i, branch in enumerate(body.branches):
-            if branch.contains.casefold() not in body.message.casefold():
+            if (
+                branch.contains.casefold()
+                not in (
+                    body.message if match_text is None else match_text
+                ).casefold()
+            ):
                 ids.append(None)
                 continue
             settings = body.settings.get(branch.agent_id)
@@ -248,7 +273,9 @@ def stop(store, scope, event_id, generation):
         ]
 
 
-def recover(store, scope, event_id, recovery, harnesses):
+def recover(
+    store, scope, event_id, recovery, harnesses, *, batch_class=BatchRequest
+):
     # Replay of the same user action cannot start a second attempt.
     def settings_key(s):
         return (
@@ -291,7 +318,7 @@ def recover(store, scope, event_id, recovery, harnesses):
         if any(r and r["status"] == "running" for r in batch["branches"]):
             raise Conflict("Branches are still stopping")
         spec = batch["spec"]
-        body = BatchRequest(
+        body = batch_class(
             **spec,
             event_id=event_id,
             settings={spec["summary"]["agent_id"]: recovery.summary},

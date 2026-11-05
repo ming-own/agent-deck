@@ -722,5 +722,17 @@
   "queue-confirm": "Confirm and run",
   "batch-retry": "Retry failed branches",
   "batch-resume": "Resume summary",
-  "batch-stopped": "Stopped"
+  "batch-stopped": "Stopped",
+  "workshop": "Workshop",
+  "workshop-library": "Templates",
+  "workshop-save": "Save as template",
+  "workshop-built-in": "Built-in template",
+  "workshop-custom": "Custom template",
+  "workshop-from": "Derived from",
+  "workshop-install": "Add to this session",
+  "workshop-source": "Template source",
+  "workshop-name": "Template name",
+  "workshop-fork": "Save as new template",
+  "workshop-version": "Save new version",
+  "workshop-saved": "Saved to Workshop"
 }

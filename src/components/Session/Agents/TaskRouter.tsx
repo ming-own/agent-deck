@@ -25,7 +25,7 @@ import {
   type RouteReceipt,
   type SessionAgent,
 } from '@/service/sessionAgentApi';
-import { resolveAgentConnection } from '@/service/sessionAgentModels';
+import { resolveNodeConnection } from '@/service/sessionAgentModels';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BranchRouter } from './BranchRouter';
@@ -42,12 +42,14 @@ export interface RouterLocation {
 export function TaskRouter({
   location,
   onTaskCreated,
+  openWorkshop,
   account,
   choices,
   email,
   close,
 }: {
   onTaskCreated: () => void;
+  openWorkshop?: () => void;
   location: RouterLocation;
   account: string;
   choices: ConfiguredModelChoice[];
@@ -137,6 +139,16 @@ export function TaskRouter({
                 {t('chat.route-log')}
               </TabsTrigger>
             </TabsList>
+            {!location.origin && openWorkshop && (
+              <Button
+                variant="text"
+                size="xs"
+                disabled={sending}
+                onClick={openWorkshop}
+              >
+                {t('chat.workshop')}
+              </Button>
+            )}
           </div>
           <DialogContentSection>
             <TabsContent
@@ -312,10 +324,15 @@ function RouteComposer({
       current = false;
     };
   }, [api, agentId, reply, retry]);
-  let connection: ReturnType<typeof resolveAgentConnection> | undefined;
+  let connection: ReturnType<typeof resolveNodeConnection> | undefined;
   if (agent)
     try {
-      connection = resolveAgentConnection(agent.model, choices);
+      connection = resolveNodeConnection(
+        agent,
+        choices,
+        location.agents,
+        email
+      );
     } catch {
       /* Offer the existing model-unavailable state. */
     }

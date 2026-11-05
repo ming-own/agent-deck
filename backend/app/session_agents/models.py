@@ -81,6 +81,9 @@ class ModelConnection(BaseModel):
     """Ephemeral inference settings. Never written to the instance database."""
 
     model_config = ConfigDict(extra="forbid")
+    members: dict[UUID, "RunSettings"] = Field(
+        default_factory=dict, max_length=32, repr=False
+    )
     model_platform: str
     model_type: str
     api_key: str = Field(default="", repr=False)
@@ -196,3 +199,36 @@ class RecoverBatch(BaseModel):
     )
     summary: RunSettings
     summary_attempt: UUID | None = None
+
+
+class WorkshopRoute(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    branches: list[BranchRule] = Field(min_length=1, max_length=8)
+    summary: BranchTarget
+    join: Literal["all_success", "all_finished"] = "all_success"
+
+
+class SaveTemplate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    name: str = Field(min_length=1, max_length=100)
+    request_id: UUID | None = None
+    node_id: UUID | None = None
+    route: WorkshopRoute | None = None
+    new_version: bool = False
+
+    @model_validator(mode="after")
+    def one_source(self):
+        if (self.route is None) == (self.node_id is None):
+            raise ValueError("Choose one source")
+        return self
+
+
+class InstallTemplate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    instance_id: UUID
+    family: str = Field(min_length=1, max_length=100)
+    version: int = Field(ge=1)
+    model: ModelReference | None = None
+
+
+ModelConnection.model_rebuild()

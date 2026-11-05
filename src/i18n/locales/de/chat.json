@@ -722,5 +722,17 @@
   "queue-confirm": "Bestätigen und starten",
   "batch-retry": "Fehlgeschlagene Zweige erneut starten",
   "batch-resume": "Zusammenfassung fortsetzen",
-  "batch-stopped": "Gestoppt"
+  "batch-stopped": "Gestoppt",
+  "workshop": "Werkstatt",
+  "workshop-library": "Vorlagen",
+  "workshop-save": "Als Vorlage speichern",
+  "workshop-built-in": "Integrierte Vorlage",
+  "workshop-custom": "Eigene Vorlage",
+  "workshop-from": "Abgeleitet von",
+  "workshop-install": "Zur Sitzung hinzufügen",
+  "workshop-source": "Vorlagenquelle",
+  "workshop-name": "Vorlagenname",
+  "workshop-fork": "Als neue Vorlage speichern",
+  "workshop-version": "Neue Version speichern",
+  "workshop-saved": "In Werkstatt gespeichert"
 }

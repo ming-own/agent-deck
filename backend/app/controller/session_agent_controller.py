@@ -8,16 +8,18 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.auth import LocalControlPrincipal, require_local_control_principal
-from app.session_agents.batches import batches
+from app.session_agents import batches, workshop
 from app.session_agents.models import (
     AgentConfig,
     BatchRequest,
     CreateTask,
+    InstallTemplate,
     PositionUpdate,
     RecoverBatch,
     RouteRequest,
     RunRequest,
     RunSettings,
+    SaveTemplate,
     UpdateAgent,
 )
 from app.session_agents.routing import inbox
@@ -238,7 +240,7 @@ async def route_message(
 @router.get("/{project_id}/router/batches")
 def batch_history(project_id: str, account: Annotated[str, Depends(owner)]):
     try:
-        return batches(service().store, (account, project_id))
+        return batches.batches(service().store, (account, project_id))
     except NotFound as exc:
         raise translate(exc) from exc
 
@@ -295,5 +297,44 @@ async def confirm_queued(
         return service().confirm(
             (account, project_id), agent_id, task_id, run_id, body
         )
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.get("/{project_id}/workshop/runs/{run_id}")
+def workforce_trace(
+    project_id: str, run_id: str, account: Annotated[str, Depends(owner)]
+):
+    return batches.workforce_trace(
+        service().store, (account, project_id), run_id
+    )
+
+
+@router.get("/{project_id}/workshop/templates")
+def list_templates(project_id: str, account: Annotated[str, Depends(owner)]):
+    return workshop.catalog(service().store, account)
+
+
+@router.post("/{project_id}/workshop/templates")
+def save_template(
+    project_id: str,
+    body: SaveTemplate,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return workshop.save(service().store, (account, project_id), body)
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.post("/{project_id}/workshop/instances")
+def install_template(
+    project_id: str,
+    body: InstallTemplate,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        root = workshop.install(service().store, (account, project_id), body)
+        return service().store.get(account, project_id, root)
     except (NotFound, Conflict) as exc:
         raise translate(exc) from exc

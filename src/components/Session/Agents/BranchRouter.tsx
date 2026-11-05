@@ -18,7 +18,7 @@ import type {
   SessionAgent,
   sessionAgentApi,
 } from '@/service/sessionAgentApi';
-import { resolveAgentConnection } from '@/service/sessionAgentModels';
+import { resolveNodeConnection } from '@/service/sessionAgentModels';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BatchActions } from './BatchActions';
@@ -124,11 +124,13 @@ export function BranchRouter(props: Props) {
   const { t } = useTranslation();
   const [records, setRecords] = useState<BatchReceipt[] | null>(null);
   const [grants, setGrants] = useState<Record<string, AgentToolId[]>>({});
+  const [templateName, setTemplateName] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<BatchSpec | null>(null);
   const [err, setErr] = useState('');
   const [epoch, refresh] = useState(0);
   const lock = useRef(false);
+  const saveGesture = useRef<{ key: string; id: string } | null>(null);
   const pending = useRef<{ id: string; key: string } | null>(null);
   const branch = (i: number) => ({
     agent_id: agents[i % agents.length]?.id ?? '',
@@ -152,6 +154,7 @@ export function BranchRouter(props: Props) {
           }
     );
     setGrants({});
+    setTemplateName(null);
     setEditing(true);
     setErr('');
     pending.current = null;
@@ -193,7 +196,7 @@ export function BranchRouter(props: Props) {
         if (!a) throw new Error('unavailable');
         try {
           settings[id] = {
-            connection: resolveAgentConnection(a.model, choices),
+            connection: resolveNodeConnection(a, choices, agents, email),
             email,
             expected_revision: a.revision,
             approved_tools:
@@ -434,6 +437,56 @@ export function BranchRouter(props: Props) {
           )}
           {permissions(draft.summary.agent_id, 'summary')}
         </section>
+        {templateName !== null &&
+          input(t('chat.workshop-name'), templateName, setTemplateName, 100)}
+        <div>
+          <Button
+            type="button"
+            size="xs"
+            variant="text"
+            disabled={
+              sending || (templateName !== null && !templateName.trim())
+            }
+            onClick={async () => {
+              if (templateName === null) {
+                setTemplateName('');
+                return;
+              }
+              if (lock.current) return;
+              lock.current = true;
+              setSending(true);
+              try {
+                const key = JSON.stringify([
+                  templateName,
+                  draft.branches,
+                  draft.summary,
+                  draft.join,
+                ]);
+                if (saveGesture.current?.key !== key)
+                  saveGesture.current = { key, id: crypto.randomUUID() };
+                await api.saveTemplate({
+                  request_id: saveGesture.current.id,
+                  name: templateName.trim(),
+                  route: {
+                    branches: draft.branches,
+                    summary: draft.summary,
+                    join: draft.join,
+                  },
+                });
+                saveGesture.current = null;
+                setTemplateName(null);
+                setErr('chat.workshop-saved');
+              } catch {
+                setErr('chat.session-agents-save-error');
+              } finally {
+                lock.current = false;
+                setSending(false);
+              }
+            }}
+          >
+            {t('chat.workshop-save')}
+          </Button>
+        </div>
         {err && (
           <DsText role="base" aria-live="assertive">
             {t(err)}

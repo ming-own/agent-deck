@@ -31,7 +31,7 @@ import {
 } from '@/service/sessionAgentApi';
 import {
   modelReference,
-  resolveAgentConnection,
+  resolveNodeConnection,
 } from '@/service/sessionAgentModels';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -64,6 +64,8 @@ import { markSessionAgents } from './Launcher';
 import { SkillPicker } from './SkillPicker';
 import { TaskRouter, type RouterLocation } from './TaskRouter';
 import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
+import { WorkforceDetails } from './WorkforceDetails';
+import { Workshop } from './Workshop';
 
 const harnessLabels: Record<string, string> = {
   standard: 'chat.node-harness-standard',
@@ -133,6 +135,22 @@ function AgentInstances({
     project: string;
     node?: SessionAgent;
   } | null>(null);
+  const [workshop, setWorkshop] = useState<{
+    project: string;
+    node?: SessionAgent;
+  } | null>(null);
+  const [team, setTeam] = useState<{
+    project: string;
+    node: SessionAgent;
+  } | null>(null);
+  const workshopApi = useMemo(
+    () => sessionAgentApi(account, workshop?.project ?? projectId),
+    [account, workshop?.project, projectId]
+  );
+  const teamApi = useMemo(
+    () => sessionAgentApi(account, team?.project ?? projectId),
+    [account, team?.project, projectId]
+  );
   const editorProject = editor?.project ?? projectId;
   const editorApi = useMemo(
     () => sessionAgentApi(account, editorProject),
@@ -171,7 +189,8 @@ function AgentInstances({
   const openEditor = useCallback(
     (project: string, button: HTMLButtonElement, node?: SessionAgent) => {
       opener.current = button;
-      setEditor({ project, node });
+      if (node?.workforce) setTeam({ project, node });
+      else setEditor({ project, node });
     },
     []
   );
@@ -226,6 +245,13 @@ function AgentInstances({
         }
         actions={
           <>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setWorkshop({ project: projectId })}
+            >
+              {t('chat.workshop')}
+            </Button>
             <Button
               size="sm"
               variant="secondary"
@@ -340,6 +366,44 @@ function AgentInstances({
           </Button>
         </div>
       ) : null}
+      {team && !editor && !workshop && (
+        <WorkforceDetails
+          key={team.node.id}
+          node={team.node}
+          api={teamApi}
+          choices={choices}
+          epoch={canvasEpoch}
+          email={email}
+          close={() => setTeam(null)}
+          edit={(child, button) => openEditor(team.project, button, child)}
+          save={() => setWorkshop(team)}
+        />
+      )}
+      {workshop && (
+        <Workshop
+          key={workshop.project}
+          api={workshopApi}
+          projectId={workshop.project}
+          choices={choices}
+          initialNode={workshop.node}
+          onClose={() => setWorkshop(null)}
+          beforeInstall={async () => {
+            if (workshop.project !== projectId)
+              await markSessionAgents(
+                workshop.project,
+                account,
+                'canvasAgents'
+              );
+          }}
+          onInstalled={(installed) => {
+            if (workshop.project === projectId) {
+              void refresh().then(() => setSelected(installed.id));
+            }
+            setCanvasEpoch((v) => v + 1);
+            setTaskEpoch((v) => v + 1);
+          }}
+        />
+      )}
       {editor && (
         <AgentForm
           key={editor.node ? `edit-${editor.node.id}` : 'create'}
@@ -353,6 +417,10 @@ function AgentInstances({
       )}
       {router && (
         <TaskRouter
+          openWorkshop={() => {
+            setWorkshop({ project: router.project });
+            setRouter(null);
+          }}
           location={router}
           onTaskCreated={() => setTaskEpoch((n) => n + 1)}
           account={account}
@@ -834,7 +902,7 @@ function AgentConversation({
   const running = runs.find((run) => run.status === 'running');
   let available = true;
   try {
-    resolveAgentConnection(node.model, choices);
+    resolveNodeConnection(node, choices, targets, email);
   } catch {
     available = false;
   }
@@ -886,7 +954,7 @@ function AgentConversation({
       };
     const submissionId = request.current.id;
     try {
-      const connection = resolveAgentConnection(node.model, choices);
+      const connection = resolveNodeConnection(node, choices, targets, email);
       const result = await api.start(node.id, {
         task_id: taskId,
         request_id: submissionId,
@@ -916,6 +984,7 @@ function AgentConversation({
       {handoff && (
         <AnswerHandoff
           {...handoff}
+          allNodes={[node, ...targets]}
           targets={targets}
           choices={choices}
           api={api}
@@ -1040,9 +1109,11 @@ function AgentConversation({
                         confirm={async (tools) => {
                           await api.confirmQueued(node.id, taskId, run.id, {
                             expected_revision: node.revision,
-                            connection: resolveAgentConnection(
-                              node.model,
-                              choices
+                            connection: resolveNodeConnection(
+                              node,
+                              choices,
+                              targets,
+                              email
                             ),
                             email,
                             approved_tools: tools,
