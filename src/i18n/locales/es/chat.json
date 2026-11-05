@@ -669,5 +669,11 @@
   "node-tool-withheld": "Sin permiso en este turno",
   "node-harness": "Modo de ejecución",
   "node-harness-standard": "Ejecución estándar",
-  "node-harness-unrecorded": "Sin registrar"
+  "node-harness-unrecorded": "Sin registrar",
+  "node-harness-plan-execute": "Planificar y ejecutar",
+  "node-phase-planning": "Planificando",
+  "node-phase-executing": "Ejecutando el plan",
+  "node-run-plan": "Plan",
+  "node-run-result": "Resultado",
+  "node-invalid-plan": "No se pudo generar un plan conciso. Inténtalo de nuevo."
 }

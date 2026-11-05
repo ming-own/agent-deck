@@ -38,6 +38,7 @@ export interface SessionAgentRun {
   };
   prompt: string;
   output: string;
+  plan?: string | null;
   status: 'running' | 'completed' | 'failed' | 'interrupted';
   error: string | null;
   created_at: string;

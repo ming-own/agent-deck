@@ -79,6 +79,8 @@ class AgentStore:
 
     @staticmethod
     def run(row):
+        snapshot = json.loads(row["snapshot"])
+        plan = snapshot.pop("execution_plan", None)
         return {
             key: row[key]
             for key in (
@@ -93,13 +95,14 @@ class AgentStore:
                 "finished_at",
             )
         } | {
+            "plan": plan,
             "agent": {
                 "role": "",
                 "instructions": "",
                 "skill_ids": [],
                 "tool_policy": {},
-                **json.loads(row["snapshot"]),
-            }
+                **snapshot,
+            },
         }
 
     def list(self, owner, project):
@@ -260,12 +263,24 @@ class AgentStore:
             updated = db.execute(
                 "UPDATE agent_runs SET snapshot=json_set(snapshot, ?, "
                 "COALESCE(json_extract(snapshot, ?), 0) + 1) WHERE id=? "
-                "AND status='running' AND EXISTS (SELECT 1 FROM "
+                "AND status='running' AND (COALESCE(json_extract(snapshot, '$.harness_id'), 'standard') != 'plan_execute' "
+                "OR json_type(snapshot, '$.execution_plan')='text') AND EXISTS (SELECT 1 FROM "
                 "json_each(snapshot, '$.granted_tools') WHERE value=?)",
                 (key, key, run_id, tool),
             )
             if not updated.rowcount:
                 raise PermissionError("Tool unavailable for this turn")
+
+    def record_plan(self, run_id, plan):
+        with self.connect() as db:
+            updated = db.execute(
+                "UPDATE agent_runs SET snapshot=json_set(snapshot, '$.execution_plan', ?) "
+                "WHERE id=? AND status='running' AND json_extract(snapshot, '$.harness_id')='plan_execute' "
+                "AND json_type(snapshot, '$.execution_plan') IS NULL",
+                (plan, run_id),
+            )
+            if not updated.rowcount:
+                raise Conflict("Plan no longer accepted for this run")
 
     def record_skill_versions(self, run_id, versions):
         with self.connect() as db:

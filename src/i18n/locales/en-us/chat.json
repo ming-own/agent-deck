@@ -665,5 +665,11 @@
   "node-tool-withheld": "Not granted this turn",
   "node-harness": "Execution harness",
   "node-harness-standard": "Standard execution",
-  "node-harness-unrecorded": "Not recorded"
+  "node-harness-unrecorded": "Not recorded",
+  "node-harness-plan-execute": "Plan then execute",
+  "node-phase-planning": "Planning",
+  "node-phase-executing": "Executing the plan",
+  "node-run-plan": "Plan",
+  "node-run-result": "Result",
+  "node-invalid-plan": "Could not produce a concise plan. Try sending the task again."
 }

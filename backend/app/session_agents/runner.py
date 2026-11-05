@@ -63,7 +63,9 @@ def _node_model_settings(settings):
     }
 
 
-async def run_text_agent(node, history, prompt, connection, email):
+async def run_text_agent(
+    node, history, prompt, connection, email, *, stage_instruction=""
+):
     # Keep history bounded explicitly instead of silently dropping earlier turns.
     if (
         sum(len(question) + len(answer) for question, answer in history)
@@ -98,6 +100,8 @@ async def run_text_agent(node, history, prompt, connection, email):
         system += f"\n\nInstructions:\n{node['instructions']}"
     if node.get("skill_material"):
         system += "\n\nSelected skill instructions:\n" + node["skill_material"]
+    if stage_instruction:
+        system += "\n\n" + stage_instruction
     build = create_model_builder(
         node["name"], node["id"], system, options, tools=tools
     )

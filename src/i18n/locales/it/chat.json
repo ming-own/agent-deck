@@ -669,5 +669,11 @@
   "node-tool-withheld": "Non consentito in questo turno",
   "node-harness": "Modalità di esecuzione",
   "node-harness-standard": "Esecuzione standard",
-  "node-harness-unrecorded": "Non registrato"
+  "node-harness-unrecorded": "Non registrato",
+  "node-harness-plan-execute": "Pianifica ed esegui",
+  "node-phase-planning": "Pianificazione",
+  "node-phase-executing": "Esecuzione del piano",
+  "node-run-plan": "Piano",
+  "node-run-result": "Risultato",
+  "node-invalid-plan": "Impossibile generare un piano conciso. Riprova."
 }

@@ -681,5 +681,11 @@
   "node-tool-withheld": "غير مسموح لهذه الجولة",
   "node-harness": "إطار التنفيذ",
   "node-harness-standard": "التنفيذ القياسي",
-  "node-harness-unrecorded": "غير مسجل"
+  "node-harness-unrecorded": "غير مسجل",
+  "node-harness-plan-execute": "التخطيط ثم التنفيذ",
+  "node-phase-planning": "جارٍ التخطيط",
+  "node-phase-executing": "جارٍ تنفيذ الخطة",
+  "node-run-plan": "الخطة",
+  "node-run-result": "النتيجة",
+  "node-invalid-plan": "تعذّر إعداد خطة موجزة. أعد إرسال المهمة."
 }

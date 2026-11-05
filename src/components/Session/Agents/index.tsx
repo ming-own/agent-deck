@@ -40,6 +40,11 @@ import { useTranslation } from 'react-i18next';
 import { SkillPicker } from './SkillPicker';
 import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
 
+const harnessLabels: Record<string, string> = {
+  standard: 'chat.node-harness-standard',
+  plan_execute: 'chat.node-harness-plan-execute',
+};
+
 export function SessionAgents({ projectId }: { projectId: string }) {
   const auth = useAuthStore();
   const account = getAccountEnvironmentKey(auth);
@@ -239,7 +244,7 @@ function AgentForm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const harnessId = node?.harness_id ?? 'standard';
+  const [harnessId, setHarnessId] = useState(node?.harness_id ?? 'standard');
   const [name, setName] = useState(node?.name ?? '');
   const [model, setModel] = useState(node?.model.id ?? '');
   const [role, setRole] = useState(node?.role ?? '');
@@ -306,14 +311,22 @@ function AgentForm({
           ))}
         </SelectContent>
       </Select>
-      <Input
-        readOnly
-        title={t('chat.node-harness')}
-        aria-label={t('chat.node-harness')}
-        value={
-          harnessId === 'standard' ? t('chat.node-harness-standard') : harnessId
-        }
-      />
+      <Select value={harnessId} onValueChange={setHarnessId} disabled={saving}>
+        <SelectTrigger
+          title={t('chat.node-harness')}
+          aria-label={t('chat.node-harness')}
+          wrapperClassName="w-full"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent fitTrigger>
+          {Object.entries(harnessLabels).map(([id, label]) => (
+            <SelectItem key={id} value={id}>
+              {t(label)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {!choices.length && (
         <DsText role="base">{t('chat.session-agents-no-models')}</DsText>
       )}
@@ -407,9 +420,11 @@ function AgentBehaviorDetails({
               {t('chat.node-harness')}
             </DsText>
             <DsText as="dd" role="base">
-              {agent.harness_id === 'standard'
-                ? t('chat.node-harness-standard')
-                : (agent.harness_id ?? t('chat.node-harness-unrecorded'))}
+              {agent.harness_id
+                ? harnessLabels[agent.harness_id]
+                  ? t(harnessLabels[agent.harness_id])
+                  : agent.harness_id
+                : t('chat.node-harness-unrecorded')}
               {agent.harness_version && ` · v${agent.harness_version}`}
             </DsText>
           </div>
@@ -655,7 +670,14 @@ function AgentConversation({
           >
             <DsText role="meta" className="text-ds-ink-muted-default">
               {run.agent.name} · {run.agent.model.name} ·{' '}
-              {t(`chat.session-agents-status-${run.status}`)}
+              {run.status === 'running' &&
+              run.agent.harness_id === 'plan_execute'
+                ? t(
+                    run.plan
+                      ? 'chat.node-phase-executing'
+                      : 'chat.node-phase-planning'
+                  )
+                : t(`chat.session-agents-status-${run.status}`)}
             </DsText>
             <AgentBehaviorDetails
               agent={run.agent}
@@ -668,6 +690,25 @@ function AgentConversation({
             >
               {run.prompt}
             </DsText>
+            {run.plan && (
+              <div className="flex flex-col gap-ds-stack-related">
+                <DsText role="meta" weight="semibold">
+                  {t('chat.node-run-plan')}
+                </DsText>
+                <DsText
+                  as="p"
+                  role="base"
+                  className="break-words whitespace-pre-wrap"
+                >
+                  {run.plan}
+                </DsText>
+              </div>
+            )}
+            {run.plan && run.output && (
+              <DsText role="meta" weight="semibold">
+                {t('chat.node-run-result')}
+              </DsText>
+            )}
             {run.output && (
               <DsText
                 as="p"
@@ -680,11 +721,13 @@ function AgentConversation({
             {run.status === 'failed' && (
               <DsText role="base">
                 {t(
-                  run.error === 'skill_unavailable'
-                    ? 'chat.session-agents-skill-unavailable'
-                    : run.error === 'skill_limit'
-                      ? 'chat.session-agents-skill-limit'
-                      : 'chat.session-agents-run-error'
+                  run.error === 'invalid_plan'
+                    ? 'chat.node-invalid-plan'
+                    : run.error === 'skill_unavailable'
+                      ? 'chat.session-agents-skill-unavailable'
+                      : run.error === 'skill_limit'
+                        ? 'chat.session-agents-skill-limit'
+                        : 'chat.session-agents-run-error'
                 )}
               </DsText>
             )}

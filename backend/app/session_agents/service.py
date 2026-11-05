@@ -3,7 +3,7 @@ import logging
 import traceback
 from types import MappingProxyType
 
-from .harnesses import HARNESSES, TurnContext
+from .harnesses import HARNESSES, InvalidPlan, TurnContext
 from .models import AgentConfig, RunRequest
 from .skills import SkillLimitExceeded, SkillUnavailable, resolve_skills
 from .store import AgentStore, Conflict, NotFound
@@ -65,6 +65,9 @@ class AgentService:
                     skill_material=material,
                     granted_tools=tuple(agent["granted_tools"]),
                     owner=owner,
+                    record_plan=lambda plan: self.store.record_plan(
+                        run["id"], plan
+                    ),
                     admit_tool=lambda tool: self.store.admit_tool_call(
                         run["id"], tool
                     ),
@@ -76,6 +79,8 @@ class AgentService:
             self.store.finish(run["id"], "completed", output=output)
         except asyncio.CancelledError:
             self.store.finish(run["id"], "interrupted", error="cancelled")
+        except InvalidPlan:
+            self.store.finish(run["id"], "failed", error="invalid_plan")
         except SkillUnavailable:
             self.store.finish(run["id"], "failed", error="skill_unavailable")
         except SkillLimitExceeded:

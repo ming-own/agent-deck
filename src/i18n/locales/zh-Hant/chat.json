@@ -661,5 +661,11 @@
   "node-tool-withheld": "本輪未授權",
   "node-harness": "執行方式（Harness）",
   "node-harness-standard": "標準執行",
-  "node-harness-unrecorded": "當時未記錄"
+  "node-harness-unrecorded": "當時未記錄",
+  "node-harness-plan-execute": "先規劃、再執行",
+  "node-phase-planning": "正在擬定計畫",
+  "node-phase-executing": "正在執行計畫",
+  "node-run-plan": "執行計畫",
+  "node-run-result": "執行結果",
+  "node-invalid-plan": "未能產生簡明計畫，請重新傳送任務。"
 }

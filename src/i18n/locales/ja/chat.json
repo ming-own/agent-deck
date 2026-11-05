@@ -661,5 +661,11 @@
   "node-tool-withheld": "今回は未許可",
   "node-harness": "実行方式（Harness）",
   "node-harness-standard": "標準実行",
-  "node-harness-unrecorded": "記録なし"
+  "node-harness-unrecorded": "記録なし",
+  "node-harness-plan-execute": "計画してから実行",
+  "node-phase-planning": "計画を作成中",
+  "node-phase-executing": "計画を実行中",
+  "node-run-plan": "実行計画",
+  "node-run-result": "実行結果",
+  "node-invalid-plan": "簡潔な計画を作成できませんでした。もう一度送信してください。"
 }

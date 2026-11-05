@@ -661,5 +661,11 @@
   "node-tool-withheld": "이번에는 허용하지 않음",
   "node-harness": "실행 방식 (Harness)",
   "node-harness-standard": "표준 실행",
-  "node-harness-unrecorded": "기록 없음"
+  "node-harness-unrecorded": "기록 없음",
+  "node-harness-plan-execute": "계획 후 실행",
+  "node-phase-planning": "계획 수립 중",
+  "node-phase-executing": "계획 실행 중",
+  "node-run-plan": "실행 계획",
+  "node-run-result": "실행 결과",
+  "node-invalid-plan": "간결한 계획을 생성할 수 없습니다. 다시 시도하세요."
 }

@@ -665,5 +665,11 @@
   "node-tool-withheld": "Für diese Runde gesperrt",
   "node-harness": "Ausführungsmodus",
   "node-harness-standard": "Standardausführung",
-  "node-harness-unrecorded": "Nicht erfasst"
+  "node-harness-unrecorded": "Nicht erfasst",
+  "node-harness-plan-execute": "Planen und ausführen",
+  "node-phase-planning": "Planung läuft",
+  "node-phase-executing": "Plan wird ausgeführt",
+  "node-run-plan": "Plan",
+  "node-run-result": "Ergebnis",
+  "node-invalid-plan": "Kein kurzer Plan verfügbar. Bitte erneut versuchen."
 }

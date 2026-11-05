@@ -661,5 +661,11 @@
   "node-tool-withheld": "本轮未授权",
   "node-harness": "执行方式（Harness）",
   "node-harness-standard": "标准执行",
-  "node-harness-unrecorded": "当时未记录"
+  "node-harness-unrecorded": "当时未记录",
+  "node-harness-plan-execute": "先计划、再执行",
+  "node-phase-planning": "正在制定计划",
+  "node-phase-executing": "正在执行计划",
+  "node-run-plan": "执行计划",
+  "node-run-result": "执行结果",
+  "node-invalid-plan": "未能生成简明计划，请重新发送任务。"
 }

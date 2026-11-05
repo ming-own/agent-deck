@@ -47,6 +47,7 @@ vi.mock('@/hooks/useConfiguredModels', () => ({
 vi.mock('@/components/ui/select', () => ({
   Select: ({ children, value, onValueChange, disabled }: any) => (
     <select
+      aria-label={children[0].props['aria-label']}
       value={value}
       disabled={disabled}
       onChange={(event) => onValueChange(event.target.value)}
@@ -131,9 +132,13 @@ describe('Session Agent instances', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent name' }), {
       target: { value: 'Reviewer' },
     });
-    fireEvent.change(screen.getByRole('combobox'), {
+    fireEvent.change(screen.getByRole('combobox', { name: 'Model' }), {
       target: { value: 'codex:model-b' },
     });
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Execution harness' }),
+      { target: { value: 'plan_execute' } }
+    );
     fireEvent.change(screen.getByRole('textbox', { name: 'Role (optional)' }), {
       target: { value: 'Reviewer' },
     });
@@ -154,7 +159,7 @@ describe('Session Agent instances', () => {
         role: 'Reviewer',
         instructions: 'List risks first.',
         skill_ids: ['audit-package'],
-        harness_id: 'standard',
+        harness_id: 'plan_execute',
         tool_policy: { calculate: 'turn' },
       })
     );
@@ -220,6 +225,7 @@ describe('Session Agent instances', () => {
 it('edits node instructions while keeping the previous run configuration visible', async () => {
   const configured = {
     ...first,
+    harness_id: 'plan_execute',
     role: 'Researcher',
     instructions: 'Cite sources.',
   };
@@ -227,7 +233,8 @@ it('edits node instructions while keeping the previous run configuration visible
   mocks.api.runs.mockResolvedValue([
     {
       id: 'old-run',
-      agent: configured,
+      agent: { ...configured, harness_version: '1.0.0' },
+      plan: 'Check sources for each claim.',
       prompt: 'Question',
       output: 'Answer',
       status: 'completed',
@@ -236,6 +243,7 @@ it('edits node instructions while keeping the previous run configuration visible
   mocks.api.update.mockResolvedValue({
     ...configured,
     revision: 2,
+    harness_id: 'standard',
     role: 'Reviewer',
     instructions: 'List risks.',
   });
@@ -247,6 +255,9 @@ it('edits node instructions while keeping the previous run configuration visible
   expect(
     screen.getByRole('textbox', { name: 'Instructions (optional)' })
   ).toHaveValue('Cite sources.');
+  const harness = screen.getByRole('combobox', { name: 'Execution harness' });
+  expect(harness).toHaveValue('plan_execute');
+  fireEvent.change(harness, { target: { value: 'standard' } });
   fireEvent.change(screen.getByRole('textbox', { name: 'Role (optional)' }), {
     target: { value: 'Reviewer' },
   });
@@ -272,6 +283,8 @@ it('edits node instructions while keeping the previous run configuration visible
   fireEvent.click(
     await screen.findByRole('button', { name: 'Run configuration' })
   );
+  expect(screen.getByText('Plan then execute · v1.0.0')).toBeVisible();
+  expect(screen.getByText('Check sources for each claim.')).toBeVisible();
   expect(screen.getByText('Cite sources.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
   await screen.findByRole('checkbox', { name: 'Audit' });

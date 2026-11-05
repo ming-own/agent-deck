@@ -673,5 +673,11 @@
   "node-tool-withheld": "На этот ход не разрешено",
   "node-harness": "Режим выполнения",
   "node-harness-standard": "Стандартное выполнение",
-  "node-harness-unrecorded": "Не указан"
+  "node-harness-unrecorded": "Не указан",
+  "node-harness-plan-execute": "Планирование и выполнение",
+  "node-phase-planning": "Составление плана",
+  "node-phase-executing": "Выполнение плана",
+  "node-run-plan": "План",
+  "node-run-result": "Результат",
+  "node-invalid-plan": "Не удалось составить краткий план. Повторите попытку."
 }
