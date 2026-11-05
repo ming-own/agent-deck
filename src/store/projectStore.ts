@@ -352,6 +352,7 @@ interface ProjectModelSelection {
 interface ProjectMetadata {
   /** Session-owned Agent instances; independent of the legacy chat model pin. */
   agentSession?: boolean;
+  canvasAgents?: boolean;
   nameSource?: 'initial' | 'manual';
   tags?: string[];
   priority?: 'low' | 'medium' | 'high';

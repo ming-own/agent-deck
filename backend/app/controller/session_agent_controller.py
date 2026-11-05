@@ -7,7 +7,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.auth import LocalControlPrincipal, require_local_control_principal
-from app.session_agents.models import AgentConfig, RunRequest, UpdateAgent
+from app.session_agents.models import (
+    AgentConfig,
+    PositionUpdate,
+    RunRequest,
+    UpdateAgent,
+)
 from app.session_agents.service import AgentService
 from app.session_agents.skills import available_skills
 from app.session_agents.store import AgentStore, Conflict, NotFound
@@ -99,6 +104,19 @@ async def update_agent(
             body.expected_revision,
             AgentConfig(**config),
         )
+    except (NotFound, Conflict) as exc:
+        raise translate(exc) from exc
+
+
+@router.put("/{project_id}/{agent_id}/position")
+def move_agent(
+    project_id: str,
+    agent_id: str,
+    body: PositionUpdate,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return service().store.move(account, project_id, agent_id, body)
     except (NotFound, Conflict) as exc:
         raise translate(exc) from exc
 

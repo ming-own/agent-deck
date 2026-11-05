@@ -667,5 +667,13 @@
   "node-phase-executing": "계획 실행 중",
   "node-run-plan": "실행 계획",
   "node-run-result": "실행 결과",
-  "node-invalid-plan": "간결한 계획을 생성할 수 없습니다. 다시 시도하세요."
+  "node-invalid-plan": "간결한 계획을 생성할 수 없습니다. 다시 시도하세요.",
+  "canvas-title": "캔버스",
+  "canvas-chat": "대화",
+  "canvas-add-in": "{{name}}에 에이전트 추가",
+  "canvas-edit-node": "{{name}} 편집",
+  "canvas-current": "현재 세션으로 이동",
+  "canvas-fit": "모든 세션 보기",
+  "canvas-sync-error": "레이아웃을 동기화할 수 없습니다. 새로 고쳐 저장된 위치를 불러오세요.",
+  "canvas-locate": "세션으로 이동"
 }

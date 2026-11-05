@@ -675,5 +675,13 @@
   "node-phase-executing": "Esecuzione del piano",
   "node-run-plan": "Piano",
   "node-run-result": "Risultato",
-  "node-invalid-plan": "Impossibile generare un piano conciso. Riprova."
+  "node-invalid-plan": "Impossibile generare un piano conciso. Riprova.",
+  "canvas-title": "Tela",
+  "canvas-chat": "Chat",
+  "canvas-add-in": "Aggiungi un agente a {{name}}",
+  "canvas-edit-node": "Modifica {{name}}",
+  "canvas-current": "Centra la sessione",
+  "canvas-fit": "Mostra tutte le sessioni",
+  "canvas-sync-error": "Sincronizzazione non riuscita. Aggiorna per caricare le posizioni salvate.",
+  "canvas-locate": "Vai alla sessione"
 }

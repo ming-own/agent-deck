@@ -671,5 +671,13 @@
   "node-phase-executing": "Plan wird ausgeführt",
   "node-run-plan": "Plan",
   "node-run-result": "Ergebnis",
-  "node-invalid-plan": "Kein kurzer Plan verfügbar. Bitte erneut versuchen."
+  "node-invalid-plan": "Kein kurzer Plan verfügbar. Bitte erneut versuchen.",
+  "canvas-title": "Canvas",
+  "canvas-chat": "Chat",
+  "canvas-add-in": "Agent zu {{name}} hinzufügen",
+  "canvas-edit-node": "{{name}} bearbeiten",
+  "canvas-current": "Aktuelle Sitzung zentrieren",
+  "canvas-fit": "Alle Sitzungen anzeigen",
+  "canvas-sync-error": "Layout konnte nicht synchronisiert werden. Bitte aktualisieren.",
+  "canvas-locate": "Zur Sitzung"
 }

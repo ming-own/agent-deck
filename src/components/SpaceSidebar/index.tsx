@@ -759,7 +759,9 @@ export default function SpaceSidebar({
       const chatState = projectStore.peekActiveChatStore(projectId)?.getState();
       await deleteSessionTaskData({
         projectId,
-        deleteAgentInstances: projectMeta?.metadata?.agentSession === true,
+        deleteAgentInstances:
+          projectMeta?.metadata?.agentSession === true ||
+          projectMeta?.metadata?.canvasAgents === true,
         spaceId,
         ...identity,
         knownTasks: Object.keys(chatState?.tasks ?? {}).map((taskId) => ({

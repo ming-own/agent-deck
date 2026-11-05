@@ -38,7 +38,9 @@ import {
   ArrowUp,
   Bot,
   ChevronDown,
+  LayoutGrid,
   ListChecks,
+  MessageSquare,
   Plus,
   RotateCw,
   Settings2,
@@ -53,6 +55,8 @@ import {
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AgentCanvas } from './AgentCanvas';
+import { markSessionAgents } from './Launcher';
 import { SkillPicker } from './SkillPicker';
 import { ToolPermissions, TurnTools, nodeTools } from './ToolPermissions';
 
@@ -95,7 +99,25 @@ function AgentInstances({
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [editor, setEditor] = useState<'create' | 'edit' | null>(null);
+  const modeKey =
+    'agentdeck:agent-view:' + JSON.stringify([account, projectId]);
+  const [canvas, setCanvas] = useState(() => {
+    try {
+      return localStorage.getItem(modeKey) === 'canvas';
+    } catch {
+      return false;
+    }
+  });
+  const [canvasEpoch, setCanvasEpoch] = useState(0);
+  const [editor, setEditor] = useState<{
+    project: string;
+    node?: SessionAgent;
+  } | null>(null);
+  const editorProject = editor?.project ?? projectId;
+  const editorApi = useMemo(
+    () => sessionAgentApi(account, editorProject),
+    [account, editorProject]
+  );
   const opener = useRef<HTMLButtonElement | null>(null);
   const alive = useRef(true);
   const refreshSequence = useRef(0);
@@ -126,16 +148,40 @@ function AgentInstances({
   useEffect(() => {
     void refresh();
   }, [refresh]);
-  const create = async (
+  const openEditor = useCallback(
+    (project: string, button: HTMLButtonElement, node?: SessionAgent) => {
+      opener.current = button;
+      setEditor({ project, node });
+    },
+    []
+  );
+  const saveEditor = async (
     name: string,
     choice: ConfiguredModelChoice,
     behavior: AgentBehavior
   ) => {
-    const node = await api.create(name, modelReference(choice), behavior);
+    if (!editor) return;
+    if (!editor.node && editor.project !== projectId)
+      await markSessionAgents(editor.project, account, 'canvasAgents');
+    const updated = editor.node
+      ? await editorApi.update(
+          editor.node,
+          name,
+          modelReference(choice),
+          behavior
+        )
+      : await editorApi.create(name, modelReference(choice), behavior);
     if (!alive.current) return;
-    refreshSequence.current++;
-    setNodes((previous) => [...previous, node]);
-    setSelected(node.id);
+    if (editor.project === projectId) {
+      refreshSequence.current++;
+      setNodes((old) =>
+        editor.node
+          ? old.map((item) => (item.id === updated.id ? updated : item))
+          : [...old, updated]
+      );
+      setSelected((current) => (canvas ? (current ?? updated.id) : updated.id));
+    }
+    setCanvasEpoch((v) => v + 1);
     setEditor(null);
   };
   const node = nodes.find((item) => item.id === selected);
@@ -145,21 +191,52 @@ function AgentInstances({
       className="flex min-h-0 min-w-0 flex-1 flex-col bg-ds-neutral-subtle-default"
     >
       <ContentHeader
-        leading={<DsIcon icon={Bot} className="text-ds-ink-muted-default" />}
-        title={!node ? t('chat.session-agents-title') : undefined}
+        leading={
+          <DsIcon
+            icon={canvas ? LayoutGrid : Bot}
+            className="text-ds-ink-muted-default"
+          />
+        }
+        title={
+          canvas
+            ? t('chat.canvas-title')
+            : !node
+              ? t('chat.session-agents-title')
+              : undefined
+        }
         actions={
           <>
+            <Button
+              size="sm"
+              variant="secondary"
+              aria-pressed={canvas}
+              onClick={() => {
+                const next = !canvas;
+                setCanvas(next);
+                try {
+                  localStorage.setItem(modeKey, next ? 'canvas' : 'chat');
+                } catch {
+                  /* optional view preference */
+                }
+              }}
+            >
+              <DsIcon icon={canvas ? MessageSquare : LayoutGrid} />
+              {t(canvas ? 'chat.canvas-chat' : 'chat.canvas-title')}
+            </Button>
             <Button
               size="sm"
               variant="ghost"
               buttonContent="icon-only"
               aria-label={t('chat.session-agents-retry')}
               title={t('chat.session-agents-retry')}
-              onClick={() => void refresh()}
+              onClick={() => {
+                void refresh();
+                setCanvasEpoch((v) => v + 1);
+              }}
             >
               <DsIcon icon={RotateCw} />
             </Button>
-            {node && (
+            {node && !canvas && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -167,29 +244,29 @@ function AgentInstances({
                 aria-label={t('chat.session-agents-edit')}
                 title={t('chat.session-agents-edit')}
                 onClick={(e) => {
-                  opener.current = e.currentTarget;
-                  setEditor('edit');
+                  openEditor(projectId, e.currentTarget, node);
                 }}
               >
                 <DsIcon icon={Settings2} />
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={loading}
-              onClick={(e) => {
-                opener.current = e.currentTarget;
-                setEditor('create');
-              }}
-            >
-              <DsIcon icon={Plus} />
-              {t('chat.session-agents-add')}
-            </Button>
+            {!canvas && (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={loading}
+                onClick={(e) => {
+                  openEditor(projectId, e.currentTarget);
+                }}
+              >
+                <DsIcon icon={Plus} />
+                {t('chat.session-agents-add')}
+              </Button>
+            )}
           </>
         }
       >
-        {node && (
+        {node && !canvas && (
           <Select value={node.id} onValueChange={setSelected}>
             <SelectTrigger
               aria-label={t('chat.session-agents-select')}
@@ -237,43 +314,26 @@ function AgentInstances({
           </Button>
         </div>
       ) : null}
-      {editor && (editor === 'create' || node) && (
+      {editor && (
         <AgentForm
-          key={
-            editor === 'create'
-              ? 'create'
-              : `edit-${node?.id}-${node?.revision}`
-          }
-          node={editor === 'edit' ? node : undefined}
-          loadSkills={api.skills}
+          key={editor.node ? `edit-${editor.node.id}` : 'create'}
+          node={editor.node}
+          loadSkills={editorApi.skills}
           choices={choices}
           restoreFocus={() => opener.current?.focus()}
           onCancel={() => setEditor(null)}
-          onSave={
-            editor === 'create'
-              ? create
-              : async (name, choice, behavior) => {
-                  if (!node) return;
-                  const updated = await api.update(
-                    node,
-                    name,
-                    modelReference(choice),
-                    behavior
-                  );
-                  if (alive.current) {
-                    refreshSequence.current++;
-                    setNodes((previous) =>
-                      previous.map((item) =>
-                        item.id === updated.id ? updated : item
-                      )
-                    );
-                    setEditor(null);
-                  }
-                }
-          }
+          onSave={saveEditor}
         />
       )}
-      {!loading && !error && !nodes.length && (
+      {canvas && (
+        <AgentCanvas
+          account={account}
+          projectId={projectId}
+          refreshKey={canvasEpoch}
+          edit={openEditor}
+        />
+      )}
+      {!canvas && !loading && !error && !nodes.length && (
         <div className="flex flex-1 flex-col items-center justify-center gap-ds-stack-related p-ds-panel-inset text-center">
           <DsIcon
             icon={Bot}
@@ -285,14 +345,16 @@ function AgentInstances({
         </div>
       )}
       {node && (
-        <AgentConversation
-          key={node.id}
-          node={node}
-          choices={choices}
-          modelsLoading={inventory.loading || inventory.codexModelsLoading}
-          api={api}
-          email={email}
-        />
+        <div className={canvas ? 'hidden' : 'contents'}>
+          <AgentConversation
+            key={node.id}
+            node={node}
+            choices={choices}
+            modelsLoading={inventory.loading || inventory.codexModelsLoading}
+            api={api}
+            email={email}
+          />
+        </div>
       )}
     </section>
   );

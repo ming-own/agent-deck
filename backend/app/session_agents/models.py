@@ -65,6 +65,13 @@ class AgentConfig(BaseModel):
         return ids
 
 
+class PositionUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    x: float = Field(ge=24, le=1000000)
+    y: float = Field(ge=64, le=1000000)
+    expected_revision: int = Field(ge=0)
+
+
 class UpdateAgent(AgentConfig):
     expected_revision: int = Field(ge=1)
 

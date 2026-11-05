@@ -12,6 +12,31 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+export async function markSessionAgents(
+  projectId: string,
+  account: string,
+  flag: 'agentSession' | 'canvasAgents' = 'agentSession'
+) {
+  const store = useSpaceStore.getState();
+  const meta = store.getProjectMeta(projectId);
+  if (meta?.metadata?.agentSession === true || meta?.metadata?.[flag] === true)
+    return;
+  const spaceId = meta?.spaceId ?? store.activeSpaceId;
+  if (!spaceId || account !== getAccountEnvironmentKey(getAuthStore()))
+    throw new Error('Session unavailable');
+  await proxyUpdateSpaceProject(
+    spaceId,
+    projectId,
+    { metadata: { [flag]: true } },
+    { expectedAccountKey: account }
+  );
+  if (account !== getAccountEnvironmentKey(getAuthStore()))
+    throw new Error('Account changed');
+  store.updateProjectMeta(projectId, {
+    metadata: { ...store.getProjectMeta(projectId)?.metadata, [flag]: true },
+  });
+}
+
 export function SessionAgentsLauncher({
   projectId,
   onOpen,
@@ -33,18 +58,8 @@ export function SessionAgentsLauncher({
     try {
       if (!spaceId) throw new Error('Space is required');
       if (projectId) {
-        if (meta?.metadata?.agentSession !== true) {
-          await proxyUpdateSpaceProject(
-            spaceId,
-            projectId,
-            { metadata: { agentSession: true } },
-            { expectedAccountKey: account }
-          );
-          if (account !== getAccountEnvironmentKey(getAuthStore())) return;
-          spaceStore.updateProjectMeta(projectId, {
-            metadata: { ...meta?.metadata, agentSession: true },
-          });
-        }
+        await markSessionAgents(projectId, account);
+        if (account !== getAccountEnvironmentKey(getAuthStore())) return;
         onOpen();
       } else {
         const project = await proxyCreateSpaceProject(

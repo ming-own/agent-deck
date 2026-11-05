@@ -173,15 +173,13 @@ export function useHomeHubProjects() {
         const chatState = projectStore
           .peekActiveChatStore(projectId)
           ?.getState();
+        const meta = useSpaceStore.getState().getProjectMeta(projectId);
         await deleteSessionTaskData({
           projectId,
           deleteAgentInstances:
-            useSpaceStore.getState().getProjectMeta(projectId)?.metadata
-              ?.agentSession === true,
-          spaceId:
-            useSpaceStore.getState().getProjectMeta(projectId)?.spaceId ??
-            targetProject?.space_id ??
-            undefined,
+            meta?.metadata?.agentSession === true ||
+            meta?.metadata?.canvasAgents === true,
+          spaceId: meta?.spaceId ?? targetProject?.space_id ?? undefined,
           ...identity,
           knownTasks: [
             ...(targetProject?.tasks ?? []),

@@ -38,6 +38,14 @@ class AgentStore:
                     created_at TEXT NOT NULL, updated_at TEXT NOT NULL
                 );
                 CREATE INDEX IF NOT EXISTS agents_scope ON agents(owner, project);
+                CREATE TABLE IF NOT EXISTS agent_positions (
+                    agent_id TEXT PRIMARY KEY REFERENCES agents(id) ON DELETE CASCADE,
+                    x REAL NOT NULL, y REAL NOT NULL, revision INTEGER NOT NULL
+                );
+                INSERT OR IGNORE INTO agent_positions(agent_id,x,y,revision)
+                    SELECT id, 24 + (slot % 2) * 256, 72 + (slot / 2) * 132, 0
+                    FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY owner,project ORDER BY rowid)-1 AS slot FROM agents)
+                    WHERE id NOT IN (SELECT agent_id FROM agent_positions);
                 CREATE TABLE IF NOT EXISTS agent_runs (
                     id TEXT PRIMARY KEY, owner TEXT NOT NULL, project TEXT NOT NULL,
                     agent_id TEXT NOT NULL, request_id TEXT NOT NULL,
@@ -54,6 +62,7 @@ class AgentStore:
     def connect(self):
         db = sqlite3.connect(self.path, timeout=10)
         db.row_factory = sqlite3.Row
+        db.execute("PRAGMA foreign_keys = ON")
         try:
             with db:
                 yield db
@@ -108,12 +117,46 @@ class AgentStore:
     def list(self, owner, project):
         with self.connect() as db:
             return [
-                self.node(row)
+                {
+                    **self.node(row),
+                    "position": None
+                    if row["layout_revision"] is None
+                    else {
+                        "x": row["x"],
+                        "y": row["y"],
+                        "revision": row["layout_revision"],
+                    },
+                }
                 for row in db.execute(
-                    "SELECT * FROM agents WHERE owner=? AND project=? ORDER BY rowid",
+                    "SELECT a.*, p.x, p.y, p.revision AS layout_revision FROM agents a "
+                    "LEFT JOIN agent_positions p ON p.agent_id=a.id "
+                    "WHERE a.owner=? AND a.project=? ORDER BY a.rowid",
                     (owner, project),
                 )
             ]
+
+    def move(self, owner, project, agent_id, position):
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self.require_open(db, owner, project)
+            row = db.execute(
+                "SELECT p.x,p.y,p.revision FROM agents a LEFT JOIN agent_positions p ON p.agent_id=a.id "
+                "WHERE a.owner=? AND a.project=? AND a.id=?",
+                (owner, project, agent_id),
+            ).fetchone()
+            if row is None:
+                raise NotFound("Agent not found")
+            if row["x"] == position.x and row["y"] == position.y:
+                return dict(row)
+            revision = row["revision"] or 0
+            if revision != position.expected_revision:
+                raise Conflict("Node position changed; refresh the canvas")
+            db.execute(
+                "INSERT INTO agent_positions(agent_id,x,y,revision) VALUES(?,?,?,?) "
+                "ON CONFLICT(agent_id) DO UPDATE SET x=excluded.x,y=excluded.y,revision=excluded.revision",
+                (agent_id, position.x, position.y, revision + 1),
+            )
+        return {"x": position.x, "y": position.y, "revision": revision + 1}
 
     def get(self, owner, project, agent_id):
         with self.connect() as db:
@@ -140,6 +183,23 @@ class AgentStore:
                     timestamp,
                     timestamp,
                 ),
+            )
+            # Choose a free starting cell, including nodes moved off the original grid.
+            occupied = db.execute(
+                "SELECT x,y FROM agent_positions p JOIN agents a ON a.id=p.agent_id WHERE owner=? AND project=?",
+                (owner, project),
+            ).fetchall()
+            slot = 0
+            while True:
+                x, y = 24 + slot % 2 * 256, 72 + slot // 2 * 132
+                if all(
+                    abs(x - row["x"]) >= 224 or abs(y - row["y"]) >= 100
+                    for row in occupied
+                ):
+                    break
+                slot += 1
+            db.execute(
+                "INSERT INTO agent_positions VALUES(?,?,?,0)", (agent_id, x, y)
             )
         return self.get(owner, project, agent_id)
 

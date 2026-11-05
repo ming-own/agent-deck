@@ -17,11 +17,18 @@ export interface AgentBehavior {
   instructions: string;
 }
 
+export interface CanvasPosition {
+  x: number;
+  y: number;
+  revision: number;
+}
+
 export interface SessionAgent extends AgentBehavior {
   id: string;
   name: string;
   model: AgentModelReference;
   revision: number;
+  position?: CanvasPosition | null;
   created_at: string;
   updated_at: string;
 }
@@ -70,6 +77,18 @@ export function sessionAgentApi(account: string, projectId: string) {
       fetchPut(
         `${root}/${node.id}`,
         { name, model, ...behavior, expected_revision: node.revision },
+        headers,
+        options
+      ),
+    move: (
+      id: string,
+      x: number,
+      y: number,
+      expectedRevision: number
+    ): Promise<CanvasPosition> =>
+      fetchPut(
+        `${root}/${encodeURIComponent(id)}/position`,
+        { x, y, expected_revision: expectedRevision },
         headers,
         options
       ),

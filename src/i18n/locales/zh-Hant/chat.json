@@ -667,5 +667,13 @@
   "node-phase-executing": "正在執行計畫",
   "node-run-plan": "執行計畫",
   "node-run-result": "執行結果",
-  "node-invalid-plan": "未能產生簡明計畫，請重新傳送任務。"
+  "node-invalid-plan": "未能產生簡明計畫，請重新傳送任務。",
+  "canvas-title": "畫布",
+  "canvas-chat": "對話",
+  "canvas-add-in": "在「{{name}}」新增 Agent",
+  "canvas-edit-node": "編輯「{{name}}」",
+  "canvas-current": "定位目前對話",
+  "canvas-fit": "顯示所有對話",
+  "canvas-sync-error": "版面同步失敗，請重新整理以載入已儲存的位置。",
+  "canvas-locate": "前往對話"
 }

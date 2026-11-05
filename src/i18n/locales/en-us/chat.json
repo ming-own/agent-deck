@@ -671,5 +671,13 @@
   "node-phase-executing": "Executing the plan",
   "node-run-plan": "Plan",
   "node-run-result": "Result",
-  "node-invalid-plan": "Could not produce a concise plan. Try sending the task again."
+  "node-invalid-plan": "Could not produce a concise plan. Try sending the task again.",
+  "canvas-title": "Canvas",
+  "canvas-chat": "Chat",
+  "canvas-add-in": "Add Agent to {{name}}",
+  "canvas-edit-node": "Edit {{name}}",
+  "canvas-current": "Focus current session",
+  "canvas-fit": "Fit all sessions",
+  "canvas-sync-error": "Could not sync the layout. Refresh to load saved positions.",
+  "canvas-locate": "Go to session"
 }

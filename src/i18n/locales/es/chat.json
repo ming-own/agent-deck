@@ -675,5 +675,13 @@
   "node-phase-executing": "Ejecutando el plan",
   "node-run-plan": "Plan",
   "node-run-result": "Resultado",
-  "node-invalid-plan": "No se pudo generar un plan conciso. Inténtalo de nuevo."
+  "node-invalid-plan": "No se pudo generar un plan conciso. Inténtalo de nuevo.",
+  "canvas-title": "Lienzo",
+  "canvas-chat": "Chat",
+  "canvas-add-in": "Añadir agente a {{name}}",
+  "canvas-edit-node": "Editar {{name}}",
+  "canvas-current": "Centrar sesión actual",
+  "canvas-fit": "Ver todas las sesiones",
+  "canvas-sync-error": "No se pudo sincronizar el diseño. Actualiza para cargar las posiciones guardadas.",
+  "canvas-locate": "Ir a la sesión"
 }

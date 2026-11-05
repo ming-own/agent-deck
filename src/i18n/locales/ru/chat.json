@@ -679,5 +679,13 @@
   "node-phase-executing": "Выполнение плана",
   "node-run-plan": "План",
   "node-run-result": "Результат",
-  "node-invalid-plan": "Не удалось составить краткий план. Повторите попытку."
+  "node-invalid-plan": "Не удалось составить краткий план. Повторите попытку.",
+  "canvas-title": "Холст",
+  "canvas-chat": "Чат",
+  "canvas-add-in": "Добавить агента в {{name}}",
+  "canvas-edit-node": "Редактировать {{name}}",
+  "canvas-current": "Текущий сеанс",
+  "canvas-fit": "Показать все сеансы",
+  "canvas-sync-error": "Не удалось синхронизировать холст. Обновите сохранённые позиции.",
+  "canvas-locate": "Перейти к сеансу"
 }

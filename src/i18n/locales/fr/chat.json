@@ -675,5 +675,13 @@
   "node-phase-executing": "Exécution du plan",
   "node-run-plan": "Plan",
   "node-run-result": "Résultat",
-  "node-invalid-plan": "Impossible de produire un plan concis. Réessayez."
+  "node-invalid-plan": "Impossible de produire un plan concis. Réessayez.",
+  "canvas-title": "Canevas",
+  "canvas-chat": "Discussion",
+  "canvas-add-in": "Ajouter un agent à {{name}}",
+  "canvas-edit-node": "Modifier {{name}}",
+  "canvas-current": "Centrer la session",
+  "canvas-fit": "Afficher toutes les sessions",
+  "canvas-sync-error": "Échec de la synchronisation. Actualisez pour charger les positions enregistrées.",
+  "canvas-locate": "Aller à la session"
 }

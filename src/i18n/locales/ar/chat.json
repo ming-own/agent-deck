@@ -687,5 +687,13 @@
   "node-phase-executing": "جارٍ تنفيذ الخطة",
   "node-run-plan": "الخطة",
   "node-run-result": "النتيجة",
-  "node-invalid-plan": "تعذّر إعداد خطة موجزة. أعد إرسال المهمة."
+  "node-invalid-plan": "تعذّر إعداد خطة موجزة. أعد إرسال المهمة.",
+  "canvas-title": "اللوحة",
+  "canvas-chat": "المحادثة",
+  "canvas-add-in": "إضافة وكيل إلى {{name}}",
+  "canvas-edit-node": "تعديل {{name}}",
+  "canvas-current": "عرض الجلسة الحالية",
+  "canvas-fit": "عرض كل الجلسات",
+  "canvas-sync-error": "تعذّرت مزامنة التخطيط. حدّث لتحميل المواضع المحفوظة.",
+  "canvas-locate": "انتقل إلى جلسة"
 }

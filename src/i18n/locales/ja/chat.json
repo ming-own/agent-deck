@@ -667,5 +667,13 @@
   "node-phase-executing": "計画を実行中",
   "node-run-plan": "実行計画",
   "node-run-result": "実行結果",
-  "node-invalid-plan": "簡潔な計画を作成できませんでした。もう一度送信してください。"
+  "node-invalid-plan": "簡潔な計画を作成できませんでした。もう一度送信してください。",
+  "canvas-title": "キャンバス",
+  "canvas-chat": "チャット",
+  "canvas-add-in": "{{name}} にエージェントを追加",
+  "canvas-edit-node": "{{name}} を編集",
+  "canvas-current": "現在のセッションに移動",
+  "canvas-fit": "全セッションを表示",
+  "canvas-sync-error": "レイアウトを同期できません。更新して保存済みの位置を読み込んでください。",
+  "canvas-locate": "セッションへ移動"
 }
