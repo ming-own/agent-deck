@@ -74,13 +74,13 @@ export function SkillPicker({ load, selected, onChange, disabled }: Props) {
           <DsText role="meta">{t('chat.session-agents-skill-empty')}</DsText>
         )
       )}
-      <div className="flex flex-wrap gap-ds-control-gap">
+      <div className="grid gap-x-ds-panel-inset gap-y-ds-4 pt-ds-8 sm:grid-cols-2">
         {options.map(({ id, name }) => {
           const checked = selected.includes(id);
           return (
             <label
               key={id}
-              className="flex min-w-0 items-center gap-ds-control-gap py-ds-4"
+              className="flex min-w-0 items-center gap-ds-control-gap py-ds-6"
             >
               <Checkbox
                 aria-label={name}

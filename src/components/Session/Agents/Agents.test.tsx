@@ -97,8 +97,9 @@ beforeEach(() => {
 describe('Session Agent instances', () => {
   it('sends with the selected instance model rather than a session default', async () => {
     render(<SessionAgents projectId="session-one" />);
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Writer', exact: true })
+    fireEvent.change(
+      await screen.findByRole('combobox', { name: 'Select Agent' }),
+      { target: { value: 'b' } }
     );
     fireEvent.change(
       screen.getByRole('textbox', { name: 'Message this Agent' }),
@@ -127,7 +128,7 @@ describe('Session Agent instances', () => {
   it('adds an explicit model reference without copying account credentials', async () => {
     mocks.api.create.mockResolvedValue(node('c', 'Reviewer', 'model-b'));
     render(<SessionAgents projectId="s" />);
-    await screen.findByRole('button', { name: 'Research', exact: true });
+    await screen.findByRole('combobox', { name: 'Select Agent' });
     fireEvent.click(screen.getByRole('button', { name: 'Add Agent' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Agent name' }), {
       target: { value: 'Reviewer' },
@@ -146,13 +147,13 @@ describe('Session Agent instances', () => {
       screen.getByRole('textbox', { name: 'Instructions (optional)' }),
       { target: { value: 'List risks first.' } }
     );
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Capabilities' }), {
+      button: 0,
+    });
     fireEvent.click(await screen.findByRole('checkbox', { name: 'Audit' }));
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Calculator' })).getByRole(
-        'button',
-        { name: 'Choose each turn' }
-      )
-    );
+    fireEvent.change(screen.getByRole('combobox', { name: 'Calculator' }), {
+      target: { value: 'turn' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Save', exact: true }));
     await waitFor(() =>
       expect(mocks.api.create).toHaveBeenCalledWith('Reviewer', second.model, {
@@ -164,14 +165,14 @@ describe('Session Agent instances', () => {
       })
     );
     expect(
-      await screen.findByRole('button', { name: 'Reviewer', exact: true })
-    ).toHaveAttribute('aria-pressed', 'true');
+      await screen.findByRole('combobox', { name: 'Select Agent' })
+    ).toHaveValue('c');
   });
 
   it('keeps an uncertain send idempotent', async () => {
     mocks.api.start.mockRejectedValue(new Error('lost response'));
     render(<SessionAgents projectId="s" />);
-    await screen.findByRole('button', { name: 'Research', exact: true });
+    await screen.findByRole('combobox', { name: 'Select Agent' });
     fireEvent.change(
       screen.getByRole('textbox', { name: 'Message this Agent' }),
       { target: { value: 'Hello' } }
@@ -205,8 +206,9 @@ describe('Session Agent instances', () => {
         : Promise.resolve([])
     );
     render(<SessionAgents projectId="s" />);
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Writer', exact: true })
+    fireEvent.change(
+      await screen.findByRole('combobox', { name: 'Select Agent' }),
+      { target: { value: 'b' } }
     );
     deliver([
       {
@@ -284,10 +286,12 @@ it('edits node instructions while keeping the previous run configuration visible
     await screen.findByRole('button', { name: 'Run configuration' })
   );
   expect(screen.getByText('Plan then execute · v1.0.0')).toBeVisible();
-  expect(screen.getByText('Check sources for each claim.')).toBeVisible();
+  fireEvent.click(screen.getByText('Plan', { selector: 'summary' }));
+  await waitFor(() =>
+    expect(screen.getByText('Check sources for each claim.')).toBeVisible()
+  );
   expect(screen.getByText('Cite sources.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
-  await screen.findByRole('checkbox', { name: 'Audit' });
   expect(
     screen.getByRole('textbox', { name: 'Instructions (optional)' })
   ).toHaveValue('List risks.');
@@ -308,7 +312,6 @@ it('keeps unsaved instructions in the form after a failed save and cancels witho
   ).toHaveValue('Unsaved draft');
   fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
   fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
-  await screen.findByRole('checkbox', { name: 'Audit' });
   expect(
     screen.getByRole('textbox', { name: 'Instructions (optional)' })
   ).toHaveValue('');
@@ -325,6 +328,9 @@ it('preserves a missing skill across a catalog failure and lets the user remove 
   });
   render(<SessionAgents projectId="s" />);
   fireEvent.click(await screen.findByRole('button', { name: 'Edit Agent' }));
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Capabilities' }), {
+    button: 0,
+  });
   const alert = await screen.findByRole('alert');
   expect(screen.getByRole('checkbox', { name: 'retired' })).toBeChecked();
   fireEvent.click(within(alert).getByRole('button', { name: 'Refresh' }));
@@ -364,9 +370,9 @@ it('limits optional tool consent to the submitted turn', async () => {
   );
   await waitFor(() => expect(grant).not.toBeChecked());
   await act(async () => {
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Writer', exact: true })
-    );
+    fireEvent.change(screen.getByRole('combobox', { name: 'Select Agent' }), {
+      target: { value: 'b' },
+    });
   });
   expect(
     screen.queryByRole('checkbox', { name: 'Current UTC time' })

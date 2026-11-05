@@ -14,11 +14,9 @@ import { toast } from 'sonner';
 
 export function SessionAgentsLauncher({
   projectId,
-  selected,
   onOpen,
 }: {
   projectId: string | null;
-  selected: boolean;
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
@@ -85,8 +83,7 @@ export function SessionAgentsLauncher({
   return (
     <Button
       size="sm"
-      variant={selected ? 'primary' : 'secondary'}
-      aria-pressed={selected}
+      variant="secondary"
       disabled={pending}
       onClick={() => void open()}
     >

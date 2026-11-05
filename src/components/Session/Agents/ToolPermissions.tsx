@@ -1,6 +1,12 @@
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DsText } from '@/components/ui/ds-text';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { AgentToolId, AgentToolPolicy } from '@/service/sessionAgentApi';
 import { useTranslation } from 'react-i18next';
 
@@ -33,29 +39,27 @@ export function ToolPermissions({
           className="flex flex-wrap items-center justify-between gap-ds-control-gap"
         >
           <DsText role="base">{t('chat.node-tool-' + tool)}</DsText>
-          <div className="flex flex-wrap gap-ds-control-gap">
-            {(['off', 'turn', 'allow'] as const).map((mode) => {
-              const active = (policy[tool] ?? 'off') === mode;
-              return (
-                <Button
-                  key={mode}
-                  size="xs"
-                  type="button"
-                  variant={active ? 'secondary' : 'ghost'}
-                  disabled={disabled}
-                  aria-pressed={active}
-                  onClick={() => {
-                    const next = { ...policy };
-                    if (mode === 'off') delete next[tool];
-                    else next[tool] = mode;
-                    onChange(next);
-                  }}
-                >
+          <Select
+            value={policy[tool] ?? 'off'}
+            disabled={disabled}
+            onValueChange={(mode) => {
+              const next = { ...policy };
+              if (mode === 'off') delete next[tool];
+              else if (mode === 'allow' || mode === 'turn') next[tool] = mode;
+              onChange(next);
+            }}
+          >
+            <SelectTrigger size="sm" aria-label={t('chat.node-tool-' + tool)}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent fitTrigger>
+              {(['off', 'turn', 'allow'] as const).map((mode) => (
+                <SelectItem key={mode} value={mode}>
                   {t('chat.node-tool-' + mode)}
-                </Button>
-              );
-            })}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       ))}
     </div>

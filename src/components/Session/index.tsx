@@ -628,17 +628,18 @@ function SessionContent({ isNewProject = false, headerActions }: SessionProps) {
                   {t('chat.session-agents-conversation')}
                 </Button>
               )}
-              <SessionAgentsLauncher
-                projectId={isNewProject ? null : activeProjectId}
-                selected={showAgents}
-                onOpen={() => {
-                  if (activeProjectId)
-                    setAgentViewBySession((previous) => ({
-                      ...previous,
-                      [activeProjectId]: true,
-                    }));
-                }}
-              />
+              {!showAgents && (
+                <SessionAgentsLauncher
+                  projectId={isNewProject ? null : activeProjectId}
+                  onOpen={() => {
+                    if (activeProjectId)
+                      setAgentViewBySession((previous) => ({
+                        ...previous,
+                        [activeProjectId]: true,
+                      }));
+                  }}
+                />
+              )}
               {headerActions}
             </>
           }

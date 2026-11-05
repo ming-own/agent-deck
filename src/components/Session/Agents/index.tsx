@@ -1,4 +1,9 @@
+import { MarkDown } from '@/components/ChatBox/MessageItem/MarkDown';
+import { UserMessageCard } from '@/components/ChatBox/MessageItem/UserMessageCard';
+import ContentHeader from '@/components/Layout/ContentHeader';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
+import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
 import { Input } from '@/components/ui/input';
 import {
@@ -8,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfiguredModels } from '@/hooks/useConfiguredModels';
 import { getAccountEnvironmentKey } from '@/lib/authEnvironment';
@@ -28,6 +34,16 @@ import {
   resolveAgentConnection,
 } from '@/service/sessionAgentModels';
 import { useAuthStore } from '@/store/authStore';
+import {
+  ArrowUp,
+  Bot,
+  ChevronDown,
+  ListChecks,
+  Plus,
+  RotateCw,
+  Settings2,
+  Square,
+} from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -79,7 +95,8 @@ function AgentInstances({
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [editor, setEditor] = useState<'create' | 'edit' | null>(null);
+  const opener = useRef<HTMLButtonElement | null>(null);
   const alive = useRef(true);
   const refreshSequence = useRef(0);
   useEffect(() => {
@@ -119,34 +136,80 @@ function AgentInstances({
     refreshSequence.current++;
     setNodes((previous) => [...previous, node]);
     setSelected(node.id);
-    setCreating(false);
+    setEditor(null);
   };
   const node = nodes.find((item) => item.id === selected);
   return (
     <section
       aria-label={t('chat.session-agents-title')}
-      className="scrollbar-always-visible flex min-h-0 flex-1 flex-col gap-ds-stack-section overflow-y-auto p-ds-panel-inset"
+      className="flex min-h-0 min-w-0 flex-1 flex-col bg-ds-neutral-subtle-default"
     >
-      <div className="flex flex-wrap items-center justify-between gap-ds-control-gap">
-        <DsText as="h2" role="title" weight="semibold">
-          {t('chat.session-agents-title')}
-        </DsText>
-        <div className="flex gap-ds-control-gap">
-          <Button variant="ghost" onClick={() => void refresh()}>
-            {t('chat.session-agents-retry')}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setCreating(true)}
-            disabled={loading}
-          >
-            {t('chat.session-agents-add')}
-          </Button>
-        </div>
-      </div>
-      <DsText as="p" role="base" className="text-ds-ink-muted-default">
-        {t('chat.session-agents-description')}
-      </DsText>
+      <ContentHeader
+        leading={<DsIcon icon={Bot} className="text-ds-ink-muted-default" />}
+        title={!node ? t('chat.session-agents-title') : undefined}
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="ghost"
+              buttonContent="icon-only"
+              aria-label={t('chat.session-agents-retry')}
+              title={t('chat.session-agents-retry')}
+              onClick={() => void refresh()}
+            >
+              <DsIcon icon={RotateCw} />
+            </Button>
+            {node && (
+              <Button
+                size="sm"
+                variant="ghost"
+                buttonContent="icon-only"
+                aria-label={t('chat.session-agents-edit')}
+                title={t('chat.session-agents-edit')}
+                onClick={(e) => {
+                  opener.current = e.currentTarget;
+                  setEditor('edit');
+                }}
+              >
+                <DsIcon icon={Settings2} />
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={loading}
+              onClick={(e) => {
+                opener.current = e.currentTarget;
+                setEditor('create');
+              }}
+            >
+              <DsIcon icon={Plus} />
+              {t('chat.session-agents-add')}
+            </Button>
+          </>
+        }
+      >
+        {node && (
+          <Select value={node.id} onValueChange={setSelected}>
+            <SelectTrigger
+              aria-label={t('chat.session-agents-select')}
+              size="xs"
+              variant="secondary"
+              wrapperClassName="min-w-0"
+              className="max-w-full"
+            >
+              <SelectValue>{node.name}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {nodes.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </ContentHeader>
       {loading && (
         <DsText role="base" aria-live="polite">
           {t('chat.session-agents-loading')}
@@ -174,38 +237,53 @@ function AgentInstances({
           </Button>
         </div>
       ) : null}
-      {creating && (
+      {editor && (editor === 'create' || node) && (
         <AgentForm
-          key="create"
+          key={
+            editor === 'create'
+              ? 'create'
+              : `edit-${node?.id}-${node?.revision}`
+          }
+          node={editor === 'edit' ? node : undefined}
           loadSkills={api.skills}
           choices={choices}
-          onSave={create}
-          onCancel={() => setCreating(false)}
+          restoreFocus={() => opener.current?.focus()}
+          onCancel={() => setEditor(null)}
+          onSave={
+            editor === 'create'
+              ? create
+              : async (name, choice, behavior) => {
+                  if (!node) return;
+                  const updated = await api.update(
+                    node,
+                    name,
+                    modelReference(choice),
+                    behavior
+                  );
+                  if (alive.current) {
+                    refreshSequence.current++;
+                    setNodes((previous) =>
+                      previous.map((item) =>
+                        item.id === updated.id ? updated : item
+                      )
+                    );
+                    setEditor(null);
+                  }
+                }
+          }
         />
       )}
-      {!loading && !error && !nodes.length && !creating && (
-        <DsText as="p" role="base">
-          {t('chat.session-agents-empty')}
-        </DsText>
+      {!loading && !error && !nodes.length && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-ds-stack-related p-ds-panel-inset text-center">
+          <DsIcon
+            icon={Bot}
+            recipe="illustration"
+            illustrationSize={32}
+            className="text-ds-ink-muted-default"
+          />
+          <DsText role="body-large">{t('chat.session-agents-empty')}</DsText>
+        </div>
       )}
-      <div
-        role="group"
-        aria-label={t('chat.session-agents-select')}
-        className="flex flex-wrap gap-ds-control-gap"
-      >
-        {nodes.map((item) => (
-          <Button
-            key={item.id}
-            variant={selected === item.id ? 'primary' : 'secondary'}
-            aria-pressed={selected === item.id}
-            className="max-w-full min-w-0"
-            title={item.name}
-            onClick={() => setSelected(item.id)}
-          >
-            <span className="truncate">{item.name}</span>
-          </Button>
-        ))}
-      </div>
       {node && (
         <AgentConversation
           key={node.id}
@@ -214,12 +292,6 @@ function AgentInstances({
           modelsLoading={inventory.loading || inventory.codexModelsLoading}
           api={api}
           email={email}
-          onUpdated={(updated) => {
-            refreshSequence.current++;
-            setNodes((previous) =>
-              previous.map((item) => (item.id === updated.id ? updated : item))
-            );
-          }}
         />
       )}
     </section>
@@ -227,12 +299,14 @@ function AgentInstances({
 }
 
 function AgentForm({
+  restoreFocus,
   loadSkills,
   node,
   choices,
   onSave,
   onCancel,
 }: {
+  restoreFocus: () => void;
   node?: SessionAgent;
   loadSkills: ReturnType<typeof sessionAgentApi>['skills'];
   choices: ConfiguredModelChoice[];
@@ -259,136 +333,192 @@ function AgentForm({
   const savingRef = useRef(false);
   const choice = choices.find((item) => item.id === model);
   return (
-    <form
-      className="flex flex-col gap-ds-stack-related rounded-ds-card bg-ds-neutral-subtle-default p-ds-card-inset"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        if (!choice || !name.trim() || savingRef.current) return;
-        savingRef.current = true;
-        setSaving(true);
-        setFailed(false);
-        try {
-          await onSave(name.trim(), choice, {
-            harness_id: harnessId,
-            tool_policy: toolPolicy,
-            skill_ids: skillIds,
-            role: role.trim(),
-            instructions: instructions.trim(),
-          });
-        } catch {
-          setFailed(true);
-        } finally {
-          savingRef.current = false;
-          setSaving(false);
-        }
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !savingRef.current) onCancel();
       }}
     >
-      <Input
-        title={t('chat.session-agents-name')}
-        aria-label={t('chat.session-agents-name')}
-        value={name}
-        maxLength={100}
-        onChange={(event) => setName(event.target.value)}
-        disabled={saving}
-      />
-      <Select
-        value={model}
-        onValueChange={setModel}
-        disabled={saving || !choices.length}
+      <DialogContent
+        size="md"
+        overlayVariant="dimmed"
+        showCloseButton={!saving}
+        aria-describedby={undefined}
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          restoreFocus();
+        }}
       >
-        <SelectTrigger
-          title={t('chat.session-agents-model')}
-          aria-label={t('chat.session-agents-model')}
-          wrapperClassName="w-full"
+        <DialogHeader
+          title={t(
+            node ? 'chat.session-agents-edit' : 'chat.session-agents-add'
+          )}
+        />
+        <form
+          className="flex min-h-0 flex-col"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (!choice || !name.trim() || savingRef.current) return;
+            savingRef.current = true;
+            setSaving(true);
+            setFailed(false);
+            try {
+              await onSave(name.trim(), choice, {
+                harness_id: harnessId,
+                tool_policy: toolPolicy,
+                skill_ids: skillIds,
+                role: role.trim(),
+                instructions: instructions.trim(),
+              });
+            } catch {
+              setFailed(true);
+            } finally {
+              savingRef.current = false;
+              setSaving(false);
+            }
+          }}
         >
-          <SelectValue placeholder={t('chat.session-agents-select-model')} />
-        </SelectTrigger>
-        <SelectContent fitTrigger>
-          {choices.map((item) => (
-            <SelectItem key={item.id} value={item.id}>
-              {item.name} · {item.group}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select value={harnessId} onValueChange={setHarnessId} disabled={saving}>
-        <SelectTrigger
-          title={t('chat.node-harness')}
-          aria-label={t('chat.node-harness')}
-          wrapperClassName="w-full"
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent fitTrigger>
-          {Object.entries(harnessLabels).map(([id, label]) => (
-            <SelectItem key={id} value={id}>
-              {t(label)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {!choices.length && (
-        <DsText role="base">{t('chat.session-agents-no-models')}</DsText>
-      )}
-      <Input
-        title={t('chat.session-agents-role-label')}
-        aria-label={t('chat.session-agents-role-label')}
-        placeholder={t('chat.session-agents-role-placeholder')}
-        value={role}
-        maxLength={200}
-        onChange={(event) => setRole(event.target.value)}
-        disabled={saving}
-      />
-      <Textarea
-        variant="outlined"
-        title={t('chat.session-agents-instructions-label')}
-        aria-label={t('chat.session-agents-instructions-label')}
-        aria-describedby={helpId}
-        placeholder={t('chat.session-agents-instructions-placeholder')}
-        value={instructions}
-        rows={5}
-        maxLength={12000}
-        onChange={(event) => setInstructions(event.target.value)}
-        disabled={saving}
-      />
-      <DsText
-        as="p"
-        id={helpId}
-        role="meta"
-        className="text-ds-ink-muted-default"
-      >
-        {t('chat.session-agents-instructions-help')}
-      </DsText>
-      <SkillPicker
-        load={loadSkills}
-        selected={skillIds}
-        onChange={setSkillIds}
-        disabled={saving}
-      />
-      <ToolPermissions
-        policy={toolPolicy}
-        onChange={setToolPolicy}
-        disabled={saving}
-      />
-      {failed && (
-        <DsText role="base" aria-live="assertive">
-          {t('chat.session-agents-save-error')}
-        </DsText>
-      )}
-      <div className="flex flex-wrap gap-ds-control-gap">
-        <Button type="submit" disabled={!name.trim() || !choice || saving}>
-          {t('chat.session-agents-save')}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={saving}
-          onClick={onCancel}
-        >
-          {t('chat.session-agents-cancel')}
-        </Button>
-      </div>
-    </form>
+          <Tabs defaultValue="general" className="flex min-h-0 flex-col">
+            <div className="shrink-0 px-ds-panel-inset">
+              <TabsList
+                appearance="outline"
+                aria-label={t(
+                  node ? 'chat.session-agents-edit' : 'chat.session-agents-add'
+                )}
+              >
+                <TabsTrigger value="general">{t('layout.general')}</TabsTrigger>
+                <TabsTrigger value="capabilities">
+                  {t('layout.capabilities')}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <div className="scrollbar-always-visible min-h-0 overflow-y-auto p-ds-panel-inset">
+              <TabsContent value="general" className="m-0">
+                <Input
+                  title={t('chat.session-agents-name')}
+                  aria-label={t('chat.session-agents-name')}
+                  value={name}
+                  maxLength={100}
+                  onChange={(event) => setName(event.target.value)}
+                  disabled={saving}
+                />
+                <div className="grid grid-cols-1 gap-ds-control-gap sm:grid-cols-2">
+                  <Select
+                    value={model}
+                    onValueChange={setModel}
+                    disabled={saving || !choices.length}
+                  >
+                    <SelectTrigger
+                      title={t('chat.session-agents-model')}
+                      aria-label={t('chat.session-agents-model')}
+                      wrapperClassName="w-full"
+                    >
+                      <SelectValue
+                        placeholder={t('chat.session-agents-select-model')}
+                      />
+                    </SelectTrigger>
+                    <SelectContent fitTrigger>
+                      {choices.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name} · {item.group}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={harnessId}
+                    onValueChange={setHarnessId}
+                    disabled={saving}
+                  >
+                    <SelectTrigger
+                      title={t('chat.node-harness')}
+                      aria-label={t('chat.node-harness')}
+                      wrapperClassName="w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent fitTrigger>
+                      {Object.entries(harnessLabels).map(([id, label]) => (
+                        <SelectItem key={id} value={id}>
+                          {t(label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {!choices.length && (
+                  <DsText role="base">
+                    {t('chat.session-agents-no-models')}
+                  </DsText>
+                )}
+                <Input
+                  title={t('chat.session-agents-role-label')}
+                  aria-label={t('chat.session-agents-role-label')}
+                  placeholder={t('chat.session-agents-role-placeholder')}
+                  value={role}
+                  maxLength={200}
+                  onChange={(event) => setRole(event.target.value)}
+                  disabled={saving}
+                />
+                <Textarea
+                  variant="outlined"
+                  title={t('chat.session-agents-instructions-label')}
+                  aria-label={t('chat.session-agents-instructions-label')}
+                  aria-describedby={helpId}
+                  placeholder={t(
+                    'chat.session-agents-instructions-placeholder'
+                  )}
+                  value={instructions}
+                  rows={3}
+                  maxLength={12000}
+                  onChange={(event) => setInstructions(event.target.value)}
+                  disabled={saving}
+                />
+                <DsText
+                  as="p"
+                  id={helpId}
+                  role="meta"
+                  className="text-ds-ink-muted-default"
+                >
+                  {t('chat.session-agents-instructions-help')}
+                </DsText>
+              </TabsContent>
+              <TabsContent value="capabilities" className="m-0">
+                <SkillPicker
+                  load={loadSkills}
+                  selected={skillIds}
+                  onChange={setSkillIds}
+                  disabled={saving}
+                />
+                <ToolPermissions
+                  policy={toolPolicy}
+                  onChange={setToolPolicy}
+                  disabled={saving}
+                />
+              </TabsContent>
+            </div>
+          </Tabs>
+          {failed && (
+            <DsText role="base" aria-live="assertive">
+              {t('chat.session-agents-save-error')}
+            </DsText>
+          )}
+          <div className="flex shrink-0 items-center justify-end gap-ds-control-gap border-x-0 border-t border-b-0 border-solid border-ds-hairline-subtle-default px-ds-panel-inset py-ds-12">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={saving}
+              onClick={onCancel}
+            >
+              {t('chat.session-agents-cancel')}
+            </Button>
+            <Button type="submit" disabled={!name.trim() || !choice || saving}>
+              {t('chat.session-agents-save')}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -411,10 +541,16 @@ function AgentBehaviorDetails({
         aria-controls={detailsId}
         onClick={() => setExpanded(!expanded)}
       >
+        <DsIcon icon={Settings2} recipe="main-compact" />
         {label}
+        <DsIcon
+          icon={ChevronDown}
+          recipe="main-compact"
+          className={expanded ? 'rotate-180' : undefined}
+        />
       </Button>
       <div id={detailsId} hidden={!expanded} className="w-full min-w-0">
-        <dl className="flex flex-col gap-ds-stack-related">
+        <dl className="grid gap-ds-12 rounded-ds-field bg-ds-neutral-muted-default p-ds-panel-inset sm:grid-cols-2">
           <div>
             <DsText as="dt" role="meta" className="text-ds-ink-muted-default">
               {t('chat.node-harness')}
@@ -501,17 +637,14 @@ function AgentConversation({
   modelsLoading,
   api,
   email,
-  onUpdated,
 }: {
   node: SessionAgent;
   choices: ConfiguredModelChoice[];
   modelsLoading: boolean;
   api: ReturnType<typeof sessionAgentApi>;
   email: string;
-  onUpdated: (node: SessionAgent) => void;
 }) {
   const { t } = useTranslation();
-  const [editing, setEditing] = useState(false);
   const [runs, setRuns] = useState<SessionAgentRun[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(false);
@@ -522,6 +655,19 @@ function AgentConversation({
     ids: AgentToolId[];
   }>({ revision: node.revision, ids: [] });
   const selectedTools = consent.revision === node.revision ? consent.ids : [];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const followEnd = useRef(true);
+  useEffect(() => {
+    const frame = scrollRef.current,
+      content = contentRef.current;
+    if (!frame || !content || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      if (followEnd.current) frame.scrollTop = frame.scrollHeight;
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
   const busy = useRef(false);
   const alive = useRef(true);
   const request = useRef<{
@@ -573,6 +719,7 @@ function AgentConversation({
   const send = async () => {
     const text = prompt.trim();
     if (!text || busy.current || running || !ready) return;
+    followEnd.current = true;
     busy.current = true;
     setSending(true);
     setError(false);
@@ -616,19 +763,7 @@ function AgentConversation({
     }
   };
   return (
-    <div className="flex flex-col gap-ds-stack-related">
-      <div className="flex flex-wrap items-center justify-between gap-ds-control-gap">
-        <DsText role="body-large" weight="semibold">
-          {node.name} · {node.model.name}
-        </DsText>
-        <Button variant="secondary" onClick={() => setEditing(true)}>
-          {t('chat.session-agents-edit')}
-        </Button>
-      </div>
-      <AgentBehaviorDetails
-        agent={node}
-        label={t('chat.session-agents-behavior')}
-      />
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {!available && (
         <DsText role="base" aria-live="polite">
           {t(
@@ -638,159 +773,212 @@ function AgentConversation({
           )}
         </DsText>
       )}
-      {editing && (
-        <AgentForm
-          key={node.revision}
-          loadSkills={api.skills}
-          node={node}
-          choices={choices}
-          onCancel={() => setEditing(false)}
-          onSave={async (name, choice, behavior) => {
-            const updated = await api.update(
-              node,
-              name,
-              modelReference(choice),
-              behavior
-            );
-            if (alive.current) {
-              onUpdated(updated);
-              setEditing(false);
-            }
-          }}
-        />
-      )}
       <div
+        ref={scrollRef}
         aria-label={t('chat.session-agents-history')}
-        className="flex flex-col gap-ds-stack-related"
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          followEnd.current =
+            el.scrollHeight - el.clientHeight - el.scrollTop < 48;
+        }}
+        className="scrollbar-always-visible min-h-0 min-w-0 flex-1 overflow-y-auto"
       >
-        {runs.map((run) => (
-          <article
-            key={run.id}
-            className="flex flex-col gap-ds-stack-related rounded-ds-card bg-ds-neutral-subtle-default p-ds-card-inset"
-          >
-            <DsText role="meta" className="text-ds-ink-muted-default">
-              {run.agent.name} · {run.agent.model.name} ·{' '}
-              {run.status === 'running' &&
-              run.agent.harness_id === 'plan_execute'
-                ? t(
-                    run.plan
-                      ? 'chat.node-phase-executing'
-                      : 'chat.node-phase-planning'
-                  )
-                : t(`chat.session-agents-status-${run.status}`)}
-            </DsText>
-            <AgentBehaviorDetails
-              agent={run.agent}
-              label={t('chat.session-agents-run-config')}
-            />
-            <DsText
-              as="p"
-              role="base"
-              className="break-words whitespace-pre-wrap"
+        <div
+          ref={contentRef}
+          className="mx-auto flex min-h-full w-full max-w-[736px] flex-col gap-ds-stack-section px-ds-panel-inset py-ds-16"
+        >
+          {ready && !runs.length && (
+            <div className="flex flex-1 flex-col items-center justify-center gap-ds-stack-related text-center">
+              <DsIcon
+                icon={Bot}
+                recipe="illustration"
+                illustrationSize={32}
+                className="text-ds-ink-muted-default"
+              />
+              <DsText
+                role="title"
+                weight="semibold"
+                className="max-w-full break-words"
+              >
+                {node.name}
+              </DsText>
+            </div>
+          )}
+          {runs.map((run) => (
+            <article
+              key={run.id}
+              className="flex min-w-0 flex-col gap-ds-stack-related"
             >
-              {run.prompt}
-            </DsText>
-            {run.plan && (
-              <div className="flex flex-col gap-ds-stack-related">
-                <DsText role="meta" weight="semibold">
-                  {t('chat.node-run-plan')}
-                </DsText>
+              <UserMessageCard
+                embedded
+                id={run.id}
+                content={run.prompt}
+                createdAt={run.created_at}
+              />
+              <div className="flex flex-wrap items-center gap-ds-control-gap">
+                <DsIcon icon={Bot} className="text-ds-ink-muted-default" />
                 <DsText
-                  as="p"
                   role="base"
-                  className="break-words whitespace-pre-wrap"
+                  weight="semibold"
+                  className="min-w-0 break-words"
                 >
-                  {run.plan}
+                  {run.agent.name}
+                </DsText>
+                <DsText role="meta" className="text-ds-ink-muted-default">
+                  {run.agent.model.name} ·{' '}
+                  {run.status === 'running' &&
+                  run.agent.harness_id === 'plan_execute'
+                    ? t(
+                        run.plan
+                          ? 'chat.node-phase-executing'
+                          : 'chat.node-phase-planning'
+                      )
+                    : t(`chat.session-agents-status-${run.status}`)}
                 </DsText>
               </div>
-            )}
-            {run.plan && run.output && (
-              <DsText role="meta" weight="semibold">
-                {t('chat.node-run-result')}
-              </DsText>
-            )}
-            {run.output && (
-              <DsText
-                as="p"
-                role="base"
-                className="break-words whitespace-pre-wrap"
-              >
-                {run.output}
-              </DsText>
-            )}
-            {run.status === 'failed' && (
-              <DsText role="base">
-                {t(
-                  run.error === 'invalid_plan'
-                    ? 'chat.node-invalid-plan'
-                    : run.error === 'skill_unavailable'
-                      ? 'chat.session-agents-skill-unavailable'
-                      : run.error === 'skill_limit'
-                        ? 'chat.session-agents-skill-limit'
-                        : 'chat.session-agents-run-error'
-                )}
-              </DsText>
-            )}
-            {run.status === 'interrupted' && (
-              <DsText role="base">
-                {t('chat.session-agents-interrupted')}
-              </DsText>
-            )}
-          </article>
-        ))}
+              {run.plan && (
+                <details
+                  className="group rounded-ds-field bg-ds-neutral-muted-default px-ds-panel-inset py-ds-8"
+                  open={run.status === 'running' || undefined}
+                >
+                  <summary className="flex cursor-pointer list-none items-center gap-ds-control-gap text-ds-text-base text-ds-ink-muted-default focus-visible:ring-2 focus-visible:ring-ds-ring-focus">
+                    <DsIcon icon={ListChecks} />
+                    {t('chat.node-run-plan')}
+                    <DsIcon
+                      icon={ChevronDown}
+                      recipe="main-compact"
+                      className="ml-auto group-open:rotate-180"
+                    />
+                  </summary>
+                  <MarkDown
+                    content={run.plan}
+                    enableTypewriter={false}
+                    profile="compact"
+                    className="pt-ds-8"
+                  />
+                </details>
+              )}
+              {run.output && (
+                <MarkDown
+                  content={run.output}
+                  enableTypewriter={false}
+                  profile="conversation"
+                />
+              )}
+              {run.status === 'failed' && (
+                <DsText role="base">
+                  {t(
+                    run.error === 'invalid_plan'
+                      ? 'chat.node-invalid-plan'
+                      : run.error === 'skill_unavailable'
+                        ? 'chat.session-agents-skill-unavailable'
+                        : run.error === 'skill_limit'
+                          ? 'chat.session-agents-skill-limit'
+                          : 'chat.session-agents-run-error'
+                  )}
+                </DsText>
+              )}
+              {run.status === 'interrupted' && (
+                <DsText role="base">
+                  {t('chat.session-agents-interrupted')}
+                </DsText>
+              )}
+              <AgentBehaviorDetails
+                agent={run.agent}
+                label={t('chat.session-agents-run-config')}
+              />
+            </article>
+          ))}
+        </div>
       </div>
-      {error && (
-        <DsText role="base" aria-live="assertive">
-          {t('chat.session-agents-request-error')}
-        </DsText>
-      )}
-      <TurnTools
-        policy={node.tool_policy ?? {}}
-        selected={selectedTools}
-        onChange={(ids) => setConsent({ revision: node.revision, ids })}
-        disabled={sending || Boolean(running)}
-      />
-      <Textarea
-        aria-label={t('chat.session-agents-message')}
-        placeholder={t('chat.session-agents-message')}
-        value={prompt}
-        maxLength={32000}
-        onChange={(event) => {
-          if (
-            request.current &&
-            request.current.prompt !== event.target.value.trim()
-          ) {
-            request.current = null;
-            setConsent({ revision: node.revision, ids: [] });
-          }
-          setPrompt(event.target.value);
-        }}
-      />
-      <div className="flex flex-wrap gap-ds-control-gap">
-        <Button
-          onClick={() => void send()}
-          disabled={
-            !ready ||
-            !available ||
-            !prompt.trim() ||
-            Boolean(running) ||
-            sending
-          }
-        >
-          {t('chat.session-agents-send')}
-        </Button>
-        {running && (
-          <Button
-            variant="secondary"
-            onClick={() =>
-              void api.cancel(node.id, running.id).catch(() => {
-                if (alive.current) setError(true);
-              })
-            }
-          >
-            {t('chat.session-agents-stop')}
-          </Button>
+      <div className="mx-auto w-full max-w-[736px] shrink-0 px-ds-panel-inset pt-ds-4 pb-ds-12">
+        {error && (
+          <DsText role="base" aria-live="assertive">
+            {t('chat.session-agents-request-error')}
+          </DsText>
         )}
+        <div className="flex flex-col gap-ds-control-gap rounded-ds-24 border border-x border-y border-solid border-ds-hairline-default-default bg-ds-neutral-subtle-default px-ds-panel-inset py-ds-12 shadow-ds-elevation-card">
+          <TurnTools
+            policy={node.tool_policy ?? {}}
+            selected={selectedTools}
+            onChange={(ids) => setConsent({ revision: node.revision, ids })}
+            disabled={sending || Boolean(running)}
+          />
+          <Textarea
+            className="resize-none"
+            variant="plain"
+            size="sm"
+            rows={2}
+            onKeyDown={(event) => {
+              if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                event.keyCode !== 229
+              ) {
+                event.preventDefault();
+                if (available) void send();
+              }
+            }}
+            aria-label={t('chat.session-agents-message')}
+            placeholder={t('chat.session-agents-message')}
+            value={prompt}
+            maxLength={32000}
+            onChange={(event) => {
+              if (
+                request.current &&
+                request.current.prompt !== event.target.value.trim()
+              ) {
+                request.current = null;
+                setConsent({ revision: node.revision, ids: [] });
+              }
+              setPrompt(event.target.value);
+            }}
+          />
+          <div className="flex items-center justify-between gap-ds-control-gap">
+            <DsText
+              role="meta"
+              className="min-w-0 truncate text-ds-ink-muted-default"
+              title={node.model.name}
+            >
+              {node.model.name}
+            </DsText>
+            {!running && (
+              <Button
+                size="sm"
+                buttonContent="icon-only"
+                aria-label={t('chat.session-agents-send')}
+                title={t('chat.session-agents-send')}
+                onClick={() => void send()}
+                disabled={
+                  !ready ||
+                  !available ||
+                  !prompt.trim() ||
+                  Boolean(running) ||
+                  sending
+                }
+              >
+                <DsIcon icon={ArrowUp} />
+              </Button>
+            )}
+            {running && (
+              <Button
+                variant="secondary"
+                size="sm"
+                buttonContent="icon-only"
+                aria-label={t('chat.session-agents-stop')}
+                title={t('chat.session-agents-stop')}
+                onClick={() =>
+                  void api.cancel(node.id, running.id).catch(() => {
+                    if (alive.current) setError(true);
+                  })
+                }
+              >
+                <DsIcon icon={Square} />
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
