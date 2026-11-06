@@ -784,5 +784,8 @@
   "team-members": "팀 구성",
   "team-message": "팀에 맡길 작업",
   "team-match": "메시지에 “{{word}}” 포함",
-  "workspace-name": "Name"
+  "workspace-name": "Name",
+  "workspace-port-output": "Connect to Agent",
+  "workspace-port-input": "Receive input",
+  "workspace-connect-help": "Right output → left input. Drag, or click the two ports in order."
 }

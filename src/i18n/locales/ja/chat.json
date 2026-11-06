@@ -784,5 +784,8 @@
   "team-members": "チームの構成",
   "team-message": "チームへのタスク",
   "team-match": "「{{word}}」を含むメッセージ",
-  "workspace-name": "Name"
+  "workspace-name": "Name",
+  "workspace-port-output": "Connect to Agent",
+  "workspace-port-input": "Receive input",
+  "workspace-connect-help": "Right output → left input. Drag, or click the two ports in order."
 }

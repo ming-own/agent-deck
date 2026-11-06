@@ -784,5 +784,8 @@
   "team-members": "團隊編排",
   "team-message": "交給團隊的任務",
   "team-match": "訊息包含「{{word}}」",
-  "workspace-name": "名稱"
+  "workspace-name": "名稱",
+  "workspace-port-output": "連接到 Agent",
+  "workspace-port-input": "接收輸入",
+  "workspace-connect-help": "右側輸出 → 左側輸入；可拖曳或依序點擊連接埠。"
 }

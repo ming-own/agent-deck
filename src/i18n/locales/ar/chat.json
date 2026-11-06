@@ -804,5 +804,8 @@
   "team-members": "إعداد الفريق",
   "team-message": "مهمة للفريق",
   "team-match": "تحتوي الرسالة على «{{word}}»",
-  "workspace-name": "Name"
+  "workspace-name": "Name",
+  "workspace-port-output": "Connect to Agent",
+  "workspace-port-input": "Receive input",
+  "workspace-connect-help": "Right output → left input. Drag, or click the two ports in order."
 }

@@ -796,5 +796,8 @@
   "team-members": "Настройка команды",
   "team-message": "Задание для команды",
   "team-match": "Сообщение содержит «{{word}}»",
-  "workspace-name": "Name"
+  "workspace-name": "Name",
+  "workspace-port-output": "Connect to Agent",
+  "workspace-port-input": "Receive input",
+  "workspace-connect-help": "Right output → left input. Drag, or click the two ports in order."
 }

@@ -5,7 +5,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { DS_FOCUS_RING } from '@/components/ui/semanticProps';
+import {
+  Handle,
+  Position,
+  useNodeId,
+  useUpdateNodeInternals,
+  useViewport,
+  type NodeProps,
+} from '@xyflow/react';
 import {
   ArrowUpRight,
   Bot,
@@ -20,8 +28,63 @@ import {
   Sparkles,
   Workflow,
 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import './connectionPorts.css';
 import type { GraphNode } from './graphModel';
+
+function ConnectionPort({
+  type,
+  name,
+}: {
+  type: 'source' | 'target';
+  name: string;
+}) {
+  const { t } = useTranslation(),
+    { zoom } = useViewport(),
+    nodeId = useNodeId(),
+    updateNodeInternals = useUpdateNodeInternals();
+  // Keep the hit target in screen pixels, and update React Flow's snap bounds
+  // when zoom changes without changing the card's world-space geometry.
+  useEffect(() => {
+    if (nodeId) updateNodeInternals(nodeId);
+  }, [nodeId, zoom, updateNodeInternals]);
+  const label =
+    t(
+      type === 'source'
+        ? 'chat.workspace-port-output'
+        : 'chat.workspace-port-input'
+    ) +
+    ' · ' +
+    name;
+  return (
+    <Handle
+      type={type}
+      position={type === 'source' ? Position.Right : Position.Left}
+      className={'workspace-connection-port ' + DS_FOCUS_RING}
+      style={{
+        transform: `translate(${type === 'source' ? '50%' : '-50%'}, -50%) scale(${1 / zoom})`,
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      title={label + ' — ' + t('chat.workspace-connect-help')}
+      data-port-direction={type}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.stopPropagation();
+          event.currentTarget.click();
+        }
+      }}
+    >
+      <span
+        aria-hidden="true"
+        className="workspace-connection-dot pointer-events-none rounded-full border border-x border-y border-solid border-ds-ink-muted-default bg-ds-neutral-subtle-default"
+      />
+    </Handle>
+  );
+}
 export const kindIcons = {
   session: Folder,
   agent: Bot,
@@ -40,8 +103,8 @@ export function WorkspaceObjectNode({ data, selected }: NodeProps<GraphNode>) {
       <div
         className={`flex h-full flex-col rounded-ds-card border border-x border-y border-solid bg-ds-neutral-subtle-default p-ds-6 ${selected ? 'border-ds-accent-strong-default' : 'border-ds-hairline-default-default'}`}
       >
-        <Handle type="target" position={Position.Left} />
-        <Handle type="source" position={Position.Right} />
+        <ConnectionPort type="target" name={a.name} />
+        <ConnectionPort type="source" name={a.name} />
         <div className="flex h-full min-h-0 flex-col gap-ds-8 rounded-ds-field border border-x border-y border-solid border-ds-hairline-default-default p-ds-12">
           <div className="flex items-center justify-between gap-ds-6">
             <DsText role="meta" className="text-ds-ink-muted-default">
@@ -128,11 +191,18 @@ export function WorkspaceObjectNode({ data, selected }: NodeProps<GraphNode>) {
     <div
       className={`flex h-full flex-col justify-center gap-ds-8 rounded-ds-panel border border-x border-y border-solid bg-ds-neutral-subtle-default p-ds-12 ${selected ? 'border-ds-accent-strong-default' : 'border-ds-hairline-default-default'}`}
     >
-      {item.kind !== 'settings' && (
-        <Handle type="target" position={Position.Left} />
+      {item.kind === 'task' && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          isConnectable={false}
+          isConnectableStart={false}
+          isConnectableEnd={false}
+          aria-hidden="true"
+        />
       )}
       {['context', 'memory', 'automation'].includes(item.kind) && (
-        <Handle type="source" position={Position.Right} />
+        <ConnectionPort type="source" name={item.name} />
       )}
       <div className="flex items-center gap-ds-control-gap">
         <DsIcon
@@ -173,7 +243,14 @@ export function WorkspaceSessionNode({ data }: NodeProps<GraphNode>) {
     { item, expanded, toggle, open } = data;
   return (
     <div className="h-full rounded-ds-panel border border-x border-y border-dashed border-ds-hairline-default-default bg-ds-neutral-muted-default">
-      <Handle type="target" position={Position.Left} />
+      <Handle
+        type="target"
+        position={Position.Left}
+        isConnectable={false}
+        isConnectableStart={false}
+        isConnectableEnd={false}
+        aria-hidden="true"
+      />
       <div className="flex items-center gap-ds-control-gap p-ds-16">
         <Button
           className="nodrag nopan shrink-0"

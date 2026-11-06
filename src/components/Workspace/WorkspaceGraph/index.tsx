@@ -73,6 +73,7 @@ import {
   WorkspaceSessionNode,
   kindIcons,
 } from './GraphNodes';
+import { createResourceConnector } from './resourceConnections';
 import {
   ContextEditor,
   MemoryEditor,
@@ -128,6 +129,10 @@ function WorkspaceGraphBody({
     data = useWorkspaceGraph(account, spaceId);
   const canvasWidth = useStore((s) => s.width),
     canvasHeight = useStore((s) => s.height);
+  const connectResource = useMemo(
+    () => createResourceConnector(data.api),
+    [data.api]
+  );
   const inventory = useConfiguredModels(),
     choices = selectableConfiguredModels(inventory);
   const [showTasks, setShowTasks] = useState(false),
@@ -299,32 +304,38 @@ function WorkspaceGraphBody({
           target.id,
           true
         );
-      else if (source.kind === 'context' || source.kind === 'memory') {
-        const ref = data.graph?.agent_references.find(
-          (r) => r.agent_id === target.id
+      else if (
+        source.kind === 'context' ||
+        source.kind === 'memory' ||
+        source.kind === 'automation'
+      ) {
+        const change = await connectResource(
+          { kind: source.kind, id: source.id },
+          { id: target.id, projectId: target.projectId! }
         );
-        const contexts = ref?.context_ids ?? [],
-          memories = ref?.memory_ids ?? [];
-        await data.api.setAgentReferences(target.projectId!, target.id, {
-          context_ids:
-            source.kind === 'context'
-              ? [...new Set([...contexts, source.id])]
-              : contexts,
-          memory_ids:
-            source.kind === 'memory'
-              ? [...new Set([...memories, source.id])]
-              : memories,
-          expected_revision: ref?.revision ?? 0,
-        });
-      } else if (source.kind === 'automation') {
-        const b = data.graph?.automation_bindings.find(
-          (b) => b.trigger_id === source.id
+        data.setGraph(
+          (graph) =>
+            graph &&
+            (change.kind === 'references'
+              ? {
+                  ...graph,
+                  agent_references: [
+                    ...graph.agent_references.filter(
+                      (r) => r.agent_id !== change.value.agent_id
+                    ),
+                    change.value,
+                  ],
+                }
+              : {
+                  ...graph,
+                  automation_bindings: [
+                    ...graph.automation_bindings.filter(
+                      (b) => b.trigger_id !== change.value.trigger_id
+                    ),
+                    change.value,
+                  ],
+                })
         );
-        await data.api.bindAutomation(source.id, {
-          project_id: target.projectId!,
-          agent_id: target.id,
-          expected_revision: b?.revision ?? 0,
-        });
       } else return;
       data.refresh();
     } catch {
@@ -503,6 +514,7 @@ function WorkspaceGraphBody({
                     }
                   }}
                   onConnect={(c) => void connect(c)}
+                  connectOnClick
                   isValidConnection={(c) => {
                     const a = board.nodes.find((n) => n.id === c.source)?.data
                         .item,
@@ -610,6 +622,12 @@ function WorkspaceGraphBody({
                         />
                         <DsText role="meta">{t('chat.team-members')}</DsText>
                       </label>
+                      <DsText
+                        role="meta"
+                        className="basis-full text-ds-ink-muted-default"
+                      >
+                        {t('chat.workspace-connect-help')}
+                      </DsText>
                     </div>
                   </Panel>
                   <Background

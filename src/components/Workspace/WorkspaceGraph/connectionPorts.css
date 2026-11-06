@@ -1,0 +1,31 @@
+/* React Flow viewport geometry: inverse scaling keeps a compact desktop hit
+   target usable while zoomed out. The edge still terminates at its center. */
+.workspace-connection-port.react-flow__handle {
+  display: grid;
+  place-items: center;
+  width: var(--ds-controlHeight-xs);
+  height: var(--ds-controlHeight-xs);
+  border: 0;
+  background: none;
+  z-index: 3;
+}
+
+.workspace-connection-dot {
+  width: var(--ds-space-control-gap);
+  height: var(--ds-space-control-gap);
+}
+
+.workspace-connection-port:hover .workspace-connection-dot,
+.workspace-connection-port:focus-visible .workspace-connection-dot,
+.workspace-connection-port.connectingfrom .workspace-connection-dot,
+.workspace-connection-port.valid .workspace-connection-dot {
+  background: var(--ds-accent-strong-default);
+  border-color: var(--ds-accent-strong-default);
+}
+
+@media (pointer: coarse) {
+  .workspace-connection-port.react-flow__handle {
+    width: var(--ds-touch-target-minimum);
+    height: var(--ds-touch-target-minimum);
+  }
+}
