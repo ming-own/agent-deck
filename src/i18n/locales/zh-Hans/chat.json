@@ -796,8 +796,8 @@
   "card-artwork": "卡面插画",
   "card-art-dragon": "龙",
   "card-art-owl": "猫头鹰",
-  "card-art-crab": "螃蟹",
-  "card-art-oasis": "绿洲",
+  "card-art-crab": "机关守卫",
+  "card-art-oasis": "天穹档案",
   "card-art-document": "文档",
   "card-art-custom": "自定义",
   "card-upload": "上传插画",
@@ -846,5 +846,9 @@
   "card-place": "放入画布",
   "card-edit": "编辑卡片",
   "card-configure": "配置",
-  "card-save-to-library": "保存到卡库"
+  "card-save-to-library": "保存到卡库",
+  "card-information": "卡面信息",
+  "card-artwork-and-frame": "插画与卡框",
+  "card-category-knowledge": "知识卡",
+  "card-category-trigger": "触发卡"
 }

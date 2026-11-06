@@ -1,0 +1,185 @@
+{
+  "created": "2026-11-06",
+  "project": "AgentDeck",
+  "method": "Native image_gen.imagegen, one generation per artwork",
+  "useCase": "stylized-concept",
+  "origin": "Original AI-generated raster illustrations created for this project.",
+  "referencePolicy": "The product mockups were inspected for layout and full-frame composition only. No reference images or game-card pixels were passed to generation, cropped, or included in these files.",
+  "processing": "Generated PNG pixels preserved; exact generation prompts embedded as PNG tEXt with Impeccable embed-prompt. PNG hashes reflect metadata insertion; original generation hashes are retained separately. WebP delivery derivatives use installed cwebp 1.6.0 with picture preset, quality 90, method 6 and sharp YUV conversion, without resize or crop. Impeccable stores the exact generation prompts for WebP in adjacent .webp.json sidecars, which also record the source and derivative hashes.",
+  "dimensions": {
+    "width": 1024,
+    "height": 1536,
+    "aspectRatio": "2:3"
+  },
+  "review": {
+    "visual": "All three outputs inspected. Full-bleed painterly fantasy art; no visible text, branding, UI, or borders. Face or main symbolic motif is in the upper 60 percent.",
+    "integration": "Artwork only. Shared UI primitives, semantic tokens, interaction states, and theme behavior remain the responsibility of consuming card components.",
+    "delivery": "PNG critical chunks match original generated files. All six rasters pass Impeccable prompt scan and exact prompt readback. WebP files retain 1024x1536 dimensions, are below 600000 bytes each, and were visually inspected after encoding."
+  },
+  "assets": [
+    {
+      "file": "dragon-amethyst.png",
+      "role": "Agent",
+      "source": "/Users/zhushiming03/.codex/generated_images/01a1afb7-15e9-72f3-ae4b-670b2856fe91/exec-0aaf0bb4-648f-4c9b-a4c9-4cb58bdb9ce7.png",
+      "prompt": "Use case: stylized-concept.\nAsset type: original full-bleed trading-card illustration for AgentDeck.\nPrimary request: a majestic original arcane amethyst dragon, portrait aspect ratio 2:3, full-frame painted fantasy artwork.\nSubject and scene: a serpentine armored dragon rises through a fractured ancient observatory, its long sculpted horns and violet crystalline scales catching glints of warm old gold. Its head and intense luminous eyes occupy the upper-middle third. One enormous claw curves toward an orbiting amethyst spell sphere beneath its face; its wings sweep diagonally through the scene. Ruined floating stone and a distant cosmic storm create layered foreground, middle ground, and background depth.\nStyle/medium: richly detailed hand-painted anime fantasy trading-card illustration, crisp expressive forms over textured painterly shadows, dramatic foreshortening, energetic sweeping composition; serious and monumental.\nComposition: portrait 2:3. Keep the face and the recognizable dragon silhouette within the upper 60 percent. Art extends fully to every edge with no margins. The bottom 30 percent continues into atmospheric dark violet ruins and magical mist so product rules text can later overlay it. This image itself contains no rules panel.\nLighting and palette: deep amethyst, near-black plum, luminous lavender, restrained antique-gold highlights; strong violet rim light with warm reflected light.\nConstraints: entirely new original character design. No existing game characters or card art. No lettering, numbers, symbols that look like writing, watermarks, logos, borders, card frame, UI, title bar, or text box. No cute mascot, no chibi proportions, no plastic 3D render. Output a single raster illustration.",
+      "sha256": "a3fe4aa48e32455a3287783a53f8649d1e84162df61f5e666d52aa9e10e140b1",
+      "bytes": 3308229,
+      "originalGeneration": {
+        "file": "/Users/zhushiming03/.codex/generated_images/01a1afb7-15e9-72f3-ae4b-670b2856fe91/exec-0aaf0bb4-648f-4c9b-a4c9-4cb58bdb9ce7.png",
+        "sha256": "968f639a1fc47bdd38313b853d949163f3c33f924619f5233563fe3cb102de43",
+        "bytes": 3306460
+      },
+      "embeddedMetadata": {
+        "tool": "Impeccable embed-prompt",
+        "content": "Exact prompt passed to native image_gen.imagegen",
+        "pixelsUnchanged": true,
+        "storage": "PNG tEXt chunk"
+      },
+      "derivatives": [
+        {
+          "file": "dragon-amethyst.webp",
+          "format": "WebP",
+          "width": 1024,
+          "height": 1536,
+          "bytes": 549688,
+          "sha256": "af9559cde0f5c649ab003125824c97a7a62c060441ba7c0644d5f2510f168bee",
+          "sourcePng": "dragon-amethyst.png",
+          "sourcePngSha256": "a3fe4aa48e32455a3287783a53f8649d1e84162df61f5e666d52aa9e10e140b1",
+          "originalGenerationSha256": "968f639a1fc47bdd38313b853d949163f3c33f924619f5233563fe3cb102de43",
+          "processing": {
+            "tool": "cwebp",
+            "version": "1.6.0",
+            "preset": "picture",
+            "quality": 90,
+            "method": 6,
+            "sharpYuv": true,
+            "resize": false,
+            "crop": false
+          },
+          "embeddedMetadata": {
+            "tool": "Impeccable embed-prompt",
+            "storage": "JSON sidecar fallback used by Impeccable for WebP",
+            "file": "dragon-amethyst.webp.json",
+            "sha256": "69e69e996479980d7e7c2b43104c42bb9babec25ef9248afdd6f56127cf54df3",
+            "content": "Exact original generation prompt and derivative source provenance"
+          },
+          "verification": {
+            "encoderPsnrDb": 42.63,
+            "visualInspection": "Full image inspected after encoding; detailed focal motif and full-frame composition preserved, with no visible objectionable compression artifacts."
+          }
+        }
+      ]
+    },
+    {
+      "file": "guardian-sapphire.png",
+      "role": "Workforce / automation",
+      "source": "/Users/zhushiming03/.codex/generated_images/01a1afb7-15e9-72f3-ae4b-670b2856fe91/exec-738254da-4350-4bb1-97ee-d415c553c82e.png",
+      "prompt": "Use case: stylized-concept.\nAsset type: original full-bleed trading-card illustration for AgentDeck, matching a richly painted fantasy card series.\nPrimary request: an original sapphire clockwork guardian representing a coordinated workforce and automation, portrait aspect ratio 2:3.\nSubject and scene: a towering elegant mechanical knight forged from sapphire enamel, silver, and aged brass steps forward from an enormous celestial clockwork engine. Its stern sculpted visor, blue glowing eyes, and luminous circular chest mechanism form the clear focal area in the upper half. Interlocking gear halos and several articulated mechanical arms surround it in a coordinated sweeping pose, their finely crafted tools and armored hands suggesting precision and collaboration. Monumental machinery, arched bridges, and drifting shards recede into blue atmospheric depth.\nStyle/medium: richly detailed hand-painted anime fantasy trading-card illustration, crisp expressive forms over painterly shadows, heroic dramatic foreshortening, layered composition. Serious and monumental, sophisticated articulated anatomy, not a toy.\nComposition/framing: single portrait image at 2:3. Head around upper third and luminous chest in upper 60 percent. Full-bleed scene extends fully to every edge without margin. Lower 30 percent is continuous shadowed clockwork architecture and soft blue mist suitable for future rules overlay; no rules panel inside this image.\nLighting/palette: deep sapphire and midnight cobalt with brilliant icy blue energy, restrained brushed silver and old brass highlights; strong cool rim light and warm mechanical reflections. Rich tonal contrast.\nConstraints: entirely original design, no existing game character or card art. No lettering, numerals, clocks with readable numbers, writing, watermark, logo, border, frame, UI, title bar, or text box. No cute mascot, no chibi, no plastic 3D render. Output one single raster illustration.",
+      "sha256": "da42636a4e4f64811e25a27900ec4796906405a5065f7fee48f18f1196dd9f9b",
+      "bytes": 3206687,
+      "originalGeneration": {
+        "file": "/Users/zhushiming03/.codex/generated_images/01a1afb7-15e9-72f3-ae4b-670b2856fe91/exec-738254da-4350-4bb1-97ee-d415c553c82e.png",
+        "sha256": "775da69440e40551f65202b499ed2e3c318b15cc1fb74f3f9131dfe1d16a0464",
+        "bytes": 3204709
+      },
+      "embeddedMetadata": {
+        "tool": "Impeccable embed-prompt",
+        "content": "Exact prompt passed to native image_gen.imagegen",
+        "pixelsUnchanged": true,
+        "storage": "PNG tEXt chunk"
+      },
+      "derivatives": [
+        {
+          "file": "guardian-sapphire.webp",
+          "format": "WebP",
+          "width": 1024,
+          "height": 1536,
+          "bytes": 533208,
+          "sha256": "e3f66c5299a480e4f0893ae59597e14d7788ed327c3669b2e78afdffce35d1d9",
+          "sourcePng": "guardian-sapphire.png",
+          "sourcePngSha256": "da42636a4e4f64811e25a27900ec4796906405a5065f7fee48f18f1196dd9f9b",
+          "originalGenerationSha256": "775da69440e40551f65202b499ed2e3c318b15cc1fb74f3f9131dfe1d16a0464",
+          "processing": {
+            "tool": "cwebp",
+            "version": "1.6.0",
+            "preset": "picture",
+            "quality": 90,
+            "method": 6,
+            "sharpYuv": true,
+            "resize": false,
+            "crop": false
+          },
+          "embeddedMetadata": {
+            "tool": "Impeccable embed-prompt",
+            "storage": "JSON sidecar fallback used by Impeccable for WebP",
+            "file": "guardian-sapphire.webp.json",
+            "sha256": "e0703dbc7b35b622d369a3881e057507271887f56bcfc76b769ca5a935225a5a",
+            "content": "Exact original generation prompt and derivative source provenance"
+          },
+          "verification": {
+            "encoderPsnrDb": 42.07,
+            "visualInspection": "Full image inspected after encoding; detailed focal motif and full-frame composition preserved, with no visible objectionable compression artifacts."
+          }
+        }
+      ]
+    },
+    {
+      "file": "archive-jade.png",
+      "role": "Context / memory",
+      "source": "/Users/zhushiming03/.codex/generated_images/01a1afb7-15e9-72f3-ae4b-670b2856fe91/exec-4e5c221a-e687-4e94-84ac-9e724bf8f652.png",
+      "prompt": "Use case: stylized-concept.\nAsset type: original full-bleed trading-card illustration for AgentDeck, matching a richly painted fantasy card series.\nPrimary request: an original jade celestial archive tree representing context and enduring memory, portrait aspect ratio 2:3.\nSubject and scene: a vast ancient tree made of living dark wood and luminous emerald veins grows from a floating celestial archive. Its sweeping crown of jade crystal leaves encircles a radiant suspended open book, whose pages are illuminated but blank, in the upper-middle third of the image. Delicate antique-gold orbital rings wind around the tree like an astrolabe. Woven roots merge into towering arched bookshelves, winding library stairs, distant terraces, and cascades of green magical light; a handful of small floating closed books give a sense of stored knowledge. Strong near branches and distant architecture establish dramatic layered depth.\nStyle/medium: richly detailed hand-painted anime fantasy trading-card illustration, crisp expressive silhouette over painterly shadows, sweeping cinematic composition; mythic, mysterious, monumental, never cute.\nComposition/framing: a single portrait raster image at 2:3. Place the recognizable luminous tree crown and central blank open book in upper 60 percent. Full-bleed scene to every edge without margins. Bottom 30 percent continues into atmospheric deep jade roots, shadowed archive architecture, and mist for a future rules overlay; this image itself has no panel.\nLighting and palette: deep jade, forest green, turquoise shadows, luminous pale emerald with restrained aged-gold highlights, high tonal contrast and dramatic shafts of light.\nConstraints: entirely original design, no existing game character or card artwork. No lettering, no glyphs, no numerals, no writing on any book or surface. No watermark, logo, borders, card frame, UI, title bar, or text box. No cute mascot, no chibi, no plastic 3D rendering. Output a single raster illustration.",
+      "sha256": "8067b2e2722bda09860fd436fbfce718ab78779265b5fd16f104689e3010844a",
+      "bytes": 3153465,
+      "originalGeneration": {
+        "file": "/Users/zhushiming03/.codex/generated_images/01a1afb7-15e9-72f3-ae4b-670b2856fe91/exec-4e5c221a-e687-4e94-84ac-9e724bf8f652.png",
+        "sha256": "d48b5b21d3ce65dd257b23cfeb1bbeb169beeedc58e0236b409ade79d04c4673",
+        "bytes": 3151443
+      },
+      "embeddedMetadata": {
+        "tool": "Impeccable embed-prompt",
+        "content": "Exact prompt passed to native image_gen.imagegen",
+        "pixelsUnchanged": true,
+        "storage": "PNG tEXt chunk"
+      },
+      "derivatives": [
+        {
+          "file": "archive-jade.webp",
+          "format": "WebP",
+          "width": 1024,
+          "height": 1536,
+          "bytes": 535552,
+          "sha256": "595d4706593f993a9ebd3e5eb30490a6b795b21114694c051e2f2e48d34a4e8b",
+          "sourcePng": "archive-jade.png",
+          "sourcePngSha256": "8067b2e2722bda09860fd436fbfce718ab78779265b5fd16f104689e3010844a",
+          "originalGenerationSha256": "d48b5b21d3ce65dd257b23cfeb1bbeb169beeedc58e0236b409ade79d04c4673",
+          "processing": {
+            "tool": "cwebp",
+            "version": "1.6.0",
+            "preset": "picture",
+            "quality": 90,
+            "method": 6,
+            "sharpYuv": true,
+            "resize": false,
+            "crop": false
+          },
+          "embeddedMetadata": {
+            "tool": "Impeccable embed-prompt",
+            "storage": "JSON sidecar fallback used by Impeccable for WebP",
+            "file": "archive-jade.webp.json",
+            "sha256": "3ab8d94b1c0a3793ce271d8e069a66772037c267b271c6b82753a76d90c592c0",
+            "content": "Exact original generation prompt and derivative source provenance"
+          },
+          "verification": {
+            "encoderPsnrDb": 42.48,
+            "visualInspection": "Full image inspected after encoding; detailed focal motif and full-frame composition preserved, with no visible objectionable compression artifacts."
+          }
+        }
+      ]
+    }
+  ],
+  "delivery": {
+    "format": "WebP",
+    "targetMaxBytesPerFile": 600000,
+    "originalPngsRetained": true
+  }
+}

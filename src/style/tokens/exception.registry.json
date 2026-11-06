@@ -91,6 +91,13 @@
       "reason": "Markdown document details and sanitized third-party content.",
       "platform": "all",
       "removal": "none"
+    },
+    {
+      "id": "collectible-card-artwork",
+      "owner": "card-workshop",
+      "reason": "User-approved full-frame collectible media: fixed print-material palette and serif lettering inside artwork. Sizes follow card aspect ratio; controls and app chrome use existing semantic recipes. Palette source: card.material.json.",
+      "platform": "all",
+      "removal": "none"
     }
   ]
 }

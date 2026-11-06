@@ -1,0 +1,13 @@
+{
+  "prompt": "Use case: stylized-concept.\nAsset type: original full-bleed trading-card illustration for AgentDeck, matching a richly painted fantasy card series.\nPrimary request: an original jade celestial archive tree representing context and enduring memory, portrait aspect ratio 2:3.\nSubject and scene: a vast ancient tree made of living dark wood and luminous emerald veins grows from a floating celestial archive. Its sweeping crown of jade crystal leaves encircles a radiant suspended open book, whose pages are illuminated but blank, in the upper-middle third of the image. Delicate antique-gold orbital rings wind around the tree like an astrolabe. Woven roots merge into towering arched bookshelves, winding library stairs, distant terraces, and cascades of green magical light; a handful of small floating closed books give a sense of stored knowledge. Strong near branches and distant architecture establish dramatic layered depth.\nStyle/medium: richly detailed hand-painted anime fantasy trading-card illustration, crisp expressive silhouette over painterly shadows, sweeping cinematic composition; mythic, mysterious, monumental, never cute.\nComposition/framing: a single portrait raster image at 2:3. Place the recognizable luminous tree crown and central blank open book in upper 60 percent. Full-bleed scene to every edge without margins. Bottom 30 percent continues into atmospheric deep jade roots, shadowed archive architecture, and mist for a future rules overlay; this image itself has no panel.\nLighting and palette: deep jade, forest green, turquoise shadows, luminous pale emerald with restrained aged-gold highlights, high tonal contrast and dramatic shafts of light.\nConstraints: entirely original design, no existing game character or card artwork. No lettering, no glyphs, no numerals, no writing on any book or surface. No watermark, logo, borders, card frame, UI, title bar, or text box. No cute mascot, no chibi, no plastic 3D rendering. Output a single raster illustration.",
+  "createdAt": "2026-11-06T07:25:54.151Z",
+  "origin": {
+    "type": "Original native AI-generated illustration; delivery compression derivative",
+    "generator": "image_gen.imagegen",
+    "sourcePng": "archive-jade.png",
+    "sourcePngSha256": "8067b2e2722bda09860fd436fbfce718ab78779265b5fd16f104689e3010844a",
+    "originalGenerationSha256": "d48b5b21d3ce65dd257b23cfeb1bbeb169beeedc58e0236b409ade79d04c4673",
+    "derivativeSha256": "595d4706593f993a9ebd3e5eb30490a6b795b21114694c051e2f2e48d34a4e8b",
+    "provenanceFile": "provenance.json"
+  }
+}

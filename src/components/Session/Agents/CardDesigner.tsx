@@ -122,7 +122,11 @@ export function CardDesigner({
   const update = (patch: Partial<CardAgentConfig>) =>
     setConfig((old) => ({ ...old, ...patch }));
   return (
-    <Tabs value={tab} onValueChange={setTab} className="card-workshop">
+    <Tabs
+      value={tab}
+      onValueChange={setTab}
+      className="card-workshop card-workshop--designer"
+    >
       <div className="flex shrink-0 items-center gap-ds-8 border-x-0 border-t-0 border-b border-solid border-ds-hairline-default-default p-ds-16">
         <Button
           variant="ghost"
@@ -163,7 +167,10 @@ export function CardDesigner({
       </div>
       <div className="card-workshop-body">
         <div className="card-design-stage scrollbar-always-visible">
-          <DsText role="meta" className="text-ds-ink-muted-default">
+          <DsText
+            role="meta"
+            className="card-design-caption text-ds-ink-muted-default"
+          >
             {t('chat.card-same-face')}
           </DsText>
           <div className="card-design-preview">
@@ -176,7 +183,10 @@ export function CardDesigner({
               workforce={workforce}
             />
           </div>
-          <DsText role="meta" className="text-ds-ink-muted-default">
+          <DsText
+            role="meta"
+            className="card-design-note text-ds-ink-muted-default"
+          >
             {t('chat.card-appearance-independent')}
           </DsText>
         </div>
@@ -332,7 +342,7 @@ export function InstanceCardDesigner({
     [error, setError] = useState(false);
   const lock = useRef(false);
   return (
-    <div className="card-workshop">
+    <div className="card-workshop card-workshop--designer">
       <div className="flex shrink-0 items-center gap-ds-8 border-x-0 border-t-0 border-b border-solid border-ds-hairline-default-default p-ds-16">
         <Button size="sm" variant="ghost" disabled={busy} onClick={close}>
           <DsIcon icon={ArrowLeft} />

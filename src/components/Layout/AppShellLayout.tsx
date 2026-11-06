@@ -44,6 +44,8 @@ export interface AppShellLayoutProps {
    * on both Workspace and Home.
    */
   sidebarHidden?: boolean;
+  /** Compact rail for the card canvas; width remains coupled to fold motion. */
+  sidebarWidth?: number;
   /**
    * Wrap `children` in the rounded content surface (default). Pages that paint
    * their own surface (or need several) can opt out.
@@ -63,6 +65,7 @@ export default function AppShellLayout({
   children,
   overlay,
   sidebarHidden = false,
+  sidebarWidth = APP_SHELL_SIDEBAR_WIDTH_PX,
   contentSurface = true,
   className,
   contentClassName,
@@ -100,9 +103,7 @@ export default function AppShellLayout({
           className="h-full min-h-0 shrink-0 overflow-hidden"
           initial={false}
           animate={{
-            width: sidebarHidden
-              ? 0
-              : APP_SHELL_SIDEBAR_WIDTH_PX + APP_SHELL_COLUMN_GAP_PX,
+            width: sidebarHidden ? 0 : sidebarWidth + APP_SHELL_COLUMN_GAP_PX,
           }}
           transition={sidebarTransition}
           data-sidebar-motion={shouldReduceMotion ? 'instant' : 'spring'}
@@ -110,10 +111,7 @@ export default function AppShellLayout({
           style={{ pointerEvents: sidebarHidden ? 'none' : undefined }}
         >
           {/* Fixed inner width so rail content doesn't reflow mid-animation. */}
-          <div
-            className="h-full min-h-0"
-            style={{ width: APP_SHELL_SIDEBAR_WIDTH_PX }}
-          >
+          <div className="h-full min-h-0" style={{ width: sidebarWidth }}>
             {sidebar}
           </div>
         </motion.div>

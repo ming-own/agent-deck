@@ -515,7 +515,7 @@ function WorkspaceGraphBody({
           }}
         >
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
-            <div className="relative min-h-0 min-w-0 flex-1 bg-ds-neutral-muted-default">
+            <div className="workspace-card-canvas relative min-h-0 min-w-0 flex-1">
               {view === 'canvas' ? (
                 <ReactFlow<GraphNode>
                   key={positionEpoch}

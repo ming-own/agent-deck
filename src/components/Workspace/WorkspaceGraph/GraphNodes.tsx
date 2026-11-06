@@ -115,7 +115,7 @@ export function WorkspaceObjectNode({ data, selected }: NodeProps<GraphNode>) {
     return (
       <div
         className={
-          'h-full w-full rounded-ds-field ' +
+          'workspace-agent-card h-full w-full rounded-ds-field ' +
           (selected ? 'ring-2 ring-ds-ring-focus' : '')
         }
       >
@@ -126,39 +126,69 @@ export function WorkspaceObjectNode({ data, selected }: NodeProps<GraphNode>) {
           model={a.model.name}
           skills={a.skill_ids.length}
           workforce={!!a.workforce}
-          footer={
-            <>
-              <Button
-                variant="text"
-                size="xs"
-                className="nodrag nopan"
-                onClick={() => open(item)}
-                aria-label={t('chat.card-configure') + ' · ' + a.name}
-              >
-                {t('chat.card-configure')}
-              </Button>
-              <TrialResult
-                project={a.projectId}
-                agent={a}
-                latestRun={item.latestTask?.last_run}
-                onLatestRun={() =>
-                  open({
-                    ...item,
-                    kind: 'task',
-                    id: a.id + ':' + item.latestTask!.id,
-                    task: item.latestTask,
-                  })
-                }
-              >
-                <span className="flex-1" />
-              </TrialResult>
-              <TrialAction project={a.projectId} agent={a} />
-            </>
-          }
         >
           <ConnectionPort type="target" name={a.name} />
           <ConnectionPort type="source" name={a.name} />
         </CardFace>
+        <div className="workspace-agent-actions">
+          <Button
+            variant="text"
+            size="xs"
+            className="nodrag nopan"
+            onClick={() => open(item)}
+            aria-label={t('chat.card-configure') + ' · ' + a.name}
+          >
+            {t('chat.card-configure')}
+          </Button>
+          <TrialResult
+            project={a.projectId}
+            agent={a}
+            latestRun={item.latestTask?.last_run}
+            onLatestRun={() =>
+              open({
+                ...item,
+                kind: 'task',
+                id: a.id + ':' + item.latestTask!.id,
+                task: item.latestTask,
+              })
+            }
+          >
+            <span className="flex-1" />
+          </TrialResult>
+          <TrialAction project={a.projectId} agent={a} />
+        </div>
+      </div>
+    );
+  if (
+    item.kind === 'context' ||
+    item.kind === 'memory' ||
+    item.kind === 'automation'
+  )
+    return (
+      <div
+        className={
+          'workspace-resource-card h-full w-full ' +
+          (selected ? 'ring-2 ring-ds-ring-focus' : '')
+        }
+      >
+        <CardFace
+          category={item.kind}
+          design={{ artwork: item.kind === 'automation' ? 'crab' : 'oasis' }}
+          name={item.name}
+          description={item.description || item.name}
+        >
+          <ConnectionPort type="source" name={item.name} />
+        </CardFace>
+        <Button
+          variant="ghost"
+          size="xs"
+          className="nodrag nopan w-full"
+          onClick={() => open(item)}
+          aria-label={t('chat.card-configure') + ' · ' + item.name}
+        >
+          <DsIcon icon={kindIcons[item.kind]} />
+          {t('chat.card-configure')}
+        </Button>
       </div>
     );
   return (
@@ -214,9 +244,9 @@ export function WorkspaceObjectNode({ data, selected }: NodeProps<GraphNode>) {
 }
 export function WorkspaceSessionNode({ data }: NodeProps<GraphNode>) {
   const { t } = useTranslation(),
-    { item, expanded, toggle, open } = data;
+    { item, expanded, toggle, open, results } = data;
   return (
-    <div className="h-full rounded-ds-panel border border-x border-y border-dashed border-ds-hairline-default-default bg-ds-neutral-muted-default">
+    <div className="workspace-session-region h-full rounded-ds-panel border border-x border-y border-solid border-ds-hairline-default-default">
       <Handle
         type="target"
         position={Position.Left}
@@ -225,7 +255,7 @@ export function WorkspaceSessionNode({ data }: NodeProps<GraphNode>) {
         isConnectableEnd={false}
         aria-hidden="true"
       />
-      <div className="flex items-center gap-ds-control-gap p-ds-16">
+      <div className="workspace-session-heading flex items-center gap-ds-control-gap p-ds-16">
         <Button
           className="nodrag nopan shrink-0"
           size="sm"
@@ -257,6 +287,40 @@ export function WorkspaceSessionNode({ data }: NodeProps<GraphNode>) {
           <DsIcon icon={ArrowUpRight} />
         </Button>
       </div>
+      {expanded && !!results?.length && (
+        <div className="workspace-session-results">
+          <DsText role="meta" className="text-ds-ink-muted-default">
+            {t('chat.node-run-result')}
+          </DsText>
+          <div className="flex min-w-0 gap-ds-16">
+            {results.map((result) => (
+              <Button
+                key={result.id}
+                variant="text"
+                size="sm"
+                className="nodrag nopan min-w-0 flex-1 justify-start"
+                title={t('chat.node-run-result') + ' · ' + result.name}
+                onClick={() =>
+                  open({
+                    ...result,
+                    kind: 'task',
+                    id: result.id + ':' + result.latestTask!.id,
+                    task: result.latestTask,
+                  })
+                }
+              >
+                <DsText role="meta" className="min-w-0 truncate">
+                  {result.name} ·{' '}
+                  {t(
+                    'chat.session-agents-status-' +
+                      result.latestTask!.last_run!.status
+                  )}
+                </DsText>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

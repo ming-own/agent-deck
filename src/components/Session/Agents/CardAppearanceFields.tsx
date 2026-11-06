@@ -89,6 +89,9 @@ export function CardAppearanceFields({
       disabled={disabled || uploading}
       className="m-0 flex min-w-0 flex-col gap-ds-16 border-0 border-x-0 border-y-0 p-0"
     >
+      <DsText role="base" weight="semibold">
+        {t('chat.card-information')}
+      </DsText>
       <Input
         title={t('chat.card-title')}
         aria-label={t('chat.card-title')}
@@ -104,8 +107,8 @@ export function CardAppearanceFields({
         maxLength={400}
         onChange={(e) => onChange({ ...value, summary: e.target.value })}
       />
-      <DsText role="base" weight="semibold">
-        {t('chat.card-artwork')}
+      <DsText role="base" weight="semibold" className="card-form-section-title">
+        {t('chat.card-artwork-and-frame')}
       </DsText>
       <div className="card-artwork-grid">
         {cardArtworks.map((art) => (
@@ -169,28 +172,54 @@ export function CardAppearanceFields({
           {t('chat.card-artwork-invalid')}
         </DsText>
       )}
-      <CardPicker
-        label={t('chat.card-layout')}
-        value={value.layout}
-        items={['full', 'classic'].map((id) => ({
-          id,
-          name: t('chat.card-layout-' + id),
-        }))}
-        onChange={(layout) =>
-          onChange({ ...value, layout: layout as CardDesign['layout'] })
-        }
-      />
-      <CardPicker
-        label={t('chat.card-material')}
-        value={value.material}
-        items={['gold', 'silver', 'ink'].map((id) => ({
-          id,
-          name: t('chat.card-material-' + id),
-        }))}
-        onChange={(material) =>
-          onChange({ ...value, material: material as CardDesign['material'] })
-        }
-      />
+      <div
+        className="flex flex-col gap-ds-8"
+        role="group"
+        aria-label={t('chat.card-layout')}
+      >
+        <DsText role="meta">{t('chat.card-layout')}</DsText>
+        <div className="card-layout-options">
+          {(['full', 'classic'] as const).map((layout) => (
+            <Button
+              type="button"
+              key={layout}
+              size="sm"
+              variant={value.layout === layout ? 'secondary' : 'ghost'}
+              aria-pressed={value.layout === layout}
+              onClick={() => onChange({ ...value, layout })}
+            >
+              {t('chat.card-layout-' + layout)}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div
+        className="flex flex-col gap-ds-8"
+        role="group"
+        aria-label={t('chat.card-material')}
+      >
+        <DsText role="meta">{t('chat.card-material')}</DsText>
+        <div className="card-material-options">
+          {(['gold', 'silver', 'ink'] as const).map((material) => (
+            <Button
+              type="button"
+              key={material}
+              size="sm"
+              variant={value.material === material ? 'secondary' : 'ghost'}
+              aria-pressed={value.material === material}
+              onClick={() => onChange({ ...value, material })}
+            >
+              <span
+                aria-hidden="true"
+                className={
+                  'card-material-swatch card-material-swatch--' + material
+                }
+              />
+              {t('chat.card-material-' + material)}
+            </Button>
+          ))}
+        </div>
+      </div>
       <DsText role="meta" className="text-ds-ink-muted-default">
         {t('chat.card-appearance-independent')}
       </DsText>

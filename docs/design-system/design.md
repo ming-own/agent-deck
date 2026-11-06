@@ -521,6 +521,32 @@ New UI must not introduce:
 - A new primitive when an existing primitive supports the behavior.
 - A new component color namespace; components consume foundation color roles.
 
+### Approved collectible card extension (2026-11-06)
+
+The user-approved canvas, card Workshop, and designer composition uses the
+registered `collectible-card-artwork` exception, owned by `card-workshop`,
+alongside `media-frames`. Its fixed print-material colors come only from
+`src/style/tokens/card.material.json` and generated `--ds-card-*` variables:
+gold/silver/ink for Agent and Workforce, jade for Context/Memory, and violet
+for Automation. These material pairs remain fixed across application themes.
+
+Serif artwork titles use the same source's Songti SC / STSong / Noto Serif CJK
+SC stack. `CardFace` scales Agent titles from 20–28px, compact resource titles
+from 14–16px, and two-line summaries from 11–14px within the media frame. Its
+print-panel corner, image scrim, title shadow, and portrait geometry are local
+artwork treatments. They do not change standard-control geometry or the
+product typography, elevation, and semantic-color contracts above.
+
+Application controls, canvas surfaces, selection, focus, status, and validation
+retain existing semantic recipes. The canvas uses a 55% Neutral subtle / 45%
+Neutral muted mix. The Space workforce/graph route alone uses a measured 182px
+sidebar plus the existing 2px gap; other destinations keep the existing 240px
+sidebar. Session regions remain containers, Agent actions stay below the art,
+and results link to existing Tasks. See [the implemented extension](../../DESIGN.md)
+and [its surface brief](../../.impeccable/briefs/card-workshop.md) for current
+layout, provenance, and comparison limitations. This approval does not broaden
+these exceptions to other application surfaces.
+
 ## 15. Validation and handoff
 
 Run checks in proportion to the change:

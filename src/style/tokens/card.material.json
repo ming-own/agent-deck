@@ -1,0 +1,39 @@
+{
+  "$description": "Approved 2026-11 card artwork materials. Fixed print colors inside the media frame; app controls remain theme driven.",
+  "gold": {
+    "edge": "#a48045",
+    "frame": "#b79b68",
+    "paper": "#faf3e6",
+    "ink": "#513e27"
+  },
+  "silver": {
+    "edge": "#788591",
+    "frame": "#b8c4ce",
+    "paper": "#f0f4f7",
+    "ink": "#35444f"
+  },
+  "ink": {
+    "edge": "#48505b",
+    "frame": "#89929d",
+    "paper": "#e9ebef",
+    "ink": "#353d48"
+  },
+  "jade": {
+    "edge": "#447e70",
+    "frame": "#91b8a9",
+    "paper": "#edf5ed",
+    "ink": "#2b4f42"
+  },
+  "violet": {
+    "edge": "#85659e",
+    "frame": "#b09bbf",
+    "paper": "#f4eef7",
+    "ink": "#594667"
+  },
+  "art": {
+    "ground": "#22262e",
+    "text": "#ffffff",
+    "shade": "#08111e",
+    "font": "\"Songti SC\", \"STSong\", \"Noto Serif CJK SC\", serif"
+  }
+}

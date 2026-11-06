@@ -1,0 +1,13 @@
+{
+  "prompt": "Use case: stylized-concept.\nAsset type: original full-bleed trading-card illustration for AgentDeck, matching a richly painted fantasy card series.\nPrimary request: an original sapphire clockwork guardian representing a coordinated workforce and automation, portrait aspect ratio 2:3.\nSubject and scene: a towering elegant mechanical knight forged from sapphire enamel, silver, and aged brass steps forward from an enormous celestial clockwork engine. Its stern sculpted visor, blue glowing eyes, and luminous circular chest mechanism form the clear focal area in the upper half. Interlocking gear halos and several articulated mechanical arms surround it in a coordinated sweeping pose, their finely crafted tools and armored hands suggesting precision and collaboration. Monumental machinery, arched bridges, and drifting shards recede into blue atmospheric depth.\nStyle/medium: richly detailed hand-painted anime fantasy trading-card illustration, crisp expressive forms over painterly shadows, heroic dramatic foreshortening, layered composition. Serious and monumental, sophisticated articulated anatomy, not a toy.\nComposition/framing: single portrait image at 2:3. Head around upper third and luminous chest in upper 60 percent. Full-bleed scene extends fully to every edge without margin. Lower 30 percent is continuous shadowed clockwork architecture and soft blue mist suitable for future rules overlay; no rules panel inside this image.\nLighting/palette: deep sapphire and midnight cobalt with brilliant icy blue energy, restrained brushed silver and old brass highlights; strong cool rim light and warm mechanical reflections. Rich tonal contrast.\nConstraints: entirely original design, no existing game character or card art. No lettering, numerals, clocks with readable numbers, writing, watermark, logo, border, frame, UI, title bar, or text box. No cute mascot, no chibi, no plastic 3D render. Output one single raster illustration.",
+  "createdAt": "2026-11-06T07:25:53.726Z",
+  "origin": {
+    "type": "Original native AI-generated illustration; delivery compression derivative",
+    "generator": "image_gen.imagegen",
+    "sourcePng": "guardian-sapphire.png",
+    "sourcePngSha256": "da42636a4e4f64811e25a27900ec4796906405a5065f7fee48f18f1196dd9f9b",
+    "originalGenerationSha256": "775da69440e40551f65202b499ed2e3c318b15cc1fb74f3f9131dfe1d16a0464",
+    "derivativeSha256": "e3f66c5299a480e4f0893ae59597e14d7788ed327c3669b2e78afdffce35d1d9",
+    "provenanceFile": "provenance.json"
+  }
+}

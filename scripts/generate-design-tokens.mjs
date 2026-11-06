@@ -283,6 +283,11 @@ walkObject(componentRecipe, (parts, value) => {
   }
 });
 
+// Fixed printed media materials, scoped to collectible card artwork.
+walkObject(readJson('card.material.json'), (parts, value) => {
+  defineToken(`card.${parts.join('.')}`, `--ds-card-${parts.join('-')}`, value, 'recipe');
+});
+
 const assignedTones = Object.entries(toneAssignment.families)
   .filter(([, assignment]) => assignment.kind !== 'retired')
   .map(([tone]) => tone)

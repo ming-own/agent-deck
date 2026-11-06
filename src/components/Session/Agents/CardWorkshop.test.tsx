@@ -75,7 +75,10 @@ describe('card workshop boundaries', () => {
         beforeInstall={async () => {}}
       />
     );
-    await screen.findByText('Visible card title');
+    await screen.findByRole('heading', {
+      name: 'Visible card title',
+      level: 3,
+    });
     fireEvent.change(screen.getByRole('textbox', { name: 'Search cards' }), {
       target: { value: 'Visible card' },
     });
@@ -111,7 +114,7 @@ describe('card workshop boundaries', () => {
         beforeInstall={async () => {}}
       />
     );
-    await screen.findByText('Latest face');
+    await screen.findByRole('heading', { name: 'Latest face', level: 3 });
     fireEvent.keyDown(screen.getByRole('combobox', { name: 'Version' }), {
       key: 'Enter',
     });
@@ -119,9 +122,13 @@ describe('card workshop boundaries', () => {
       await screen.findByRole('option', { name: 'Versioned card · v1' })
     );
     await waitFor(() =>
-      expect(screen.getByText('Original face')).toBeVisible()
+      expect(
+        screen.getByRole('heading', { name: 'Original face', level: 3 })
+      ).toBeVisible()
     );
-    expect(screen.queryByText('Latest face')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByText('Latest face')).not.toBeInTheDocument()
+    );
   });
 
   it('associates design and capability tabs with their panels', async () => {

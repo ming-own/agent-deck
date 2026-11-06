@@ -36,6 +36,29 @@ colors:
   dark-category-amber-background-subtle: '#5e3d00'
   dark-category-slate-text-default: '#f0f2f4'
   dark-category-slate-border-default: '#bbc2cc'
+  card-gold-edge: '#a48045'
+  card-gold-frame: '#b79b68'
+  card-gold-paper: '#faf3e6'
+  card-gold-ink: '#513e27'
+  card-silver-edge: '#788591'
+  card-silver-frame: '#b8c4ce'
+  card-silver-paper: '#f0f4f7'
+  card-silver-ink: '#35444f'
+  card-ink-edge: '#48505b'
+  card-ink-frame: '#89929d'
+  card-ink-paper: '#e9ebef'
+  card-ink-ink: '#353d48'
+  card-jade-edge: '#447e70'
+  card-jade-frame: '#91b8a9'
+  card-jade-paper: '#edf5ed'
+  card-jade-ink: '#2b4f42'
+  card-violet-edge: '#85659e'
+  card-violet-frame: '#b09bbf'
+  card-violet-paper: '#f4eef7'
+  card-violet-ink: '#594667'
+  card-art-ground: '#22262e'
+  card-art-text: '#ffffff'
+  card-art-shade: '#08111e'
 typography:
   display:
     fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
@@ -69,6 +92,20 @@ typography:
     fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
     fontSize: '0.8125rem'
     lineHeight: '1.25rem'
+  card-art-title:
+    fontFamily: '"Songti SC", "STSong", "Noto Serif CJK SC", serif'
+    fontSize: 'clamp(20px, 8.2cqw, 28px)'
+    fontWeight: 700
+    lineHeight: 1.3
+  resource-card-title:
+    fontFamily: '"Songti SC", "STSong", "Noto Serif CJK SC", serif'
+    fontSize: 'clamp(14px, 8.2cqw, 16px)'
+    fontWeight: 700
+    lineHeight: 1.3
+  card-summary:
+    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    fontSize: 'clamp(11px, 4.2cqw, 14px)'
+    lineHeight: 1.7
 rounded:
   primary-action: '9999px'
   compact-control: '0.5rem'
@@ -148,9 +185,15 @@ components:
     rounded: '{rounded.card}'
     padding: '{spacing.card-inset}'
   agent-card-face:
-    backgroundColor: '{colors.neutral-subtle-default}'
-    textColor: '{colors.ink-default-default}'
+    backgroundColor: '{colors.card-art-ground}'
+    textColor: '{colors.card-art-text}'
     rounded: '{rounded.field}'
+  agent-card-rules:
+    backgroundColor: '{colors.card-gold-paper}'
+    textColor: '{colors.card-gold-ink}'
+    padding: '4%'
+  workspace-card-canvas:
+    backgroundColor: 'color-mix(in srgb, var(--ds-neutral-subtle-default) 55%, var(--ds-neutral-muted-default))'
 ---
 
 # Design System: AgentDeck（智牌）
@@ -163,13 +206,13 @@ AgentDeck is a calm, compact working environment. Warm Neutral surfaces, Ink hie
 
 This document records the implemented extension. [The active design guideline](docs/design-system/design.md) remains authoritative, including where its legacy heading says Eigent. `src/style/tokens`, generated outputs, and shared primitives remain the executable source of truth. [Product terminology](docs/product-terminology.md) governs visible Space → Session → Task wording; the existing Project identifiers remain technical contracts. Surface strategy and approval history stay in [the card Workshop brief](.impeccable/briefs/card-workshop.md).
 
-The frontmatter is a machine-readable snapshot of reused roles, extracted from the actual theme engine (`eigent`, contrast 43) and generated dimension/type tokens. Unprefixed colors show the default light mode; `dark-` entries show the corresponding dark mode. They are documentation keys, never new application aliases. Product code consumes the same `--ds-*` semantic variables in both themes so user theme and contrast choices continue to work. Component entries show default light values; the sidecar snippets remain live-bound to semantic variables.
+The frontmatter records reused roles from the actual theme engine (`eigent`, contrast 43), generated dimension/type tokens, and the approved fixed print materials in `src/style/tokens/card.material.json`. Theme colors without a prefix show default light mode; `dark-` entries show dark mode. The `card-*` material colors remain fixed in both modes inside the registered `collectible-card-artwork` exception. These are documentation keys, not new application aliases. App controls and canvas surfaces continue to consume semantic `--ds-*` variables; the sidecar snippets retain those live bindings.
 
 **Key Characteristics:**
 
 - Compact operational controls with visible keyboard focus.
 - Warm Neutral surfaces and Ink hierarchy, with Accent reserved for action and selection.
-- Portrait cards with a stable frame, visible artwork, and readable capability text.
+- Portrait cards with fixed print materials, serif titles over original artwork, and readable capability text.
 - One shared card face across reusable designs and installed instances.
 - Appearance, capability configuration, and Task history remain distinct.
 
@@ -184,15 +227,17 @@ The shell stays quiet; semantic action contrast and categorical card frames esta
 
 ### Secondary
 
-- **Amber gold** (`category-amber-*`): the default Agent card's frame, category label, and restrained rules-panel tint. It expresses identity, not warning or execution status.
-- **Slate silver** (`category-slate-*`): the silver frame and the inner boundary of both silver and ink cards. The ink outer frame uses `ink-default-default`.
+- **Gold, silver, and ink print materials** (`card-gold-*`, `card-silver-*`, `card-ink-*`): selectable Agent and Workforce frames with coordinated edge, inner frame, paper, and text. They remain fixed across app themes.
+- **Jade and violet print materials** (`card-jade-*`, `card-violet-*`): Context/Memory and Automation card identities respectively.
+- **Artwork contrast** (`card-art-ground`, `card-art-text`, `card-art-shade`): a dark image backing, pale title/category lettering, and an upper image scrim keep the full-frame art readable.
+- Established `category-amber-*` and `category-slate-*` semantic roles remain available to other product patterns; they no longer supply the illustrated card material palette.
 
 ### Neutral
 
-- **Warm surface** (`neutral-subtle-default`): library, card headings, readable card panels, and the Workshop shell.
-- **Inset surface** (`neutral-muted-default`): the design stage and artwork backing.
+- **Warm surface** (`neutral-subtle-default`): the library and Workshop shell.
+- **Inset surface** (`neutral-muted-default`): mixed with Warm surface for quiet working regions. The canvas mixes 55% Warm surface with 45% Inset surface, the designer stage uses 60% / 40%, and the library details rail uses 80% / 20%.
 - **Control surface** (`neutral-default-default`): established field and tag fills.
-- **Ink** (`ink-default-default`, `ink-muted-default`): primary and supporting text, including card content. These roles invert with the theme.
+- **Ink** (`ink-default-default`, `ink-muted-default`): primary and supporting app text. These roles change with the theme; card artwork and rules text use their fixed material pairs.
 - **Hairline** (`hairline-default-default`): dividers and structural boundaries; do not replace it with locally chosen grays.
 
 **The Identity and State Rule.** Card materials remain stable when execution state changes. Status, validation, and destructive actions use their existing semantic feedback roles and explicit labels.
@@ -201,29 +246,33 @@ The shell stays quiet; semantic action contrast and categorical card frames esta
 
 **Display Font:** Inter with the system sans-serif fallbacks in the frontmatter.
 
-**Body Font:** The same Inter stack; there is no separate trading-card display typeface.
+**Body Font:** The same Inter stack for application controls, details, and card rules.
+
+**Card Artwork Font:** Songti SC, STSong, Noto Serif CJK SC, serif, from `card.material.json`. This approved lettering is confined to illustrated card titles.
 
 **Label/Mono Font:** Labels use the text stack. Code uses the existing system monospace stack.
 
-Use `DsText` roles from the frontmatter rather than raw local sizes. `page` carries the library heading, `title` carries card names and designer titles, `base` carries controls and descriptions, and `meta` carries card category, capability summary, model, Skills, and version. `display`, `section`, and `body-large` remain available established roles; the card extension does not require a new scale. Weight is independent of geometry: regular, medium, semibold, and bold are established choices.
+Use existing `DsText` roles for application UI: `page` for the library heading, `title` for designer and details headings, `base` for controls and descriptions, and `meta` for category labels, capability labels, model, Skills, and version. Within the registered collectible artwork/media-frame exception, Agent titles use the `card-art-title` container-relative clamp with a 20px minimum; resource titles use `resource-card-title`, and two-line summaries use `card-summary`. These pattern-specific roles do not replace the product type scale. Weight remains independent of standard-control geometry.
 
 Use sentence case and semantic headings. Card names truncate within their allotted width and retain the full `title`; summary text wraps anywhere and clamps to two lines with the full value available as a title. Configuration and details retain the underlying capability content. A card illustration is decorative beside semantic text and uses an empty image alternative.
 
-**The Same Hierarchy Rule.** The gallery, preview, and canvas render the same card typography through `CardFace`; context may add controls without inventing a smaller card text system.
+**The Same Hierarchy Rule.** The gallery, preview, and canvas share `CardFace` and its container-relative type hierarchy. Only the compact resource-card title uses its documented smaller range; app controls retain the standard text roles.
 
 ## Layout
 
 Compose controls with semantic spacing: control gap and inline inset, panel inset, card inset, related stacks, and section stacks. The full spacing scale and canonical content headers remain defined by the active guideline. Standard controls retain shared size recipes; card or canvas geometry does not authorize new control sizes.
 
-The card extension uses the registered `media-frames` exception for portrait proportions and image framing. `CardFace` has aspect ratio 244 / 352. The gallery uses an auto-fill grid with a 220px minimum track; the selected card's details occupy a 280px rail. The designer preview is bounded at 338px, beside a 340px property rail. These are pattern geometry, not new global sizing tokens.
+The card extension uses the registered `media-frames` exception for portrait proportions and image framing. `CardFace` has aspect ratio 244 / 352. The gallery uses an auto-fill grid with a 208px minimum track and a face capped at 208px wide (about 300px tall); the selected card details occupy a 282px rail. The designer preview is bounded at 338px (about 488px tall), beside a 350px property rail. These values belong to this pattern, not the global sizing scale.
 
-At a Workshop container width of 760px or less, the body stacks vertically. The preview becomes 244px wide, the property/detail rail fills the available width, and its separator moves to the top. The header and Save action stay outside the scrolling body. Wide layouts give the gallery, preview stage, and property rail their own overflow regions; persistent overflow uses the shared `scrollbar-always-visible` recipe. Modal Workshop uses the existing `DialogContent` workbench variant; the embedded version occupies the owning canvas region.
+At a Workshop container width of 760px or less, the gallery stacks above its details rail and uses 176px minimum grid tracks. The designer stays side by side from 600px through 760px, with a preview bounded at 244px and a 300px properties rail; below 600px it stacks. In stacked layouts the rail fills the available width and its separator moves to the top. The header and Save action remain outside the scrolling body. Wide layouts give the gallery, preview stage, and properties rail their own overflow regions with the shared `scrollbar-always-visible` recipe. Modal Workshop uses the existing `DialogContent` workbench variant; the embedded version occupies the owning canvas region.
+
+The Space workforce/graph surface uses the approved compact sidebar width of 182px plus the existing 2px column gap. Other app destinations retain the existing 240px sidebar plus that gap. Sidebar motion still uses the same measured shell pattern. Expanded Sessions are containment regions over the canvas; Agent actions sit below the artwork, and a Session results strip links to the actual Task and run status.
 
 Light and dark modes use the same layout and semantic roles. Narrow and short desktop windows, 200% zoom, long localized names, and missing data must preserve reachable controls and readable content. This desktop card pattern does not assert a separate mobile composition.
 
 ## Elevation & Depth
 
-Depth explains interaction and ownership. The quiet shell relies on tonal layering and spacing. Primary buttons use the existing control, hover, and pressed elevation roles; overlays use popover or dialog elevation. Standard `Card` retains its existing shared recipe. The illustrated Agent card is frame-led and does not add a stock shadow, foil effect, or glow.
+Depth explains interaction and ownership. The quiet shell relies on tonal layering and spacing. Primary buttons use the existing control, hover, and pressed elevation roles; overlays use popover or dialog elevation. Standard `Card` retains its existing shared recipe. The illustrated Agent card is frame-led and does not add a stock box shadow, foil effect, or glow. Its title shadow and upper-art scrim are scoped artwork contrast treatments, not application elevation.
 
 ### Shadow Vocabulary
 
@@ -235,7 +284,7 @@ Library card hover moves the face upward by 2px; reduced motion removes that mov
 
 ## Shapes
 
-Actions are pills or circles; fields, media, cards, panels, and dialogs keep bounded radii. The frontmatter records the reused semantic radii. The Agent face deliberately uses the field/media radius rather than the generic card radius, with a compact-control inner rim. This portrait media frame is the scoped `media-frames` exception already registered in `src/style/tokens/exception.registry.json`.
+Actions are pills or circles; fields, media, cards, panels, and dialogs keep bounded radii. The frontmatter records the reused semantic radii. The illustrated face deliberately uses the field/media radius rather than the generic card radius, with a compact-control inner rim. Its paper rules panel has a 2px print corner. These media proportions, print details, fixed palette, and serif lettering remain scoped to the registered `media-frames` and `collectible-card-artwork` exceptions in `src/style/tokens/exception.registry.json`.
 
 The outer card boundary uses the strong border role. Its inner rim, rules panel, and dividers use thin boundaries. Keep the face overflow visible so keyboard focus and canvas connection ports remain visible; artwork clips in its own rounded frame. Default keyboard focus is a 2px semantic ring with a 2px offset. Selection and validation must compose with that ring. Forced-color mode retains card and rules-panel boundaries through `CanvasText`.
 
@@ -247,11 +296,11 @@ Use `Button` with supported `variant`, `tone`, `emphasis`, `size`, and `buttonCo
 
 ### Chips
 
-Shared `Tag` and `Badge` remain compact pills with `meta` typography. Workshop category filtering is a group of shared buttons, using secondary for the selected filter and ghost for the rest, with `aria-pressed`. The card's category label is semantic text on a quiet surface; it is not an execution-status badge.
+Shared `Tag` and `Badge` remain compact pills with `meta` typography. Workshop category filtering is a group of shared buttons, using secondary for the selected filter and ghost for the rest, with `aria-pressed`. The card category is semantic text over the shaded artwork; it is not an execution-status badge.
 
 ### Cards / Containers
 
-Use the existing `Card`, panel, menu, popover, and dialog recipes for operational containers. Their semantic spacing, radii, boundaries, and elevation remain owned by the primitive. The trading-card frame belongs only to the illustrated Agent pattern; do not spread that treatment to every settings panel or resource node.
+Use the existing `Card`, panel, menu, popover, and dialog recipes for operational containers. Their semantic spacing, radii, boundaries, and elevation remain owned by the primitive. The collectible frame belongs to the shared illustrated Agent, Workforce, Context, Memory, and Automation card pattern. Settings panels, Session regions, and other operational containers retain their existing recipes.
 
 ### Inputs / Fields
 
@@ -263,19 +312,22 @@ Reuse `Tabs` with `appearance="border"` for appearance/capability sections, pres
 
 ### Shared Agent card face
 
-`CardFace` is used by the Workshop library, template designer, instance appearance editor, and workspace graph. It owns the title, Agent/Workforce category, illustration, capability summary, model, and Skills presentation. The graph supplies its footer and connection ports; the card does not own execution or history.
+`CardFace` is used by the Workshop library, template designer, instance appearance editor, and workspace graph. It owns the title, category, illustration, summary, and Agent/Workforce or resource metadata. The graph supplies connection ports and keeps Agent configuration/run controls below the artwork; the card does not own execution or history.
 
-- **Gold:** amber outer and inner frame, with a rules panel mixing 94% Neutral subtle and 6% amber subtle background.
-- **Silver:** slate outer and inner boundaries and a Neutral rules panel.
-- **Ink:** Ink outer boundary, slate inner boundary, and a Neutral rules panel.
+- **Gold, silver, and ink:** each uses its fixed edge, frame, paper, and ink quartet from `card.material.json`, independent of app theme.
+- **Context and Memory:** jade materials override the selectable Agent materials.
+- **Automation:** violet materials override the selectable Agent materials.
+- **Readable artwork:** the image uses centered horizontal framing at 30% vertically, with an upper dark scrim, a serif title, and a circular category seal. The rules panel sits 3% above the bottom with 4% side insets and a 31% minimum height.
 - **Full artwork:** the image fills its inner media area. Square or wider artwork (natural width at least 90% of natural height) uses 74% of that area's height, keeping the face above the lower capability panel. This is a bounded display field, not a new cropped asset.
-- **Classic artwork:** the image window begins 24% from the top and ends 34% above the bottom, with the semantic control-inline inset. The illustration remains separate from the lower capability panel.
+- **Classic artwork:** the image window begins 24% from the top and ends 36% above the bottom, with the semantic control-inline inset. The illustration remains separate from the lower capability panel.
 
 Title and summary are presentation fields. They do not change the Agent name, role, instructions, model, Skills, tool policy, or Harness. Template appearance and configuration are saved as distinct domains; installed instances remain independent. Instance appearance updates use the dedicated card-design operation with `card_revision` concurrency checks, independent of configuration revision. Preserve connections and Tasks when changing either presentation or capability. A template is not a copy of Task history.
 
 ### Artwork provenance
 
-Built-in artwork reuses the repository's existing `src/assets/agent/dragon.png`, `owl.png`, `crab.png`, `oasis.png`, `document.png`, and `custom.png`. These are existing repository assets, not newly generated or newly licensed illustrations. Retain the repository's attribution and license notices; the sidecar records their source paths and Git provenance without claiming a new ownership grant.
+Three original illustrations were generated through the native image generator for this implementation: `src/assets/cards/dragon-amethyst.webp`, `guardian-sapphire.webp`, and `archive-jade.webp`. They map to the existing `dragon`, `crab`, and `oasis` preset keys so persisted identifiers stay unchanged. Each delivered image is 1024 × 1536 and below 600,000 bytes (about 0.5 MB). Original PNGs, exact prompts, hashes, and WebP derivative settings are retained in `src/assets/cards/provenance.json` and adjacent prompt sidecars; delivery conversion did not resize or crop the artwork.
+
+The existing `owl`, `document`, and `custom` presets still use repository artwork from `src/assets/agent`; uploaded designs retain priority over presets. Preserve repository attribution and license notices. The original new artwork uses no reference-game pixels, branding, or card lettering.
 
 User uploads accept PNG, JPEG, or WebP up to 8 MiB. `readCardArtwork` decodes the raster, scales the longest dimension to at most 1024px without enlargement, and stores a bounded WebP data URL at quality 0.85, limited to 1,400,000 characters. A validation failure retains the prior design and shows the upload error. The file chooser, upload pending state, and saved appearance use the existing controls.
 
@@ -290,14 +342,14 @@ Reference-only Yu-Gi-Oh images informed the approved composition; they must neve
 - **Do** reuse `CardFace` in every library, designer, and installed-card context.
 - **Do** keep artwork faces clear of the capability panel with the established full/classic framing.
 - **Do** preserve independent appearance, capability, template version, and Task-history boundaries.
-- **Do** retain source provenance and repository notices for reused artwork.
+- **Do** retain generation prompts, derivative provenance, and repository notices for the corresponding artwork.
 - **Do** verify focus, selection, disabled, pending, error, empty, long-content, reduced-motion, and narrow-desktop behavior in the actual surface.
 
 ### Don't:
 
 - **Don't** turn card material or category color into execution status or validation meaning.
 - **Don't** introduce raw feature colors, arbitrary standard-control geometry, stock shadows, or local icon sizes.
-- **Don't** reinterpret the media-frame exception as permission to restyle the app shell or shared controls.
+- **Don't** extend fixed print materials or serif card lettering to shared controls or unrelated app surfaces.
 - **Don't** ship reference-only Yu-Gi-Oh artwork or imply approval of its licensing.
 - **Don't** imply that changing card text changes Agent capability or copies Task history.
-- **Don't** claim numeric mockup fidelity from this documentation; the recorded comp workflow remains at specification stage without a numeric fidelity pass.
+- **Don't** claim pixel-identical mock fidelity or completed build gates from this documentation. Numeric comparisons and their remaining image-identity limitation are recorded in the surface brief.

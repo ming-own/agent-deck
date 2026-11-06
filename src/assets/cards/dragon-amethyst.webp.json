@@ -1,0 +1,13 @@
+{
+  "prompt": "Use case: stylized-concept.\nAsset type: original full-bleed trading-card illustration for AgentDeck.\nPrimary request: a majestic original arcane amethyst dragon, portrait aspect ratio 2:3, full-frame painted fantasy artwork.\nSubject and scene: a serpentine armored dragon rises through a fractured ancient observatory, its long sculpted horns and violet crystalline scales catching glints of warm old gold. Its head and intense luminous eyes occupy the upper-middle third. One enormous claw curves toward an orbiting amethyst spell sphere beneath its face; its wings sweep diagonally through the scene. Ruined floating stone and a distant cosmic storm create layered foreground, middle ground, and background depth.\nStyle/medium: richly detailed hand-painted anime fantasy trading-card illustration, crisp expressive forms over textured painterly shadows, dramatic foreshortening, energetic sweeping composition; serious and monumental.\nComposition: portrait 2:3. Keep the face and the recognizable dragon silhouette within the upper 60 percent. Art extends fully to every edge with no margins. The bottom 30 percent continues into atmospheric dark violet ruins and magical mist so product rules text can later overlay it. This image itself contains no rules panel.\nLighting and palette: deep amethyst, near-black plum, luminous lavender, restrained antique-gold highlights; strong violet rim light with warm reflected light.\nConstraints: entirely new original character design. No existing game characters or card art. No lettering, numbers, symbols that look like writing, watermarks, logos, borders, card frame, UI, title bar, or text box. No cute mascot, no chibi proportions, no plastic 3D render. Output a single raster illustration.",
+  "createdAt": "2026-11-06T07:25:53.298Z",
+  "origin": {
+    "type": "Original native AI-generated illustration; delivery compression derivative",
+    "generator": "image_gen.imagegen",
+    "sourcePng": "dragon-amethyst.png",
+    "sourcePngSha256": "a3fe4aa48e32455a3287783a53f8649d1e84162df61f5e666d52aa9e10e140b1",
+    "originalGenerationSha256": "968f639a1fc47bdd38313b853d949163f3c33f924619f5233563fe3cb102de43",
+    "derivativeSha256": "af9559cde0f5c649ab003125824c97a7a62c060441ba7c0644d5f2510f168bee",
+    "provenanceFile": "provenance.json"
+  }
+}

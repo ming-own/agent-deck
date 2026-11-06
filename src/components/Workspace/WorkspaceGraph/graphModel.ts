@@ -36,6 +36,7 @@ export type GraphNode = Node<
     open: (item: GraphItem) => void;
     expanded?: boolean;
     toggle?: (id: string) => void;
+    results?: GraphItem[];
   },
   'object' | 'session'
 >;
@@ -141,13 +142,13 @@ export function buildWorkspaceGraph(
       );
     const columns = Math.min(3, Math.max(1, children.length));
     const rows = Math.ceil(children.length / 3);
-    const taskStart = 64 + rows * 408;
+    const taskStart = 96 + rows * 408;
     const dims = isOpen
       ? {
-          width: Math.max(600, columns * 268 + 48),
+          width: Math.max(600, columns * 360 + 48),
           height: Math.max(
             220,
-            taskStart + Math.ceil(taskItems.length / 3) * 108 + 24
+            taskStart + Math.ceil(taskItems.length / 3) * 108 + 96
           ),
         }
       : { width: 600, height: 72 };
@@ -158,7 +159,13 @@ export function buildWorkspaceGraph(
       type: 'session',
       position: at,
       ...dims,
-      data: { item: s, open, expanded: isOpen, toggle },
+      data: {
+        item: s,
+        open,
+        expanded: isOpen,
+        toggle,
+        results: children.filter((i) => i.latestTask?.last_run),
+      },
       selectable: false,
     });
     if (!isOpen) continue;
@@ -168,11 +175,11 @@ export function buildWorkspaceGraph(
         type: 'object',
         parentId: nodeId('session', s.id),
         position: position(item, {
-          x: 24 + (i % 3) * 268,
-          y: 64 + Math.floor(i / 3) * 408,
+          x: 32 + (i % 3) * 360,
+          y: 96 + Math.floor(i / 3) * 408,
         }),
         width: 244,
-        height: 384,
+        height: 392,
         extent: 'parent',
         data: { item, open },
       });
@@ -182,7 +189,7 @@ export function buildWorkspaceGraph(
         type: 'object',
         parentId: nodeId('session', s.id),
         position: position(item, {
-          x: 24 + (i % 3) * 268,
+          x: 32 + (i % 3) * 360,
           y: taskStart + Math.floor(i / 3) * 108,
         }),
         width: 244,
@@ -212,11 +219,11 @@ export function buildWorkspaceGraph(
       id: nodeId(item.kind, item.id),
       type: 'object',
       position: position(item, {
-        x: -660 + (r % 2) * 292,
-        y: Math.floor(r / 2) * 168,
+        x: -520 + (r % 2) * 236,
+        y: Math.floor(r / 2) * 312,
       }),
-      width: 268,
-      height: 144,
+      width: item.kind === 'settings' ? 200 : 184,
+      height: item.kind === 'settings' ? 120 : 296,
       data: { item, open },
     });
     r++;

@@ -265,7 +265,7 @@ export function Workshop({
           >
             {t('chat.card-library-help')}
           </DsText>
-          <div className="mb-ds-20 flex flex-wrap items-center gap-ds-8">
+          <div className="card-library-filters mb-ds-24 flex flex-wrap items-center gap-ds-8">
             {['all', 'agent', 'workforce'].map((kind) => (
               <Button
                 key={kind}
@@ -275,10 +275,16 @@ export function Workshop({
                 aria-pressed={filter === kind}
                 onClick={() => setFilter(kind)}
               >
-                {t('chat.card-filter-' + kind)}
+                {t('chat.card-filter-' + kind)}{' '}
+                <span className="text-ds-ink-muted-default">
+                  {
+                    latest.filter((v) => kind === 'all' || v.kind === kind)
+                      .length
+                  }
+                </span>
               </Button>
             ))}
-            <div className="min-w-0 flex-1">
+            <div className="card-library-search">
               <Input
                 size="sm"
                 aria-label={t('chat.card-search')}
@@ -358,7 +364,9 @@ export function Workshop({
               {t('chat.card-details')}
             </DsText>
             <DsText as="h2" role="title" weight="semibold">
-              {selected.name}
+              {detail?.appearance?.title ||
+                selected.appearance?.title ||
+                selected.name}
             </DsText>
             <DsText role="meta">
               {t('chat.card-category-agent')} ·{' '}
@@ -395,21 +403,40 @@ export function Workshop({
                 }))}
               onChange={setTarget}
             />
-            {detail?.config.model && (
-              <DsText role="base">
-                {t('chat.session-agents-model')} · {detail.config.model.name}
-              </DsText>
+            {detail && (
+              <dl className="card-library-facts">
+                <DsText as="dt" role="meta">
+                  {t('chat.session-agents-model')}
+                </DsText>
+                <DsText as="dd" role="meta">
+                  {detail.config.model?.name || t('chat.card-model-later')}
+                </DsText>
+                <DsText as="dt" role="meta">
+                  Harness
+                </DsText>
+                <DsText as="dd" role="meta">
+                  {detail.kind === 'workforce'
+                    ? 'Workforce'
+                    : t(
+                        detail.config.harness_id === 'plan_execute'
+                          ? 'chat.node-harness-plan-execute'
+                          : 'chat.node-harness-standard'
+                      )}
+                </DsText>
+                <DsText as="dt" role="meta">
+                  Skills
+                </DsText>
+                <DsText as="dd" role="meta">
+                  {detail.config.skill_ids?.length ?? 0}
+                </DsText>
+              </dl>
             )}
-            {detail?.kind === 'agent' && (
-              <DsText role="meta">
-                {t(
-                  detail.config.harness_id === 'plan_execute'
-                    ? 'chat.node-harness-plan-execute'
-                    : 'chat.node-harness-standard'
-                )}{' '}
-                · {detail.config.skill_ids?.length ?? 0} Skills
-              </DsText>
-            )}
+            <DsText
+              role="meta"
+              className="card-library-instance-note text-ds-ink-muted-default"
+            >
+              {t('chat.card-template-independent')}
+            </DsText>
             <div className="flex-1" />
             <CardPicker
               label={t('chat.card-destination')}

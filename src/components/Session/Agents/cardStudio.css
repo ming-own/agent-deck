@@ -1,100 +1,132 @@
-/* Card proportions and image framing: registered media-frames exception.
-   Category colors express card identity, never execution status. */
+/* Registered collectible-card-artwork / media-frames exceptions.
+   Fixed print materials belong to the card; application controls follow the theme. */
 .agent-card-face {
+  --ds-card-edge: var(--ds-card-gold-edge);
+  --ds-card-frame: var(--ds-card-gold-frame);
+  --ds-card-paper: var(--ds-card-gold-paper);
+  --ds-card-ink: var(--ds-card-gold-ink);
   position: relative;
+  container-type: inline-size;
   width: 100%;
   height: 100%;
   min-height: 0;
   aspect-ratio: 244 / 352;
   isolation: isolate;
-  border: var(--ds-border-strong) solid var(--ds-category-amber-text-default);
+  border: var(--ds-border-strong) solid var(--ds-card-edge);
   border-radius: var(--ds-radius-field);
-  background: var(--ds-neutral-subtle-default);
-  color: var(--ds-ink-default-default);
+  background: var(--ds-card-art-ground);
+  color: var(--ds-card-art-text);
   overflow: visible;
+}
+.agent-card-face--silver {
+  --ds-card-edge: var(--ds-card-silver-edge);
+  --ds-card-frame: var(--ds-card-silver-frame);
+  --ds-card-paper: var(--ds-card-silver-paper);
+  --ds-card-ink: var(--ds-card-silver-ink);
+}
+.agent-card-face--ink {
+  --ds-card-edge: var(--ds-card-ink-edge);
+  --ds-card-frame: var(--ds-card-ink-frame);
+  --ds-card-paper: var(--ds-card-ink-paper);
+  --ds-card-ink: var(--ds-card-ink-ink);
+}
+.agent-card-face--context,
+.agent-card-face--memory {
+  --ds-card-edge: var(--ds-card-jade-edge);
+  --ds-card-frame: var(--ds-card-jade-frame);
+  --ds-card-paper: var(--ds-card-jade-paper);
+  --ds-card-ink: var(--ds-card-jade-ink);
+}
+.agent-card-face--automation {
+  --ds-card-edge: var(--ds-card-violet-edge);
+  --ds-card-frame: var(--ds-card-violet-frame);
+  --ds-card-paper: var(--ds-card-violet-paper);
+  --ds-card-ink: var(--ds-card-violet-ink);
 }
 .agent-card-face::after {
   content: '';
   position: absolute;
-  inset: calc(var(--ds-space-control-gap) / 2);
-  border: 1px solid var(--ds-category-amber-border-default);
+  inset: 4px;
+  border: 1px solid var(--ds-card-frame);
   border-radius: var(--ds-radius-compact-control);
   pointer-events: none;
 }
-.agent-card-face--silver {
-  border-color: var(--ds-category-slate-text-default);
-}
-.agent-card-face--ink {
-  border-color: var(--ds-ink-default-default);
-}
-.agent-card-face--silver::after,
-.agent-card-face--ink::after {
-  border-color: var(--ds-category-slate-border-default);
-}
 .agent-card-art {
   position: absolute;
-  inset: calc(var(--ds-space-control-gap) * 0.75)
-    calc(var(--ds-space-control-gap) * 0.75);
+  inset: 6px;
   z-index: -1;
   border-radius: var(--ds-radius-compact-control);
   overflow: hidden;
-  background: var(--ds-neutral-muted-default);
+  background: var(--ds-card-art-ground);
+}
+.agent-card-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ds-card-art-shade) 88%, transparent),
+    color-mix(in srgb, var(--ds-card-art-shade) 20%, transparent) 30%,
+    transparent 48%
+  );
 }
 .agent-card-art img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center 30%;
 }
 .agent-card-face--full .agent-card-art--square img {
   height: 74%;
 }
 .agent-card-heading {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: var(--ds-space-control-gap);
-  margin: calc(var(--ds-space-control-gap) * 1.25)
-    calc(var(--ds-space-control-gap) * 1.25) 0;
-  padding: calc(var(--ds-space-control-gap) / 2)
-    calc(var(--ds-space-control-gap) * 0.75);
-  border-radius: var(--ds-radius-compact-control);
-  background: var(--ds-neutral-subtle-default);
+  padding: 6% 6% 0;
+}
+.agent-card-heading .agent-card-title {
+  flex: 1;
+  margin: 0;
+  font-weight: 700;
+  font-family: var(--ds-card-art-font);
+  font-size: clamp(20px, 8.2cqw, 28px);
+  line-height: 1.3;
+  text-shadow: 0 1px 3px var(--ds-card-art-shade);
+}
+.agent-card-seal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--ds-space-control-gap) / 2);
+  border: 1px solid var(--ds-card-frame);
+  border-radius: var(--ds-radius-icon-action);
 }
 .agent-card-category {
-  display: inline-block;
-  margin: calc(var(--ds-space-control-gap) / 4) var(--ds-space-panel-inset);
-  padding: 0 calc(var(--ds-space-control-gap) / 2);
-  border-radius: var(--ds-radius-compact-control);
-  background: var(--ds-neutral-subtle-default);
-  color: var(--ds-category-amber-text-strong);
+  display: block;
+  margin: 2% 6%;
+  color: var(--ds-card-art-text);
 }
 .agent-card-rules {
   position: absolute;
-  left: calc(var(--ds-space-control-gap) * 1.25);
-  right: calc(var(--ds-space-control-gap) * 1.25);
-  bottom: calc(var(--ds-space-control-gap) * 1.25);
-  padding: calc(var(--ds-space-control-gap) * 1.25);
-  background: color-mix(
-    in srgb,
-    var(--ds-neutral-subtle-default) 94%,
-    var(--ds-category-amber-background-subtle)
-  );
-  color: var(--ds-ink-default-default);
-  border: 1px solid var(--ds-category-amber-border-default);
-}
-.agent-card-face--silver .agent-card-rules,
-.agent-card-face--ink .agent-card-rules {
-  background: var(--ds-neutral-subtle-default);
-  color: var(--ds-ink-default-default);
-  border-color: var(--ds-category-slate-border-default);
+  left: 4%;
+  right: 4%;
+  bottom: 3%;
+  min-height: 31%;
+  padding: 4%;
+  background: var(--ds-card-paper);
+  color: var(--ds-card-ink);
+  border: 1px solid var(--ds-card-frame);
+  border-radius: 2px;
 }
 .agent-card-summary {
+  font-size: clamp(11px, 4.2cqw, 14px);
+  line-height: 1.7;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  min-height: 32px;
+  min-height: 2.8em;
   margin-top: calc(var(--ds-space-control-gap) / 2);
   overflow-wrap: anywhere;
 }
@@ -105,7 +137,7 @@
   gap: var(--ds-space-control-gap);
   margin-top: var(--ds-space-control-gap);
   padding-top: calc(var(--ds-space-control-gap) * 0.75);
-  border-top: 1px solid var(--ds-hairline-default-default);
+  border-top: 1px solid var(--ds-card-frame);
 }
 .agent-card-actions {
   display: flex;
@@ -117,7 +149,49 @@
   top: 24%;
   left: var(--ds-space-control-inline);
   right: var(--ds-space-control-inline);
-  bottom: 34%;
+  bottom: 36%;
+}
+.workspace-agent-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-control-gap);
+}
+.workspace-agent-card > .agent-card-face {
+  height: 352px;
+  flex: none;
+}
+.workspace-agent-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-control-gap);
+}
+.workspace-resource-card > .agent-card-face {
+  height: calc(100% - 32px);
+}
+.workspace-resource-card .agent-card-title {
+  font-size: clamp(14px, 8.2cqw, 16px);
+}
+.workspace-card-canvas {
+  background: color-mix(
+    in srgb,
+    var(--ds-neutral-subtle-default) 55%,
+    var(--ds-neutral-muted-default)
+  );
+}
+.workspace-resource-card .agent-card-summary {
+  font-size: clamp(11px, 4.2cqw, 14px);
+  line-height: 1.7;
+  -webkit-line-clamp: 2;
+}
+.workspace-session-region {
+  background: color-mix(
+    in srgb,
+    var(--ds-neutral-subtle-default) 80%,
+    transparent
+  );
+}
+.workspace-session-heading {
+  border-bottom: 1px solid var(--ds-hairline-default-default);
 }
 .card-workshop {
   container-type: inline-size;
@@ -137,14 +211,14 @@
 .card-library-main {
   flex: 1;
   min-width: 0;
-  padding: var(--ds-space-card-inset);
+  padding: var(--ds-ref-space-32);
   overflow-y: auto;
 }
 .card-library-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(208px, 1fr));
   align-items: start;
-  gap: var(--ds-space-card-inset);
+  gap: var(--ds-ref-space-32) var(--ds-ref-space-24);
 }
 .card-library-item {
   padding: calc(var(--ds-space-control-gap) * 0.75);
@@ -157,17 +231,27 @@
   border-radius: var(--ds-radius-card);
 }
 .card-library-item[aria-pressed='true'] {
+  outline: none;
+}
+.card-library-item[aria-pressed='true'] .agent-card-face {
   outline: 2px solid var(--ds-ring-focus);
-  outline-offset: 0;
+  outline-offset: 5px;
 }
 .card-library-item .agent-card-face {
   height: auto;
+  max-width: 208px;
+  margin: auto;
 }
 .card-library-item:hover .agent-card-face {
   transform: translateY(-2px);
 }
 .card-library-detail {
-  width: 280px;
+  background: color-mix(
+    in srgb,
+    var(--ds-neutral-subtle-default) 80%,
+    var(--ds-neutral-muted-default)
+  );
+  width: 282px;
   flex-shrink: 0;
   border-left: 1px solid var(--ds-hairline-default-default);
   padding: var(--ds-space-card-inset);
@@ -182,19 +266,25 @@
   min-width: 0;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   padding: var(--ds-space-card-inset);
   overflow-y: auto;
-  background: var(--ds-neutral-muted-default);
+  background: color-mix(
+    in srgb,
+    var(--ds-neutral-subtle-default) 60%,
+    var(--ds-neutral-muted-default)
+  );
   gap: var(--ds-space-card-inset);
 }
 .card-design-preview {
   width: min(100%, 338px);
   aspect-ratio: 244 / 352;
   flex-shrink: 0;
+  margin: auto;
+  transform: translateY(-24px);
 }
 .card-design-properties {
-  width: 340px;
+  width: 350px;
   min-width: 0;
   flex-shrink: 0;
   border-left: 1px solid var(--ds-hairline-default-default);
@@ -215,7 +305,7 @@
 }
 .card-artwork-choice img {
   width: 100%;
-  aspect-ratio: 1;
+  height: 84px;
   object-fit: cover;
   border-radius: var(--ds-radius-compact-control);
   display: block;
@@ -265,5 +355,113 @@
   .agent-card-face,
   .agent-card-rules {
     border-color: CanvasText;
+  }
+}
+
+.card-library-search {
+  width: 188px;
+  min-width: 140px;
+  margin-left: auto;
+}
+.card-library-facts {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--ds-ref-space-16) var(--ds-ref-space-12);
+  border-block: 1px solid var(--ds-hairline-default-default);
+  padding-block: var(--ds-ref-space-24);
+  margin: 0;
+}
+.card-library-facts dt {
+  color: var(--ds-ink-muted-default);
+}
+.card-library-facts dd {
+  overflow-wrap: anywhere;
+}
+.card-library-instance-note {
+  line-height: var(--ds-text-base-line);
+}
+.card-design-caption {
+  align-self: flex-start;
+}
+.card-design-note {
+  width: 100%;
+  text-align: center;
+  padding-top: var(--ds-ref-space-16);
+  border-top: 1px solid var(--ds-hairline-default-default);
+}
+.card-form-section-title {
+  margin-top: var(--ds-ref-space-8);
+  padding-top: var(--ds-ref-space-24);
+  border-top: 1px solid var(--ds-hairline-default-default);
+}
+.card-layout-options,
+.card-material-options {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-control-gap);
+  flex-wrap: wrap;
+}
+.card-layout-options > button {
+  flex: 1;
+}
+.card-material-swatch {
+  width: var(--ds-ref-space-12);
+  height: var(--ds-ref-space-12);
+  border-radius: var(--ds-radius-icon-action);
+  background: var(--ds-card-gold-edge);
+}
+.card-material-swatch--silver {
+  background: var(--ds-card-silver-edge);
+}
+.card-material-swatch--ink {
+  background: var(--ds-card-ink-edge);
+}
+@container (max-width: 760px) {
+  .card-library-grid {
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  }
+  .card-library-search {
+    width: 100%;
+  }
+  .card-library-main {
+    padding: var(--ds-ref-space-24);
+  }
+  .card-design-preview {
+    margin: var(--ds-ref-space-24) auto;
+  }
+}
+
+@container (max-width: 760px) {
+  .card-design-preview {
+    transform: none;
+  }
+}
+
+.workspace-session-results {
+  position: absolute;
+  inset: auto var(--ds-space-card-inset) var(--ds-space-panel-inset);
+  border-top: 1px solid var(--ds-hairline-default-default);
+  padding-top: var(--ds-space-control-gap);
+}
+@container (min-width: 600px) and (max-width: 760px) {
+  .card-workshop--designer .card-workshop-body {
+    flex-direction: row;
+    overflow: hidden;
+  }
+  .card-workshop--designer .card-design-stage {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .card-workshop--designer .card-design-preview {
+    width: min(100%, 244px);
+    margin: auto;
+  }
+  .card-workshop--designer .card-design-properties {
+    width: 300px;
+    overflow-y: auto;
+    border-top: 0;
+    border-left: 1px solid var(--ds-hairline-default-default);
   }
 }

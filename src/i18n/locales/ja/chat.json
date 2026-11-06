@@ -796,8 +796,8 @@
   "card-artwork": "Card artwork",
   "card-art-dragon": "Dragon",
   "card-art-owl": "Owl",
-  "card-art-crab": "Crab",
-  "card-art-oasis": "Oasis",
+  "card-art-crab": "Clockwork guardian",
+  "card-art-oasis": "Celestial archive",
   "card-art-document": "Document",
   "card-art-custom": "Custom",
   "card-upload": "Upload artwork",
@@ -846,5 +846,9 @@
   "card-place": "Place on canvas",
   "card-edit": "Edit card",
   "card-configure": "Configure",
-  "card-save-to-library": "Save to card library"
+  "card-save-to-library": "Save to card library",
+  "card-information": "Card information",
+  "card-artwork-and-frame": "Illustration and frame",
+  "card-category-knowledge": "Knowledge card",
+  "card-category-trigger": "Trigger card"
 }
