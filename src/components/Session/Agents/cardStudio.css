@@ -76,8 +76,17 @@
   object-fit: cover;
   object-position: center 30%;
 }
-.agent-card-face--full .agent-card-art--square img {
+.agent-card-art .agent-card-art-extension {
+  position: absolute;
+  inset: 0;
+  filter: blur(12px);
+}
+.agent-card-face--full
+  .agent-card-art--square
+  img:not(.agent-card-art-extension) {
+  position: relative;
   height: 74%;
+  mask-image: linear-gradient(180deg, var(--ds-card-art-text) 85%, transparent);
 }
 .agent-card-heading {
   display: flex;
@@ -118,6 +127,37 @@
   color: var(--ds-card-ink);
   border: 1px solid var(--ds-card-frame);
   border-radius: 2px;
+}
+/* Full-art rules sit on the same illustration, with a soft reading veil.
+   Classic cards retain their separate, opaque printed rules panel. */
+.agent-card-face--full .agent-card-rules {
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  padding: 4% 5%;
+  border: 0;
+  border-radius: 0 0 var(--ds-radius-compact-control)
+    var(--ds-radius-compact-control);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ds-card-paper) 82%, transparent),
+    color-mix(in srgb, var(--ds-card-paper) 90%, transparent)
+  );
+}
+.agent-card-face--full .agent-card-rules::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 100%;
+  height: 24px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in srgb, var(--ds-card-paper) 82%, transparent)
+  );
+  pointer-events: none;
+}
+.agent-card-face--full .agent-card-stats {
+  border-top-color: color-mix(in srgb, var(--ds-card-ink) 24%, transparent);
 }
 .agent-card-summary {
   font-size: clamp(11px, 4.2cqw, 14px);
@@ -355,6 +395,14 @@
   .agent-card-face,
   .agent-card-rules {
     border-color: CanvasText;
+  }
+  .agent-card-face--full .agent-card-rules {
+    background: Canvas;
+    color: CanvasText;
+    border-top: 1px solid CanvasText;
+  }
+  .agent-card-face--full .agent-card-rules::before {
+    display: none;
   }
 }
 

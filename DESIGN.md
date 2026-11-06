@@ -189,7 +189,7 @@ components:
     textColor: '{colors.card-art-text}'
     rounded: '{rounded.field}'
   agent-card-rules:
-    backgroundColor: '{colors.card-gold-paper}'
+    backgroundColor: 'Full artwork: 82–90% card-paper reading veil; classic: opaque card-paper'
     textColor: '{colors.card-gold-ink}'
     padding: '4%'
   workspace-card-canvas:
@@ -284,9 +284,9 @@ Library card hover moves the face upward by 2px; reduced motion removes that mov
 
 ## Shapes
 
-Actions are pills or circles; fields, media, cards, panels, and dialogs keep bounded radii. The frontmatter records the reused semantic radii. The illustrated face deliberately uses the field/media radius rather than the generic card radius, with a compact-control inner rim. Its paper rules panel has a 2px print corner. These media proportions, print details, fixed palette, and serif lettering remain scoped to the registered `media-frames` and `collectible-card-artwork` exceptions in `src/style/tokens/exception.registry.json`.
+Actions are pills or circles; fields, media, cards, panels, and dialogs keep bounded radii. The frontmatter records the reused semantic radii. The illustrated face deliberately uses the field/media radius rather than the generic card radius, with a compact-control inner rim. Classic layouts keep a separate paper rules panel with a 2px print corner. Full layouts use a translucent reading veil joined to the inner artwork rim, with no separate box border and a soft upper edge. These media proportions, print details, fixed palette, and serif lettering remain scoped to the registered `media-frames` and `collectible-card-artwork` exceptions in `src/style/tokens/exception.registry.json`.
 
-The outer card boundary uses the strong border role. Its inner rim, rules panel, and dividers use thin boundaries. Keep the face overflow visible so keyboard focus and canvas connection ports remain visible; artwork clips in its own rounded frame. Default keyboard focus is a 2px semantic ring with a 2px offset. Selection and validation must compose with that ring. Forced-color mode retains card and rules-panel boundaries through `CanvasText`.
+The outer card boundary uses the strong border role. Its inner rim, classic rules panel, and dividers use thin boundaries. Full-art metadata uses a subdued ink divider. Keep the face overflow visible so keyboard focus and canvas connection ports remain visible; artwork clips in its own rounded frame. Default keyboard focus is a 2px semantic ring with a 2px offset. Selection and validation must compose with that ring. Forced-color mode uses `Canvas` and `CanvasText` for the reading area and retains an explicit top boundary.
 
 ## Components
 
@@ -317,9 +317,9 @@ Reuse `Tabs` with `appearance="border"` for appearance/capability sections, pres
 - **Gold, silver, and ink:** each uses its fixed edge, frame, paper, and ink quartet from `card.material.json`, independent of app theme.
 - **Context and Memory:** jade materials override the selectable Agent materials.
 - **Automation:** violet materials override the selectable Agent materials.
-- **Readable artwork:** the image uses centered horizontal framing at 30% vertically, with an upper dark scrim, a serif title, and a circular category seal. The rules panel sits 3% above the bottom with 4% side insets and a 31% minimum height.
-- **Full artwork:** the image fills its inner media area. Square or wider artwork (natural width at least 90% of natural height) uses 74% of that area's height, keeping the face above the lower capability panel. This is a bounded display field, not a new cropped asset.
-- **Classic artwork:** the image window begins 24% from the top and ends 36% above the bottom, with the semantic control-inline inset. The illustration remains separate from the lower capability panel.
+- **Readable artwork:** the image uses centered horizontal framing at 30% vertically, with an upper dark scrim, a serif title, and a circular category seal. Both rules treatments retain a 31% minimum height and existing semantic text roles.
+- **Full artwork:** following the owner's bottom-panel refinement, illustration continues behind the capability text and model metadata. The reading veil aligns with the inner artwork's 6px side/bottom insets, uses 82–90% of the existing paper color, and fades in over 24px above its text region. Its minimum body-text contrast across all five materials is 4.86:1 even over black artwork. Square or wider artwork keeps its 74%-height foreground framing; a blurred copy of the same image fills the backdrop, while the foreground's bottom edge fades. This preserves the subject without leaving an empty lower field or modifying uploaded assets.
+- **Classic artwork:** the image window begins 24% from the top and ends 36% above the bottom, with the semantic control-inline inset. The illustration remains separate from the opaque lower capability panel, which sits 3% above the bottom with 4% side insets.
 
 Title and summary are presentation fields. They do not change the Agent name, role, instructions, model, Skills, tool policy, or Harness. Template appearance and configuration are saved as distinct domains; installed instances remain independent. Instance appearance updates use the dedicated card-design operation with `card_revision` concurrency checks, independent of configuration revision. Preserve connections and Tasks when changing either presentation or capability. A template is not a copy of Task history.
 

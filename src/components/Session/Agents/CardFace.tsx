@@ -60,6 +60,7 @@ export function CardFace({
   const { t } = useTranslation();
   const d = defaultCardDesign(design);
   const [squareArtwork, setSquareArtwork] = useState(false);
+  const artwork = d.image_data || cardArtworkSources[d.artwork] || dragon;
   const resource = category !== 'agent';
   const categoryIcon = {
     agent: workforce ? Workflow : Bot,
@@ -80,8 +81,16 @@ export function CardFace({
         }
         aria-hidden="true"
       >
+        {squareArtwork && d.layout === 'full' && (
+          <img
+            className="agent-card-art-extension"
+            src={artwork}
+            alt=""
+            draggable={false}
+          />
+        )}
         <img
-          src={d.image_data || cardArtworkSources[d.artwork] || dragon}
+          src={artwork}
           alt=""
           draggable={false}
           onLoad={(event) =>

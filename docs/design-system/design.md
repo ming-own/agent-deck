@@ -537,6 +537,13 @@ print-panel corner, image scrim, title shadow, and portrait geometry are local
 artwork treatments. They do not change standard-control geometry or the
 product typography, elevation, and semantic-color contracts above.
 
+The owner's subsequent bottom-panel refinement keeps classic cards' opaque
+print panel but makes full-art rules a borderless, 82–90% paper reading veil
+over continuous artwork. Its upper edge fades over 24px; square artwork keeps
+its existing subject framing with a blurred same-image extension underneath.
+These remain scoped artwork treatments. Text contrast is at least 4.86:1 over
+black imagery for all five materials; forced colors use Canvas/CanvasText.
+
 Application controls, canvas surfaces, selection, focus, status, and validation
 retain existing semantic recipes. The canvas uses a 55% Neutral subtle / 45%
 Neutral muted mix. The Space workforce/graph route alone uses a measured 182px
