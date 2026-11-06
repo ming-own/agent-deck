@@ -1,10 +1,24 @@
+# ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+
 """Immutable, account-owned templates. Only node configuration crosses Sessions."""
 
 import hashlib
 import json
 from uuid import uuid4
 
-from .models import AgentConfig, SaveTemplate
+from .models import AgentConfig, CardDesign, SaveTemplate
 from .store import Conflict, NotFound, now
 
 BUILTINS = {
@@ -49,10 +63,22 @@ def catalog(store, owner):
         custom = [
             dict(r)
             for r in db.execute(
-                "SELECT family,version,name,kind,base_family,base_version FROM workshop_versions WHERE owner=? ORDER BY rowid DESC",
+                "SELECT family,version,name,kind,base_family,base_version,graph FROM workshop_versions WHERE owner=? ORDER BY rowid DESC",
                 (owner,),
             )
         ]
+    for item in custom:
+        graph = json.loads(item.pop("graph"))
+        item["appearance"] = graph["root"].get("card_design")
+        root = graph["root"]
+        item["preview"] = dict(
+            model_name=(root.get("model") or {}).get("name"),
+            skill_count=len(root.get("skill_ids", [])),
+            description=root.get("role") or root.get("instructions", ""),
+        )
+        item["needs_model"] = any(
+            not n.get("model") and "workforce" not in n for n in graph.values()
+        )
     return [
         dict(
             family=f,
@@ -60,9 +86,59 @@ def catalog(store, owner):
             name=name,
             kind="workforce" if "workforce" in g["root"] else "agent",
             builtin=True,
+            needs_model=True,
+            appearance=None,
         )
         for f, (name, g) in BUILTINS.items()
     ] + custom
+
+
+def detail(store, owner, family, version):
+    if family in BUILTINS and version == 1:
+        name, graph = BUILTINS[family]
+    else:
+        with store.connect() as db:
+            row = db.execute(
+                "SELECT name,graph FROM workshop_versions WHERE owner=? AND family=? AND version=?",
+                (owner, family, version),
+            ).fetchone()
+        if row is None:
+            raise NotFound("Template version not found")
+        name, graph = row["name"], json.loads(row["graph"])
+    root = graph["root"]
+    return dict(
+        family=family,
+        version=version,
+        name=name,
+        kind="workforce" if "workforce" in root else "agent",
+        config={
+            k: v for k, v in root.items() if k in AgentConfig.model_fields
+        },
+        appearance=root.get("card_design"),
+    )
+
+
+def update_card(store, scope, node_id, change):
+    with store.connect() as db:
+        db.execute("BEGIN IMMEDIATE")
+        store.require_open(db, *scope)
+        row = db.execute(
+            "SELECT * FROM agents WHERE owner=? AND project=? AND id=?",
+            (*scope, node_id),
+        ).fetchone()
+        current = store.node(row)
+        if current["card_revision"] != change.expected_revision:
+            raise Conflict("Card appearance changed; reload before editing")
+        config = json.loads(row["config"])
+        config.update(
+            card_design=change.design.model_dump(),
+            card_revision=change.expected_revision + 1,
+        )
+        db.execute(
+            "UPDATE agents SET config=?,updated_at=? WHERE id=?",
+            (json.dumps(config), now(), node_id),
+        )
+    return store.get(*scope, node_id)
 
 
 def remap(route, resolve):
@@ -108,10 +184,25 @@ def capture(store, db, scope, source):
             graph[key] = AgentConfig(
                 **{k: node[k] for k in AgentConfig.model_fields}
             ).model_dump()
+        if node.get("card_design"):
+            graph[key]["card_design"] = node["card_design"]
         visiting.remove(node_id)
         return key
 
-    if source.route:
+    if source.copy_base:
+        if source.base_family in BUILTINS and source.base_version == 1:
+            graph = json.loads(json.dumps(BUILTINS[source.base_family][1]))
+        else:
+            row = db.execute(
+                "SELECT graph FROM workshop_versions WHERE owner=? AND family=? AND version=?",
+                (scope[0], source.base_family, source.base_version),
+            ).fetchone()
+            if not row:
+                raise NotFound("Template version not found")
+            graph = json.loads(row["graph"])
+    elif source.config:
+        graph["root"] = source.config.model_dump()
+    elif source.route:
         graph["root"] = {
             "name": source.name,
             "workforce": remap(
@@ -123,6 +214,8 @@ def capture(store, db, scope, source):
         root = visit(str(source.node_id))
         graph["root"] = graph.pop(root)
         graph["root"]["name"] = source.name
+    if source.appearance is not None:
+        graph["root"]["card_design"] = source.appearance.model_dump()
     # Count executions, not just distinct nodes: the same nested team may occupy
     # several branches. Bound fan-out before this template can ever be installed.
     remaining = 64
@@ -226,6 +319,13 @@ def save(store, scope, source):
             if source.node_id
             else None
         )
+        if source.base_family:
+            # Owner-scoped lookup also forbids linking another account's design.
+            detail(store, owner, source.base_family, source.base_version)
+            base = {
+                "family": source.base_family,
+                "version": source.base_version,
+            }
         family, version = str(uuid4()), 1
         if source.new_version:
             if not base or base["family"] in BUILTINS:
@@ -305,7 +405,20 @@ def install(store, scope, request):
                 model = node.get("model") or request.model
                 if model is None:
                     raise Conflict("Select a model for this template")
-                config = AgentConfig(**{**node, "model": model}).model_dump()
+                config = AgentConfig(
+                    **{
+                        **{
+                            k: v
+                            for k, v in node.items()
+                            if k in AgentConfig.model_fields
+                        },
+                        "model": model,
+                    }
+                ).model_dump()
+            if node.get("card_design"):
+                config["card_design"] = CardDesign(
+                    **node["card_design"]
+                ).model_dump()
             if key == "root":
                 config.update(
                     install_id=str(request.instance_id),

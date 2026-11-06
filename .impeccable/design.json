@@ -1,0 +1,871 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T06:59:37.575Z",
+  "title": "Design System: AgentDeck（智牌）",
+  "extensions": {
+    "source": {
+      "authoritativeGuideline": "docs/design-system/design.md",
+      "terminology": "docs/product-terminology.md",
+      "surfaceBrief": ".impeccable/briefs/card-workshop.md",
+      "colors": "src/lib/themeTokens/engine.ts: buildThemeV2(createDefaultThemeContractV2(mode)); themeId=eigent, contrast=43",
+      "dimensions": "src/style/tokens/semantic.dimension.json and src/style/generated/tokens.css",
+      "typography": "src/style/tokens/reference.typography.json and src/style/generated/tokens.css",
+      "componentRecipes": "src/style/tokens/component.recipe.json and src/components/ui",
+      "cardPattern": "src/components/Session/Agents/cardStudio.css",
+      "snapshotNote": "Frontmatter light/dark keys are documentation only. Snippets consume existing semantic CSS variables with extracted fallback values. No new tokens or aliases are introduced.",
+      "reviewScope": "Implemented card extension; visual verdict limited to F1–F4. Numeric comp fidelity is not asserted. See docs/verification/card-workshop-2026-11-06.md."
+    },
+    "colorMeta": {
+      "accent-strong-default": {
+        "role": "primary",
+        "displayName": "accent strong default",
+        "cssVariable": "--ds-accent-strong-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "accent-strong-hover": {
+        "role": "primary",
+        "displayName": "accent strong hover",
+        "cssVariable": "--ds-accent-strong-hover",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "accent-default-default": {
+        "role": "primary",
+        "displayName": "accent default default",
+        "cssVariable": "--ds-accent-default-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "ink-inverse": {
+        "role": "neutral",
+        "displayName": "ink inverse",
+        "cssVariable": "--ds-ink-inverse",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#1d1d1d",
+          "#2a2929",
+          "#535352",
+          "#757473",
+          "#9e9a98",
+          "#bebab7",
+          "#efeceb",
+          "#f2ece8"
+        ]
+      },
+      "neutral-subtle-default": {
+        "role": "neutral",
+        "displayName": "neutral subtle default",
+        "cssVariable": "--ds-neutral-subtle-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#292828",
+          "#2f2e2e",
+          "#313130",
+          "#e7e4e3",
+          "#eae7e6",
+          "#f0edec",
+          "#faf7f6"
+        ]
+      },
+      "neutral-muted-default": {
+        "role": "neutral",
+        "displayName": "neutral muted default",
+        "cssVariable": "--ds-neutral-muted-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#292828",
+          "#2f2e2e",
+          "#313130",
+          "#e7e4e3",
+          "#eae7e6",
+          "#f0edec",
+          "#faf7f6"
+        ]
+      },
+      "neutral-default-default": {
+        "role": "neutral",
+        "displayName": "neutral default default",
+        "cssVariable": "--ds-neutral-default-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#292828",
+          "#2f2e2e",
+          "#313130",
+          "#e7e4e3",
+          "#eae7e6",
+          "#f0edec",
+          "#faf7f6"
+        ]
+      },
+      "ink-default-default": {
+        "role": "neutral",
+        "displayName": "ink default default",
+        "cssVariable": "--ds-ink-default-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#1d1d1d",
+          "#2a2929",
+          "#535352",
+          "#757473",
+          "#9e9a98",
+          "#bebab7",
+          "#efeceb",
+          "#f2ece8"
+        ]
+      },
+      "ink-muted-default": {
+        "role": "neutral",
+        "displayName": "ink muted default",
+        "cssVariable": "--ds-ink-muted-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#1d1d1d",
+          "#2a2929",
+          "#535352",
+          "#757473",
+          "#9e9a98",
+          "#bebab7",
+          "#efeceb",
+          "#f2ece8"
+        ]
+      },
+      "hairline-default-default": {
+        "role": "neutral",
+        "displayName": "hairline default default",
+        "cssVariable": "--ds-hairline-default-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "rgba(29, 29, 29, 0.226)",
+          "rgba(29, 29, 29, 0.149)",
+          "rgba(29, 29, 29, 0.122)",
+          "rgba(29, 29, 29, 0.093)",
+          "rgba(242, 236, 232, 0.226)",
+          "rgba(242, 236, 232, 0.149)",
+          "rgba(242, 236, 232, 0.122)",
+          "rgba(242, 236, 232, 0.093)"
+        ]
+      },
+      "ring-focus": {
+        "role": "neutral",
+        "displayName": "ring focus",
+        "cssVariable": "--ds-ring-focus",
+        "themeMode": "light",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "category-amber-text-default": {
+        "role": "secondary",
+        "displayName": "category amber text default",
+        "cssVariable": "--ds-category-amber-text-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "category-amber-text-strong": {
+        "role": "secondary",
+        "displayName": "category amber text strong",
+        "cssVariable": "--ds-category-amber-text-strong",
+        "themeMode": "light",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "category-amber-border-default": {
+        "role": "secondary",
+        "displayName": "category amber border default",
+        "cssVariable": "--ds-category-amber-border-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "category-amber-background-subtle": {
+        "role": "secondary",
+        "displayName": "category amber background subtle",
+        "cssVariable": "--ds-category-amber-background-subtle",
+        "themeMode": "light",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "category-slate-text-default": {
+        "role": "secondary",
+        "displayName": "category slate text default",
+        "cssVariable": "--ds-category-slate-text-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "oklch(0.378 0.016 256)",
+          "oklch(0.501 0.018 256)",
+          "oklch(0.601 0.02 256)",
+          "oklch(0.645 0.018 256)",
+          "oklch(0.859 0.012 256)",
+          "oklch(0.914 0.008 256)",
+          "oklch(0.959 0.004 256)",
+          "oklch(0.993 0.002 256)"
+        ]
+      },
+      "category-slate-border-default": {
+        "role": "secondary",
+        "displayName": "category slate border default",
+        "cssVariable": "--ds-category-slate-border-default",
+        "themeMode": "light",
+        "tonalRamp": [
+          "oklch(0.378 0.016 256)",
+          "oklch(0.501 0.018 256)",
+          "oklch(0.601 0.02 256)",
+          "oklch(0.645 0.018 256)",
+          "oklch(0.859 0.012 256)",
+          "oklch(0.914 0.008 256)",
+          "oklch(0.959 0.004 256)",
+          "oklch(0.993 0.002 256)"
+        ]
+      },
+      "dark-accent-strong-default": {
+        "role": "primary",
+        "displayName": "Dark · accent strong default",
+        "cssVariable": "--ds-accent-strong-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "dark-accent-strong-hover": {
+        "role": "primary",
+        "displayName": "Dark · accent strong hover",
+        "cssVariable": "--ds-accent-strong-hover",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "dark-accent-default-default": {
+        "role": "primary",
+        "displayName": "Dark · accent default default",
+        "cssVariable": "--ds-accent-default-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "dark-ink-inverse": {
+        "role": "neutral",
+        "displayName": "Dark · ink inverse",
+        "cssVariable": "--ds-ink-inverse",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#1d1d1d",
+          "#2a2929",
+          "#535352",
+          "#757473",
+          "#9e9a98",
+          "#bebab7",
+          "#efeceb",
+          "#f2ece8"
+        ]
+      },
+      "dark-neutral-subtle-default": {
+        "role": "neutral",
+        "displayName": "Dark · neutral subtle default",
+        "cssVariable": "--ds-neutral-subtle-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#292828",
+          "#2f2e2e",
+          "#313130",
+          "#e7e4e3",
+          "#eae7e6",
+          "#f0edec",
+          "#faf7f6"
+        ]
+      },
+      "dark-neutral-muted-default": {
+        "role": "neutral",
+        "displayName": "Dark · neutral muted default",
+        "cssVariable": "--ds-neutral-muted-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#292828",
+          "#2f2e2e",
+          "#313130",
+          "#e7e4e3",
+          "#eae7e6",
+          "#f0edec",
+          "#faf7f6"
+        ]
+      },
+      "dark-neutral-default-default": {
+        "role": "neutral",
+        "displayName": "Dark · neutral default default",
+        "cssVariable": "--ds-neutral-default-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#1f1f1f",
+          "#292828",
+          "#2f2e2e",
+          "#313130",
+          "#e7e4e3",
+          "#eae7e6",
+          "#f0edec",
+          "#faf7f6"
+        ]
+      },
+      "dark-ink-default-default": {
+        "role": "neutral",
+        "displayName": "Dark · ink default default",
+        "cssVariable": "--ds-ink-default-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#1d1d1d",
+          "#2a2929",
+          "#535352",
+          "#757473",
+          "#9e9a98",
+          "#bebab7",
+          "#efeceb",
+          "#f2ece8"
+        ]
+      },
+      "dark-ink-muted-default": {
+        "role": "neutral",
+        "displayName": "Dark · ink muted default",
+        "cssVariable": "--ds-ink-muted-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#1d1d1d",
+          "#2a2929",
+          "#535352",
+          "#757473",
+          "#9e9a98",
+          "#bebab7",
+          "#efeceb",
+          "#f2ece8"
+        ]
+      },
+      "dark-hairline-default-default": {
+        "role": "neutral",
+        "displayName": "Dark · hairline default default",
+        "cssVariable": "--ds-hairline-default-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "rgba(29, 29, 29, 0.226)",
+          "rgba(29, 29, 29, 0.149)",
+          "rgba(29, 29, 29, 0.122)",
+          "rgba(29, 29, 29, 0.093)",
+          "rgba(242, 236, 232, 0.226)",
+          "rgba(242, 236, 232, 0.149)",
+          "rgba(242, 236, 232, 0.122)",
+          "rgba(242, 236, 232, 0.093)"
+        ]
+      },
+      "dark-ring-focus": {
+        "role": "neutral",
+        "displayName": "Dark · ring focus",
+        "cssVariable": "--ds-ring-focus",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#1d1d1d",
+          "#353535",
+          "#4a4a4a",
+          "#dec4b6",
+          "#ede1db",
+          "#ffffff",
+          "#ffffff"
+        ]
+      },
+      "dark-category-amber-text-default": {
+        "role": "secondary",
+        "displayName": "Dark · category amber text default",
+        "cssVariable": "--ds-category-amber-text-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "dark-category-amber-text-strong": {
+        "role": "secondary",
+        "displayName": "Dark · category amber text strong",
+        "cssVariable": "--ds-category-amber-text-strong",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "dark-category-amber-border-default": {
+        "role": "secondary",
+        "displayName": "Dark · category amber border default",
+        "cssVariable": "--ds-category-amber-border-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "dark-category-amber-background-subtle": {
+        "role": "secondary",
+        "displayName": "Dark · category amber background subtle",
+        "cssVariable": "--ds-category-amber-background-subtle",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "oklch(0.389 0.091 75)",
+          "oklch(0.534 0.141 75)",
+          "oklch(0.676 0.184 75)",
+          "oklch(0.733 0.194 75)",
+          "oklch(0.887 0.154 75)",
+          "oklch(0.944 0.103 75)",
+          "oklch(0.973 0.052 75)",
+          "oklch(0.991 0.011 75)"
+        ]
+      },
+      "dark-category-slate-text-default": {
+        "role": "secondary",
+        "displayName": "Dark · category slate text default",
+        "cssVariable": "--ds-category-slate-text-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "oklch(0.378 0.016 256)",
+          "oklch(0.501 0.018 256)",
+          "oklch(0.601 0.02 256)",
+          "oklch(0.645 0.018 256)",
+          "oklch(0.859 0.012 256)",
+          "oklch(0.914 0.008 256)",
+          "oklch(0.959 0.004 256)",
+          "oklch(0.993 0.002 256)"
+        ]
+      },
+      "dark-category-slate-border-default": {
+        "role": "secondary",
+        "displayName": "Dark · category slate border default",
+        "cssVariable": "--ds-category-slate-border-default",
+        "themeMode": "dark",
+        "tonalRamp": [
+          "oklch(0.378 0.016 256)",
+          "oklch(0.501 0.018 256)",
+          "oklch(0.601 0.02 256)",
+          "oklch(0.645 0.018 256)",
+          "oklch(0.859 0.012 256)",
+          "oklch(0.914 0.008 256)",
+          "oklch(0.959 0.004 256)",
+          "oklch(0.993 0.002 256)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "display",
+        "purpose": "Rare high emphasis."
+      },
+      "page": {
+        "displayName": "page",
+        "purpose": "Library heading."
+      },
+      "section": {
+        "displayName": "section",
+        "purpose": "Established section heading."
+      },
+      "title": {
+        "displayName": "title",
+        "purpose": "Card names and designer headings."
+      },
+      "body-large": {
+        "displayName": "body-large",
+        "purpose": "Reading and shared header titles."
+      },
+      "base": {
+        "displayName": "base",
+        "purpose": "Controls and descriptions."
+      },
+      "meta": {
+        "displayName": "meta",
+        "purpose": "Card category, summary, model, Skills, and version."
+      },
+      "code-base": {
+        "displayName": "code-base",
+        "purpose": "Code and fixed-width values."
+      }
+    },
+    "shadows": [
+      {
+        "name": "none",
+        "value": "none",
+        "purpose": "Default for rows and inset regions."
+      },
+      {
+        "name": "control",
+        "value": "inset 0 1px 0 0 rgb(255 255 255 / 0.33), 0 3px 4px -1px rgb(0 0 0 / 0.25), 0 0 0 1px rgb(212 212 212 / 0.25)",
+        "purpose": "Existing semantic control elevation; consume --ds-elevation-control."
+      },
+      {
+        "name": "control-hover",
+        "value": "inset 0 1px 0 0 rgb(255 255 255 / 0.4), 0 4px 8px -1px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(212 212 212 / 0.28)",
+        "purpose": "Existing semantic control-hover elevation; consume --ds-elevation-control-hover."
+      },
+      {
+        "name": "control-pressed",
+        "value": "inset 0 1px 2px rgb(0 0 0 / 0.2), 0 0 0 1px rgb(212 212 212 / 0.2)",
+        "purpose": "Existing semantic control-pressed elevation; consume --ds-elevation-control-pressed."
+      },
+      {
+        "name": "card",
+        "value": "0 1px 2px rgb(29 33 41 / 0.06), 0 8px 16px -8px rgb(29 33 41 / 0.1)",
+        "purpose": "Existing semantic card elevation; consume --ds-elevation-card."
+      },
+      {
+        "name": "floating",
+        "value": "0 8px 20px -2px rgb(29 33 41 / 0.1), 0 16px 32px -12px rgb(29 33 41 / 0.12)",
+        "purpose": "Existing semantic floating elevation; consume --ds-elevation-floating."
+      },
+      {
+        "name": "popover",
+        "value": "0 8px 20px -2px rgb(29 33 41 / 0.1), 0 32px 48px -12px rgb(29 33 41 / 0.12)",
+        "purpose": "Existing semantic popover elevation; consume --ds-elevation-popover."
+      },
+      {
+        "name": "dialog",
+        "value": "0 8px 20px -2px rgb(29 33 41 / 0.1), 0 32px 48px -12px rgb(29 33 41 / 0.12), 0 48px 64px -16px rgb(65 74 92 / 0.08)",
+        "purpose": "Existing semantic dialog elevation; consume --ds-elevation-dialog."
+      },
+      {
+        "name": "drag",
+        "value": "0 16px 32px -8px rgb(29 33 41 / 0.18), 0 48px 64px -16px rgb(29 33 41 / 0.16)",
+        "purpose": "Existing semantic drag elevation; consume --ds-elevation-drag."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-feedback-duration",
+        "value": "160ms",
+        "purpose": "Existing Button state feedback."
+      },
+      {
+        "name": "control-feedback-ease",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Existing shared ease-out."
+      },
+      {
+        "name": "control-pressed-scale",
+        "value": "0.97",
+        "purpose": "Pressed controls; reduced motion removes scale."
+      },
+      {
+        "name": "library-card-hover",
+        "value": "translateY(-2px)",
+        "purpose": "Library hover; reduced motion removes travel."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "workshop-narrow-container",
+        "value": "760px",
+        "purpose": "Container query, not a global viewport breakpoint."
+      }
+    ],
+    "exceptions": [
+      {
+        "id": "media-frames",
+        "registry": "src/style/tokens/exception.registry.json",
+        "scope": "Portrait proportions, image windows, gallery tracks, preview and rail geometry; never standard control geometry."
+      }
+    ],
+    "assetProvenance": {
+      "builtIn": [
+        {
+          "name": "dragon",
+          "path": "src/assets/agent/dragon.png",
+          "origin": "Existing repository asset reused without modification.",
+          "lastTrackedCommit": "59f43afcb1b0ba7b2de8c65d585124f196c4aa17",
+          "sha256": "e95a35b6034dd3175be84f14fc45c775531659ffd2209b45186511b38aec6582",
+          "rightsNote": "Preserve repository notices and attribution; no new authorship or asset-specific license claim."
+        },
+        {
+          "name": "owl",
+          "path": "src/assets/agent/owl.png",
+          "origin": "Existing repository asset reused without modification.",
+          "lastTrackedCommit": "59f43afcb1b0ba7b2de8c65d585124f196c4aa17",
+          "sha256": "348201cf4139157a25e54a7d700e9acc1c42eb3b31332427b20b0cab6f927803",
+          "rightsNote": "Preserve repository notices and attribution; no new authorship or asset-specific license claim."
+        },
+        {
+          "name": "crab",
+          "path": "src/assets/agent/crab.png",
+          "origin": "Existing repository asset reused without modification.",
+          "lastTrackedCommit": "59f43afcb1b0ba7b2de8c65d585124f196c4aa17",
+          "sha256": "9f54e21fbcfb26c742b55228a488cad5e4991a22db908c01b7731a80c835f01e",
+          "rightsNote": "Preserve repository notices and attribution; no new authorship or asset-specific license claim."
+        },
+        {
+          "name": "oasis",
+          "path": "src/assets/agent/oasis.png",
+          "origin": "Existing repository asset reused without modification.",
+          "lastTrackedCommit": "59f43afcb1b0ba7b2de8c65d585124f196c4aa17",
+          "sha256": "086ef07afb4931a69600fadb853363c4691a632b03747dd0b7f10a8997f7a472",
+          "rightsNote": "Preserve repository notices and attribution; no new authorship or asset-specific license claim."
+        },
+        {
+          "name": "document",
+          "path": "src/assets/agent/document.png",
+          "origin": "Existing repository asset reused without modification.",
+          "lastTrackedCommit": "59f43afcb1b0ba7b2de8c65d585124f196c4aa17",
+          "sha256": "2452b4f3e2cba76ae1270d093d58956cf87d0d8258838ee8ba337895c0a36259",
+          "rightsNote": "Preserve repository notices and attribution; no new authorship or asset-specific license claim."
+        },
+        {
+          "name": "custom",
+          "path": "src/assets/agent/custom.png",
+          "origin": "Existing repository asset reused without modification.",
+          "lastTrackedCommit": "59f43afcb1b0ba7b2de8c65d585124f196c4aa17",
+          "sha256": "96a3a9a55bdf22c20a7f8da48c2d00f85fc33cce496606d5c0be99da7264f452",
+          "rightsNote": "Preserve repository notices and attribution; no new authorship or asset-specific license claim."
+        }
+      ],
+      "userRaster": {
+        "source": "src/service/cardDesign.ts: readCardArtwork",
+        "acceptedMimeTypes": ["image/png", "image/jpeg", "image/webp"],
+        "maximumInputBytes": 8388608,
+        "maximumLongestDimension": 1024,
+        "outputMimeType": "image/webp",
+        "quality": 0.85,
+        "maximumDataUrlCharacters": 1400000
+      },
+      "referenceOnly": "Yu-Gi-Oh reference images never ship and are not embedded here."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Existing Button variant=\"primary\", tone=\"neutral\", size=\"md\". The Workshop also uses sm; canvas footer actions use xs.",
+      "html": "<button type=\"button\" class=\"ds-button-primary\">Save card</button>",
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;height:var(--ds-button-md-height, 2rem);padding:0 var(--ds-button-md-padding-inline, 0.625rem);gap:var(--ds-button-md-gap, 0.5rem);border:1px solid transparent;border-radius:var(--ds-button-md-radius, 9999px);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);font-weight:500;cursor:pointer;transition:background-color 160ms cubic-bezier(0.23,1,0.32,1),color 160ms cubic-bezier(0.23,1,0.32,1),box-shadow 160ms cubic-bezier(0.23,1,0.32,1),transform 160ms cubic-bezier(0.23,1,0.32,1);background:var(--ds-accent-strong-default, #0b0b0b);color:var(--ds-ink-inverse, #ffffff);box-shadow:var(--ds-elevation-control, inset 0 1px 0 0 rgb(255 255 255 / 0.33), 0 3px 4px -1px rgb(0 0 0 / 0.25), 0 0 0 1px rgb(212 212 212 / 0.25));}.ds-button-primary:hover:not(:disabled){background:var(--ds-accent-strong-hover, #020202);box-shadow:var(--ds-elevation-control-hover, inset 0 1px 0 0 rgb(255 255 255 / 0.4), 0 4px 8px -1px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(212 212 212 / 0.28));}.ds-button-primary:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-button-primary:active:not(:disabled){transform:scale(0.97);box-shadow:var(--ds-elevation-control-pressed, inset 0 1px 2px rgb(0 0 0 / 0.2), 0 0 0 1px rgb(212 212 212 / 0.2));}.ds-button-primary:disabled{pointer-events:none;background:var(--ds-accent-strong-disabled, rgba(29, 29, 29, 0.500));}@media(prefers-reduced-motion:reduce){.ds-button-primary:active:not(:disabled){transform:none;}.ds-button-primary{transition:background-color 160ms,color 160ms,box-shadow 160ms;}}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Existing Button variant=\"secondary\", tone=\"neutral\", size=\"md\". The Workshop also uses sm; canvas footer actions use xs.",
+      "html": "<button type=\"button\" class=\"ds-button-secondary\">Agents</button>",
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;height:var(--ds-button-md-height, 2rem);padding:0 var(--ds-button-md-padding-inline, 0.625rem);gap:var(--ds-button-md-gap, 0.5rem);border:1px solid transparent;border-radius:var(--ds-button-md-radius, 9999px);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);font-weight:500;cursor:pointer;transition:background-color 160ms cubic-bezier(0.23,1,0.32,1),color 160ms cubic-bezier(0.23,1,0.32,1),box-shadow 160ms cubic-bezier(0.23,1,0.32,1),transform 160ms cubic-bezier(0.23,1,0.32,1);background:var(--ds-neutral-muted-default, #e7e4e3);color:var(--ds-ink-default-default, #1d1d1d);}.ds-button-secondary:hover:not(:disabled){background:var(--ds-neutral-muted-hover, #e2dfde);}.ds-button-secondary:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-button-secondary:active:not(:disabled){transform:scale(0.97);box-shadow:var(--ds-elevation-control-pressed, inset 0 1px 2px rgb(0 0 0 / 0.2), 0 0 0 1px rgb(212 212 212 / 0.2));}.ds-button-secondary:disabled{pointer-events:none;background:var(--ds-neutral-muted-disabled, #e2dfde);}@media(prefers-reduced-motion:reduce){.ds-button-secondary:active:not(:disabled){transform:none;}.ds-button-secondary{transition:background-color 160ms,color 160ms,box-shadow 160ms;}}"
+    },
+    {
+      "name": "Outline button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Existing Button variant=\"outline\", tone=\"neutral\", size=\"md\". The Workshop also uses sm; canvas footer actions use xs.",
+      "html": "<button type=\"button\" class=\"ds-button-outline\">Edit card</button>",
+      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;height:var(--ds-button-md-height, 2rem);padding:0 var(--ds-button-md-padding-inline, 0.625rem);gap:var(--ds-button-md-gap, 0.5rem);border:1px solid transparent;border-radius:var(--ds-button-md-radius, 9999px);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);font-weight:500;cursor:pointer;transition:background-color 160ms cubic-bezier(0.23,1,0.32,1),color 160ms cubic-bezier(0.23,1,0.32,1),box-shadow 160ms cubic-bezier(0.23,1,0.32,1),transform 160ms cubic-bezier(0.23,1,0.32,1);background:transparent;color:var(--ds-ink-default-default, #1d1d1d);border-color:var(--ds-hairline-default-default, rgba(29, 29, 29, 0.149));}.ds-button-outline:hover:not(:disabled){background:var(--ds-neutral-subtle-hover, #ebe8e7);border-color:var(--ds-hairline-default-hover, rgba(29, 29, 29, 0.177));}.ds-button-outline:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-button-outline:active:not(:disabled){transform:scale(0.97);}.ds-button-outline:disabled{pointer-events:none;border-color:var(--ds-hairline-default-disabled, rgba(29, 29, 29, 0.084));}@media(prefers-reduced-motion:reduce){.ds-button-outline:active:not(:disabled){transform:none;}.ds-button-outline{transition:background-color 160ms,color 160ms,box-shadow 160ms;}}"
+    },
+    {
+      "name": "Ghost button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Existing Button variant=\"ghost\", tone=\"neutral\", size=\"md\". The Workshop also uses sm; canvas footer actions use xs.",
+      "html": "<button type=\"button\" class=\"ds-button-ghost\">Back to canvas</button>",
+      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;height:var(--ds-button-md-height, 2rem);padding:0 var(--ds-button-md-padding-inline, 0.625rem);gap:var(--ds-button-md-gap, 0.5rem);border:1px solid transparent;border-radius:var(--ds-button-md-radius, 9999px);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);font-weight:500;cursor:pointer;transition:background-color 160ms cubic-bezier(0.23,1,0.32,1),color 160ms cubic-bezier(0.23,1,0.32,1),box-shadow 160ms cubic-bezier(0.23,1,0.32,1),transform 160ms cubic-bezier(0.23,1,0.32,1);background:transparent;color:var(--ds-ink-default-default, #1d1d1d);}.ds-button-ghost:hover:not(:disabled){background:var(--ds-neutral-subtle-hover, #ebe8e7);}.ds-button-ghost:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-button-ghost:active:not(:disabled){transform:scale(0.97);}.ds-button-ghost:disabled{pointer-events:none;opacity:0.5;color:var(--ds-ink-muted-disabled, rgba(29, 29, 29, 0.380));}@media(prefers-reduced-motion:reduce){.ds-button-ghost:active:not(:disabled){transform:none;}.ds-button-ghost{transition:background-color 160ms,color 160ms,box-shadow 160ms;}}"
+    },
+    {
+      "name": "Text button",
+      "kind": "button",
+      "refersTo": "button-text",
+      "description": "Existing Button variant=\"text\", tone=\"neutral\", size=\"md\". The Workshop also uses sm; canvas footer actions use xs.",
+      "html": "<button type=\"button\" class=\"ds-button-text\">Configure</button>",
+      "css": ".ds-button-text{display:inline-flex;align-items:center;justify-content:center;height:var(--ds-button-md-height, 2rem);padding:0 var(--ds-button-md-padding-inline, 0.625rem);gap:var(--ds-button-md-gap, 0.5rem);border:1px solid transparent;border-radius:var(--ds-button-md-radius, 9999px);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);font-weight:500;cursor:pointer;transition:background-color 160ms cubic-bezier(0.23,1,0.32,1),color 160ms cubic-bezier(0.23,1,0.32,1),box-shadow 160ms cubic-bezier(0.23,1,0.32,1),transform 160ms cubic-bezier(0.23,1,0.32,1);background:transparent;color:var(--ds-ink-muted-default, #535352);}.ds-button-text:hover:not(:disabled){text-decoration:underline;color:var(--ds-ink-default-hover, #e4e1e0);}.ds-button-text:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-button-text:active:not(:disabled){transform:scale(0.97);}.ds-button-text:disabled{pointer-events:none;opacity:0.5;color:var(--ds-ink-muted-disabled, rgba(29, 29, 29, 0.380));}@media(prefers-reduced-motion:reduce){.ds-button-text:active:not(:disabled){transform:none;}.ds-button-text{transition:background-color 160ms,color 160ms,box-shadow 160ms;}}"
+    },
+    {
+      "name": "Input field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Default Input visual recipe with a separate label. The application owns validation and disabled state.",
+      "html": "<label class=\"ds-label\" for=\"ds-title\">Card title</label><input class=\"ds-input\" id=\"ds-title\" value=\"Agent card\" />",
+      "css": ".ds-label{display:block;margin-bottom:0.25rem;font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-meta-size, 0.6875rem);line-height:var(--ds-text-meta-line, 1rem);color:var(--ds-ink-muted-default, #535352);}.ds-input{width:100%;height:var(--ds-field-md-height, 2.5rem);padding:0 var(--ds-field-md-padding-inline, 0.75rem);border:1px solid var(--ds-hairline-default-default, rgba(29, 29, 29, 0.149));border-radius:var(--ds-radius-field, 0.75rem);background:var(--ds-neutral-default-default, #f0edec);color:var(--ds-ink-default-default, #1d1d1d);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);}.ds-input:hover{background:var(--ds-neutral-subtle-default, #faf7f6);border-color:var(--ds-hairline-strong-default, rgba(29, 29, 29, 0.226));}.ds-input:focus{background:var(--ds-neutral-subtle-default, #faf7f6);border-color:var(--ds-ring-focus, rgba(15, 13, 8, 0.620));}.ds-input:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-input:disabled{opacity:0.5;cursor:not-allowed;}.ds-input[aria-invalid=\"true\"]{border-color:var(--ds-border-status-error-default-default, rgba(220, 38, 38, 0.750));}"
+    },
+    {
+      "name": "Border tabs",
+      "kind": "nav",
+      "refersTo": "tabs-border",
+      "description": "Static preview of shared border-tab chrome. Runtime Radix Tabs owns selection and keyboard navigation.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\" aria-label=\"Card designer\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\" type=\"button\">Appearance</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\" type=\"button\">Capability</button></div>",
+      "css": ".ds-tabs{display:flex;gap:var(--ds-space-control-gap, 0.5rem);padding-bottom:0.5rem;}.ds-tab{position:relative;height:var(--ds-controlHeight-md, 2rem);padding:0 0.5rem;border:1px solid transparent;border-radius:var(--ds-radius-compact-control, 0.5rem);background:transparent;color:var(--ds-ink-muted-default, #535352);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);font-weight:600;cursor:pointer;}.ds-tab:hover{background:var(--ds-neutral-subtle-default, #faf7f6);color:var(--ds-ink-default-default, #1d1d1d);box-shadow:0 0 0 1px var(--ds-hairline-default-default, rgba(29, 29, 29, 0.149));}.ds-tab[aria-selected=\"true\"]{color:var(--ds-ink-default-default, #1d1d1d);}.ds-tab[aria-selected=\"true\"]::after{content:\"\";position:absolute;left:0;right:0;bottom:-10px;height:2px;border-radius:9999px;background:var(--ds-accent-default-default, #1d1d1d);}.ds-tab:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-tab:disabled{opacity:0.5;pointer-events:none;}"
+    },
+    {
+      "name": "Neutral tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Existing Tag: primary variant, neutral tone, default emphasis, sm size. A label, not an action.",
+      "html": "<span class=\"ds-tag\">Agent</span>",
+      "css": ".ds-tag{display:inline-flex;align-items:center;gap:0.25rem;padding:0.25rem 0.5rem;border:1px solid transparent;border-radius:9999px;background:var(--ds-neutral-default-default, #f0edec);color:var(--ds-ink-default-default, #1d1d1d);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-meta-size, 0.6875rem);line-height:var(--ds-text-meta-line, 1rem);font-weight:500;}"
+    },
+    {
+      "name": "Operational card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Existing shared Card and CardHeader recipe; the primitive owns its boundary and elevation.",
+      "html": "<article class=\"ds-card\"><h3 class=\"ds-card-title\">Card details</h3><p class=\"ds-card-description\">Appearance and capability are independently editable.</p></article>",
+      "css": ".ds-card{padding:var(--ds-space-card-inset, 1.5rem);border:1px solid var(--ds-hairline-default-default, rgba(29, 29, 29, 0.149));border-radius:var(--ds-radius-card, 1rem);background:var(--ds-neutral-subtle-default, #faf7f6);box-shadow:var(--ds-elevation-card, 0 1px 2px rgb(29 33 41 / 0.06), 0 8px 16px -8px rgb(29 33 41 / 0.1));color:var(--ds-ink-default-default, #1d1d1d);font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);}.ds-card-title{margin:0;font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-title-size, 1.125rem);line-height:var(--ds-text-title-line, 1.5rem);font-weight:600;letter-spacing:-0.025em;}.ds-card-description{margin:var(--ds-space-stack-related, 0.5rem) 0 0;font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-base-size, 0.8125rem);line-height:var(--ds-text-base-line, 1.25rem);color:var(--ds-ink-muted-default, #535352);}"
+    },
+    {
+      "name": "Shared Agent card face",
+      "kind": "custom",
+      "refersTo": "agent-card-face",
+      "description": "Full-layout gold CardFace with the existing repository dragon artwork in a library selection wrapper. CSS includes silver, ink, and classic variants. This preview does not save or place an instance.",
+      "html": "<button type=\"button\" class=\"ds-library-choice\" aria-label=\"Agent card\" aria-pressed=\"false\"><span class=\"ds-agent-card-face ds-agent-card-face--gold ds-agent-card-face--full\"><span class=\"ds-agent-card-art ds-agent-card-art--square\" aria-hidden=\"true\"><img src=\"data:image/png;base64,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\" alt=\"\" draggable=\"false\" /></span><span class=\"ds-agent-card-heading\"><span class=\"ds-agent-card-title\">Agent card</span><svg aria-hidden=\"true\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.25\"><path d=\"M12 8V4H8\" vector-effect=\"non-scaling-stroke\"/><rect width=\"16\" height=\"12\" x=\"4\" y=\"8\" rx=\"2\" vector-effect=\"non-scaling-stroke\"/><path d=\"M2 14h2m16 0h2m-7-1v2m-6-2v2\" vector-effect=\"non-scaling-stroke\"/></svg></span><span class=\"ds-agent-card-category\">Character · Agent</span><span class=\"ds-agent-card-rules\"><span class=\"ds-agent-card-capability\">Capability summary</span><span class=\"ds-agent-card-summary\">Configure a role, model, Skills and Harness.</span><span class=\"ds-agent-card-stats\"><span>Choose a model later</span><span>0 Skills</span></span></span></span></button>",
+      "css": "/* Card proportions and image framing: registered media-frames exception.\n   Category colors express card identity, never execution status. */\n.ds-agent-card-face {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  min-height: 0;\n  aspect-ratio: 244 / 352;\n  isolation: isolate;\n  border: var(--ds-border-strong, 2px) solid var(--ds-category-amber-text-default, #926200);\n  border-radius: var(--ds-radius-field, 0.75rem);\n  background: var(--ds-neutral-subtle-default, #faf7f6);\n  color: var(--ds-ink-default-default, #1d1d1d);\n  overflow: visible;\n}\n.ds-agent-card-face::after {\n  content: '';\n  position: absolute;\n  inset: calc(var(--ds-space-control-gap, 0.5rem) / 2);\n  border: 1px solid var(--ds-category-amber-border-default, #ffd192);\n  border-radius: var(--ds-radius-compact-control, 0.5rem);\n  pointer-events: none;\n}\n.ds-agent-card-face--silver {\n  border-color: var(--ds-category-slate-text-default, #5d646e);\n}\n.ds-agent-card-face--ink {\n  border-color: var(--ds-ink-default-default, #1d1d1d);\n}\n.ds-agent-card-face--silver::after,\n.ds-agent-card-face--ink::after {\n  border-color: var(--ds-category-slate-border-default, #ccd1d9);\n}\n.ds-agent-card-art {\n  position: absolute;\n  inset: calc(var(--ds-space-control-gap, 0.5rem) * 0.75)\n    calc(var(--ds-space-control-gap, 0.5rem) * 0.75);\n  z-index: -1;\n  border-radius: var(--ds-radius-compact-control, 0.5rem);\n  overflow: hidden;\n  background: var(--ds-neutral-muted-default, #e7e4e3);\n}\n.ds-agent-card-art img {\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  object-position: center;\n}\n.ds-agent-card-face--full .ds-agent-card-art--square img {\n  height: 74%;\n}\n.ds-agent-card-heading {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: var(--ds-space-control-gap, 0.5rem);\n  margin: calc(var(--ds-space-control-gap, 0.5rem) * 1.25)\n    calc(var(--ds-space-control-gap, 0.5rem) * 1.25) 0;\n  padding: calc(var(--ds-space-control-gap, 0.5rem) / 2)\n    calc(var(--ds-space-control-gap, 0.5rem) * 0.75);\n  border-radius: var(--ds-radius-compact-control, 0.5rem);\n  background: var(--ds-neutral-subtle-default, #faf7f6);\n}\n.ds-agent-card-category {\n  display: inline-block;\n  margin: calc(var(--ds-space-control-gap, 0.5rem) / 4) var(--ds-space-panel-inset, 1rem);\n  padding: 0 calc(var(--ds-space-control-gap, 0.5rem) / 2);\n  border-radius: var(--ds-radius-compact-control, 0.5rem);\n  background: var(--ds-neutral-subtle-default, #faf7f6);\n  color: var(--ds-category-amber-text-strong, #5e3d00);\n}\n.ds-agent-card-rules {\n  position: absolute;\n  left: calc(var(--ds-space-control-gap, 0.5rem) * 1.25);\n  right: calc(var(--ds-space-control-gap, 0.5rem) * 1.25);\n  bottom: calc(var(--ds-space-control-gap, 0.5rem) * 1.25);\n  padding: calc(var(--ds-space-control-gap, 0.5rem) * 1.25);\n  background: color-mix(\n    in srgb,\n    var(--ds-neutral-subtle-default, #faf7f6) 94%,\n    var(--ds-category-amber-background-subtle, #fff9f1)\n  );\n  color: var(--ds-ink-default-default, #1d1d1d);\n  border: 1px solid var(--ds-category-amber-border-default, #ffd192);\n}\n.ds-agent-card-face--silver .ds-agent-card-rules,\n.ds-agent-card-face--ink .ds-agent-card-rules {\n  background: var(--ds-neutral-subtle-default, #faf7f6);\n  color: var(--ds-ink-default-default, #1d1d1d);\n  border-color: var(--ds-category-slate-border-default, #ccd1d9);\n}\n.ds-agent-card-summary {\n  display: -webkit-box;\n  -webkit-box-orient: vertical;\n  -webkit-line-clamp: 2;\n  overflow: hidden;\n  min-height: 32px;\n  margin-top: calc(var(--ds-space-control-gap, 0.5rem) / 2);\n  overflow-wrap: anywhere;\n}\n.ds-agent-card-stats {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: var(--ds-space-control-gap, 0.5rem);\n  margin-top: var(--ds-space-control-gap, 0.5rem);\n  padding-top: calc(var(--ds-space-control-gap, 0.5rem) * 0.75);\n  border-top: 1px solid var(--ds-hairline-default-default, rgba(29, 29, 29, 0.149));\n}\n.ds-agent-card-actions {\n  display: flex;\n  align-items: center;\n  gap: calc(var(--ds-space-control-gap, 0.5rem) / 2);\n  margin-top: var(--ds-space-control-gap, 0.5rem);\n}\n.ds-agent-card-face--classic .ds-agent-card-art {\n  top: 24%;\n  left: var(--ds-space-control-inline, 0.75rem);\n  right: var(--ds-space-control-inline, 0.75rem);\n  bottom: 34%;\n}\n.ds-library-choice{display:block;width:256px;max-width:100%;padding:6px;border:0;border-radius:var(--ds-radius-card, 1rem);background:transparent;color:inherit;text-align:left;cursor:pointer;font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);}.ds-library-choice .ds-agent-card-face{display:block;height:auto;}.ds-agent-card-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-title-size, 1.125rem);line-height:var(--ds-text-title-line, 1.5rem);font-weight:600;}.ds-agent-card-rules{display:block;}.ds-agent-card-category,.ds-agent-card-rules{font-family:var(--ds-font-text, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);font-size:var(--ds-text-meta-size, 0.6875rem);line-height:var(--ds-text-meta-line, 1rem);}.ds-agent-card-capability{display:block;font-weight:600;}.ds-library-choice:hover .ds-agent-card-face{transform:translateY(-2px);}.ds-library-choice[aria-pressed=\"true\"]{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:0;}.ds-library-choice:focus-visible{outline:2px solid var(--ds-ring-focus, rgba(15, 13, 8, 0.620));outline-offset:2px;}.ds-library-choice:disabled{pointer-events:none;}@media(prefers-reduced-motion:reduce){.ds-library-choice:hover .ds-agent-card-face{transform:none;}}@media(forced-colors:active){.ds-agent-card-face,.ds-agent-card-rules{border-color:CanvasText;}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The operational card desk",
+    "overview": "AgentDeck is a calm, compact working environment. Warm Neutral surfaces, Ink hierarchy, restrained depth, and familiar semantic controls keep dense tasks readable. Illustrated Agent cards extend this established system: a recognizable portrait, a bounded frame, and a readable capability panel travel together between the library, designer, and canvas. The name above describes the approved direction; it does not establish a replacement identity.\n\nThis document records the implemented extension. [The active design guideline](docs/design-system/design.md) remains authoritative, including where its legacy heading says Eigent. `src/style/tokens`, generated outputs, and shared primitives remain the executable source of truth. [Product terminology](docs/product-terminology.md) governs visible Space → Session → Task wording; the existing Project identifiers remain technical contracts. Surface strategy and approval history stay in [the card Workshop brief](.impeccable/briefs/card-workshop.md).\n\nThe frontmatter is a machine-readable snapshot of reused roles, extracted from the actual theme engine (`eigent`, contrast 43) and generated dimension/type tokens. Unprefixed colors show the default light mode; `dark-` entries show the corresponding dark mode. They are documentation keys, never new application aliases. Product code consumes the same `--ds-*` semantic variables in both themes so user theme and contrast choices continue to work. Component entries show default light values; the sidecar snippets remain live-bound to semantic variables.",
+    "keyCharacteristics": [
+      "Compact operational controls with visible keyboard focus.",
+      "Warm Neutral surfaces and Ink hierarchy, with Accent reserved for action and selection.",
+      "Portrait cards with a stable frame, visible artwork, and readable capability text.",
+      "One shared card face across reusable designs and installed instances.",
+      "Appearance, capability configuration, and Task history remain distinct."
+    ],
+    "rules": [
+      {
+        "name": "The Identity and State Rule",
+        "body": "Card materials remain stable when execution state changes. Status, validation, and destructive actions use their existing semantic feedback roles and explicit labels.",
+        "section": "colors"
+      },
+      {
+        "name": "The Same Hierarchy Rule",
+        "body": "The gallery, preview, and canvas render the same card typography through `CardFace`; context may add controls without inventing a smaller card text system.",
+        "section": "typography"
+      },
+      {
+        "name": "The Owned Depth Rule",
+        "body": "Shared primitives own their elevation. Feature code adds depth only when the hierarchy calls for it and uses an existing semantic elevation role.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** read the active design and terminology contracts before extending a surface.",
+      "**Do** consume semantic tokens and shared controls in both light and dark modes.",
+      "**Do** reuse `CardFace` in every library, designer, and installed-card context.",
+      "**Do** keep artwork faces clear of the capability panel with the established full/classic framing.",
+      "**Do** preserve independent appearance, capability, template version, and Task-history boundaries.",
+      "**Do** retain source provenance and repository notices for reused artwork.",
+      "**Do** verify focus, selection, disabled, pending, error, empty, long-content, reduced-motion, and narrow-desktop behavior in the actual surface."
+    ],
+    "donts": [
+      "**Don't** turn card material or category color into execution status or validation meaning.",
+      "**Don't** introduce raw feature colors, arbitrary standard-control geometry, stock shadows, or local icon sizes.",
+      "**Don't** reinterpret the media-frame exception as permission to restyle the app shell or shared controls.",
+      "**Don't** ship reference-only Yu-Gi-Oh artwork or imply approval of its licensing.",
+      "**Don't** imply that changing card text changes Agent capability or copies Task history.",
+      "**Don't** claim numeric mockup fidelity from this documentation; the recorded comp workflow remains at specification stage without a numeric fidelity pass."
+    ]
+  }
+}

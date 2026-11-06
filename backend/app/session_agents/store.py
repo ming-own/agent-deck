@@ -1,3 +1,17 @@
+# ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+
 """Durable instance configs and immutable turn snapshots; no credentials."""
 
 import json
@@ -171,6 +185,8 @@ class AgentStore:
             "skill_ids": [],
             "tool_policy": {},
             "harness_id": DEFAULT_HARNESS_ID,
+            "card_design": None,
+            "card_revision": 0,
             **json.loads(row["config"]),
         }
 
@@ -329,6 +345,7 @@ class AgentStore:
 
     def update(self, owner, project, agent_id, revision, config: AgentConfig):
         with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
             current = self.node(
                 db.execute(
                     "SELECT * FROM agents WHERE owner=? AND project=? AND id=?",
@@ -350,6 +367,8 @@ class AgentStore:
                                     "install_id",
                                     "template_family",
                                     "template_version",
+                                    "card_design",
+                                    "card_revision",
                                 )
                                 if k in current
                             },
@@ -609,6 +628,9 @@ class AgentStore:
             ).fetchone()
         )
         self.check_connection(node, connection)
+        # Presentation can be large (uploaded art) and never belongs to a run.
+        node.pop("card_design", None)
+        node.pop("card_revision", None)
         if node["revision"] != revision:
             raise Conflict(
                 "Agent configuration changed; reload before running"

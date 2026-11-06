@@ -1,3 +1,17 @@
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+
 import type { WorkspaceNodeKind } from '@/service/workspaceGraphApi';
 import type { Edge, Node, XYPosition } from '@xyflow/react';
 import type {
@@ -127,7 +141,7 @@ export function buildWorkspaceGraph(
       );
     const columns = Math.min(3, Math.max(1, children.length));
     const rows = Math.ceil(children.length / 3);
-    const taskStart = 64 + rows * 312;
+    const taskStart = 64 + rows * 408;
     const dims = isOpen
       ? {
           width: Math.max(600, columns * 268 + 48),
@@ -155,10 +169,10 @@ export function buildWorkspaceGraph(
         parentId: nodeId('session', s.id),
         position: position(item, {
           x: 24 + (i % 3) * 268,
-          y: 64 + Math.floor(i / 3) * 312,
+          y: 64 + Math.floor(i / 3) * 408,
         }),
         width: 244,
-        height: 288,
+        height: 384,
         extent: 'parent',
         data: { item, open },
       });

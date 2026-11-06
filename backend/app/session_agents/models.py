@@ -1,3 +1,19 @@
+# ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+
+import base64
+import binascii
 from typing import Any, Literal
 from uuid import UUID
 
@@ -71,6 +87,53 @@ class PositionUpdate(BaseModel):
     x: float = Field(ge=24, le=1000000)
     y: float = Field(ge=64, le=1000000)
     expected_revision: int = Field(ge=0)
+
+
+class CardDesign(BaseModel):
+    """Presentation only. Never accepted as executable Agent configuration."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    title: str = Field(default="", max_length=100)
+    summary: str = Field(default="", max_length=400)
+    artwork: Literal[
+        "dragon", "owl", "crab", "oasis", "document", "custom"
+    ] = "dragon"
+    image_data: str | None = Field(default=None, max_length=1_400_000)
+    layout: Literal["full", "classic"] = "full"
+    material: Literal["gold", "silver", "ink"] = "gold"
+
+    @field_validator("image_data")
+    @classmethod
+    def raster_only(cls, value):
+        if value is None:
+            return None
+        try:
+            header, encoded = value.split(",", 1)
+            data = base64.b64decode(encoded, validate=True)
+            valid = (
+                header == "data:image/png;base64"
+                and data.startswith(b"\x89PNG\r\n\x1a\n")
+                or header == "data:image/jpeg;base64"
+                and data.startswith(b"\xff\xd8\xff")
+                or header == "data:image/webp;base64"
+                and data[:4] == b"RIFF"
+                and data[8:12] == b"WEBP"
+            )
+            if not valid:
+                raise ValueError("Expected PNG, JPEG or WebP artwork")
+        except (ValueError, binascii.Error) as exc:
+            raise ValueError("Expected bounded raster image data") from exc
+        return value
+
+
+class UpdateCardDesign(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_revision: int = Field(ge=0)
+    design: CardDesign
+
+
+class DraftAgentConfig(AgentConfig):
+    model: ModelReference | None = None
 
 
 class UpdateAgent(AgentConfig):
@@ -228,11 +291,24 @@ class SaveTemplate(BaseModel):
     node_id: UUID | None = None
     route: WorkshopRoute | None = None
     new_version: bool = False
+    config: DraftAgentConfig | None = None
+    appearance: CardDesign | None = None
+    base_family: str | None = Field(default=None, min_length=1, max_length=100)
+    base_version: int | None = Field(default=None, ge=1)
+    copy_base: bool = False
 
     @model_validator(mode="after")
     def one_source(self):
-        if (self.route is None) == (self.node_id is None):
+        if (
+            sum(v is not None for v in (self.route, self.node_id, self.config))
+            + int(self.copy_base)
+            != 1
+        ):
             raise ValueError("Choose one source")
+        if (self.base_family is None) != (self.base_version is None):
+            raise ValueError("Provide a complete base version")
+        if self.copy_base and self.base_family is None:
+            raise ValueError("Choose a template to copy")
         return self
 
 

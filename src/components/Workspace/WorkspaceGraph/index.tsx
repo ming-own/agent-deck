@@ -1,3 +1,17 @@
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+
 import ContentHeader from '@/components/Layout/ContentHeader';
 import { AgentForm, CanvasNodeTasks } from '@/components/Session/Agents';
 import { CanvasLinks } from '@/components/Session/Agents/CanvasLinks';
@@ -5,6 +19,7 @@ import {
   CanvasTrials,
   TrialAction,
 } from '@/components/Session/Agents/CanvasTrial';
+import { InstanceCardDesigner } from '@/components/Session/Agents/CardDesigner';
 import { NodeInspector } from '@/components/Session/Agents/NodeInspector';
 import {
   TaskRouter,
@@ -50,6 +65,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
+  CircleHelp,
   FolderOpen,
   LayoutGrid,
   Maximize,
@@ -170,6 +186,18 @@ function WorkspaceGraphBody({
   }, [expanded, expansionKey]);
   const [router, setRouter] = useState<RouterLocation | null>(null),
     [workshop, setWorkshop] = useState<string | null>(null);
+  const [workshopSource, setWorkshopSource] = useState<
+    WorkspaceAgent | undefined
+  >();
+  const [appearance, setAppearance] = useState<WorkspaceAgent | null>(null);
+  const workshopApi = useMemo(
+    () => sessionAgentApi(account, workshop ?? '__card-library__'),
+    [account, workshop]
+  );
+  const appearanceApi = useMemo(
+    () => sessionAgentApi(account, appearance?.projectId ?? ''),
+    [account, appearance?.projectId]
+  );
   const [error, setError] = useState(false),
     [saving, setSaving] = useState<Set<string>>(new Set()),
     [initialized, setInitialized] = useState(false),
@@ -241,10 +269,18 @@ function WorkspaceGraphBody({
         ? (items.find((i) => i.kind === pick.kind && i.id === pick.id) ?? null)
         : null;
   const agent = freshPick?.agent;
+  const pickedNodeReady =
+    !!pick &&
+    board.nodes.some(
+      (n) =>
+        n.id ===
+        nodeId(pick.agent ? 'agent' : pick.kind, pick.agent?.id ?? pick.id)
+    );
   useEffect(() => {
     if (
       view !== 'canvas' ||
       !pick ||
+      !pickedNodeReady ||
       pick.id === 'new' ||
       !canvasWidth ||
       !canvasHeight
@@ -257,7 +293,7 @@ function WorkspaceGraphBody({
       void flow.fitView({ nodes: [{ id }], padding: 0.3, maxZoom: 0.9 });
     });
     return () => cancelAnimationFrame(frame);
-  }, [pick, view, flow, canvasWidth, canvasHeight]);
+  }, [pick, pickedNodeReady, view, flow, canvasWidth, canvasHeight]);
   const openSession = (id: string) => {
     useProjectRuntimeStore.getState().setActiveProject(id);
     useSpaceStore.getState().setLastVisitedProject(spaceId, id);
@@ -364,6 +400,18 @@ function WorkspaceGraphBody({
     >
       <ContentHeader title={spaceName} leading={<DsIcon icon={LayoutGrid} />}>
         <div className="ml-auto flex items-center gap-ds-control-gap">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setWorkshopSource(undefined);
+              setWorkshop(
+                pick?.projectId ?? data.sessions[0]?.id ?? '__card-library__'
+              );
+            }}
+          >
+            {t('chat.workshop')}
+          </Button>
           <Button size="sm" variant="ghost" onClick={onConversation}>
             <DsIcon icon={MessageCircle} />
             {t('chat.canvas-chat')}
@@ -622,12 +670,15 @@ function WorkspaceGraphBody({
                         />
                         <DsText role="meta">{t('chat.team-members')}</DsText>
                       </label>
-                      <DsText
-                        role="meta"
-                        className="basis-full text-ds-ink-muted-default"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        buttonContent="icon-only"
+                        aria-label={t('chat.workspace-connect-help')}
+                        title={t('chat.workspace-connect-help')}
                       >
-                        {t('chat.workspace-connect-help')}
-                      </DsText>
+                        <DsIcon icon={CircleHelp} />
+                      </Button>
                     </div>
                   </Panel>
                   <Background
@@ -881,6 +932,25 @@ function WorkspaceGraphBody({
                         />
                       ) : (
                         <>
+                          <div className="flex flex-wrap gap-ds-8">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setAppearance(agent)}
+                            >
+                              {t('chat.card-appearance')}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setWorkshopSource(agent);
+                                setWorkshop(agent.projectId);
+                              }}
+                            >
+                              {t('chat.card-save-to-library')}
+                            </Button>
+                          </div>
                           <DsText role="base">
                             {agent.role ||
                               agent.instructions ||
@@ -969,7 +1039,10 @@ function WorkspaceGraphBody({
                 node: { ...node, projectId: edit.projectId },
               })
             }
-            save={() => setWorkshop(edit.projectId)}
+            save={() => {
+              setWorkshopSource(edit.node);
+              setWorkshop(edit.projectId);
+            }}
             updated={() => {
               data.refresh();
               setEdit(null);
@@ -1007,18 +1080,85 @@ function WorkspaceGraphBody({
           email={email}
           close={() => setRouter(null)}
           onTaskCreated={data.refresh}
-          openWorkshop={() => setWorkshop(router.project)}
+          openWorkshop={() => {
+            setWorkshopSource(undefined);
+            setWorkshop(router.project);
+          }}
         />
       )}
       {workshop && (
         <Workshop
+          key={workshop}
+          embedded
           projectId={workshop}
-          api={sessionAgentApi(account, workshop)}
+          api={workshopApi}
+          initialNode={workshopSource}
           choices={choices}
-          onClose={() => setWorkshop(null)}
+          sessions={data.sessions.map((s) => ({ id: s.id, name: s.name }))}
+          resolveApi={(id) => sessionAgentApi(account, id)}
+          createSession={async (name, id) => {
+            const p = await proxyCreateSpaceProject(
+              spaceId,
+              {
+                id,
+                name,
+                metadata: {
+                  agentSession: true,
+                  spaceModelDefaultPending: false,
+                },
+              },
+              { expectedAccountKey: account }
+            );
+            useSpaceStore.getState().upsertProjectMetas([
+              {
+                id: p.id,
+                spaceId,
+                name: p.name,
+                status: 'active',
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                metadata: p.metadata ?? {},
+              },
+            ]);
+            return p.id;
+          }}
+          onClose={() => {
+            setWorkshop(null);
+            setWorkshopSource(undefined);
+          }}
           beforeInstall={async () => {}}
-          onInstalled={data.refresh}
+          onInstalled={(node, projectId) => {
+            setExpanded((old) => new Set([...old, projectId]));
+            setView('canvas');
+            setEdit(null);
+            setPanelTab('details');
+            setPick({
+              kind: 'agent',
+              id: node.id,
+              name: node.name,
+              projectId,
+              agent: { ...node, projectId },
+            });
+            data.refresh();
+          }}
         />
+      )}
+      {appearance && (
+        <section
+          className="absolute inset-0 z-40 flex min-h-0 flex-col bg-ds-neutral-subtle-default"
+          aria-label={t('chat.card-appearance')}
+        >
+          <InstanceCardDesigner
+            key={appearance.id}
+            api={appearanceApi}
+            node={appearance}
+            close={() => setAppearance(null)}
+            onSaved={() => {
+              setAppearance(null);
+              data.refresh();
+            }}
+          />
+        </section>
       )}
     </section>
   );

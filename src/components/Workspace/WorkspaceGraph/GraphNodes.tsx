@@ -1,7 +1,22 @@
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+
 import {
   TrialAction,
   TrialResult,
 } from '@/components/Session/Agents/CanvasTrial';
+import { CardFace } from '@/components/Session/Agents/CardFace';
 import { Button } from '@/components/ui/button';
 import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
@@ -25,8 +40,6 @@ import {
   Folder,
   ListTodo,
   Settings2,
-  Sparkles,
-  Workflow,
 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -101,90 +114,51 @@ export function WorkspaceObjectNode({ data, selected }: NodeProps<GraphNode>) {
   if (item.kind === 'agent' && a)
     return (
       <div
-        className={`flex h-full flex-col rounded-ds-card border border-x border-y border-solid bg-ds-neutral-subtle-default p-ds-6 ${selected ? 'border-ds-accent-strong-default' : 'border-ds-hairline-default-default'}`}
+        className={
+          'h-full w-full rounded-ds-field ' +
+          (selected ? 'ring-2 ring-ds-ring-focus' : '')
+        }
       >
-        <ConnectionPort type="target" name={a.name} />
-        <ConnectionPort type="source" name={a.name} />
-        <div className="flex h-full min-h-0 flex-col gap-ds-8 rounded-ds-field border border-x border-y border-solid border-ds-hairline-default-default p-ds-12">
-          <div className="flex items-center justify-between gap-ds-6">
-            <DsText role="meta" className="text-ds-ink-muted-default">
-              {a.workforce ? 'Workforce' : 'Agent'}
-            </DsText>
-            <DsIcon
-              icon={a.workforce ? Workflow : Sparkles}
-              recipe="main-compact"
-              className="text-ds-ink-muted-default"
-            />
-          </div>
-          <Button
-            variant="text"
-            size="sm"
-            className="nodrag nopan min-w-0 justify-start"
-            onClick={() => open(item)}
-            title={a.name}
-          >
-            <DsText role="body-large" weight="semibold" className="truncate">
-              {a.name}
-            </DsText>
-          </Button>
-          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-ds-field bg-ds-neutral-muted-default">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 200 100"
-              className="absolute h-full w-full text-ds-hairline-default-default"
-              fill="none"
-              stroke="currentColor"
-            >
-              <circle cx="100" cy="50" r="38" />
-              <circle cx="100" cy="50" r="30" />
-              <path d="M100 5 145 50 100 95 55 50Z M8 50H48 M152 50H192 M100 0V12 M100 88V100" />
-            </svg>
-            <DsText
-              role="display"
-              weight="semibold"
-              className="relative text-ds-ink-muted-default"
-            >
-              {a.name.trim().slice(0, 1)}
-            </DsText>
-          </div>
-          <DsText
-            role="meta"
-            className="line-clamp-2"
-            title={a.role || a.instructions}
-          >
-            {a.role || a.instructions || t('chat.session-agents-default-role')}
-          </DsText>
-          <div className="flex items-center justify-between gap-ds-6 border-x-0 border-t border-b-0 border-solid border-ds-hairline-default-default pt-ds-8">
-            <DsText
-              role="meta"
-              className="min-w-0 truncate text-ds-ink-muted-default"
-              title={a.model.name}
-            >
-              {a.model.name}
-            </DsText>
-            <DsText role="meta" className="shrink-0 text-ds-ink-muted-default">
-              {a.skill_ids.length} Skills
-            </DsText>
-          </div>
-          <div className="flex items-center gap-ds-6">
-            <TrialResult
-              project={a.projectId}
-              agent={a}
-              latestRun={item.latestTask?.last_run}
-              onLatestRun={() =>
-                open({
-                  ...item,
-                  kind: 'task',
-                  id: a.id + ':' + item.latestTask!.id,
-                  task: item.latestTask,
-                })
-              }
-            >
-              <span className="flex-1" />
-            </TrialResult>
-            <TrialAction project={a.projectId} agent={a} />
-          </div>
-        </div>
+        <CardFace
+          design={a.card_design}
+          name={a.name}
+          description={a.role || a.instructions}
+          model={a.model.name}
+          skills={a.skill_ids.length}
+          workforce={!!a.workforce}
+          footer={
+            <>
+              <Button
+                variant="text"
+                size="xs"
+                className="nodrag nopan"
+                onClick={() => open(item)}
+                aria-label={t('chat.card-configure') + ' · ' + a.name}
+              >
+                {t('chat.card-configure')}
+              </Button>
+              <TrialResult
+                project={a.projectId}
+                agent={a}
+                latestRun={item.latestTask?.last_run}
+                onLatestRun={() =>
+                  open({
+                    ...item,
+                    kind: 'task',
+                    id: a.id + ':' + item.latestTask!.id,
+                    task: item.latestTask,
+                  })
+                }
+              >
+                <span className="flex-1" />
+              </TrialResult>
+              <TrialAction project={a.projectId} agent={a} />
+            </>
+          }
+        >
+          <ConnectionPort type="target" name={a.name} />
+          <ConnectionPort type="source" name={a.name} />
+        </CardFace>
       </div>
     );
   return (

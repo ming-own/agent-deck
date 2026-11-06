@@ -1,4 +1,19 @@
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
+
 import { fetchGet, fetchPost, fetchPut } from '@/api/http';
+import type { CardDesign } from './cardDesign';
 import type { AgentModelReference } from './sessionAgentModels';
 
 export interface SkillOption {
@@ -24,6 +39,8 @@ export interface CanvasPosition {
 }
 
 export interface SessionAgent extends AgentBehavior {
+  card_design?: CardDesign | null;
+  card_revision?: number;
   id: string;
   name: string;
   model: AgentModelReference;
@@ -166,6 +183,9 @@ export interface BatchReceipt {
 }
 
 export interface WorkshopTemplate {
+  preview?: { model_name?: string; skill_count: number; description: string };
+  appearance?: CardDesign | null;
+  needs_model?: boolean;
   family: string;
   version: number;
   name: string;
@@ -173,6 +193,14 @@ export interface WorkshopTemplate {
   builtin?: boolean;
   base_family?: string;
   base_version?: number;
+}
+
+export interface CardAgentConfig extends AgentBehavior {
+  name: string;
+  model: AgentModelReference | null;
+}
+export interface WorkshopTemplateDetail extends WorkshopTemplate {
+  config: Partial<CardAgentConfig>;
 }
 
 /** Capture scope at render/gesture time; fetch also fences account switches. */
@@ -218,6 +246,26 @@ export function sessionAgentApi(account: string, projectId: string) {
       fetchGet(`${root}/workshop/runs/${id}`, undefined, headers, options),
     templates: (): Promise<WorkshopTemplate[]> =>
       fetchGet(`${root}/workshop/templates`, undefined, headers, options),
+    template: (
+      family: string,
+      version: number
+    ): Promise<WorkshopTemplateDetail> =>
+      fetchGet(
+        `${root}/workshop/templates/${encodeURIComponent(family)}/${version}`,
+        undefined,
+        headers,
+        options
+      ),
+    updateCard: (
+      node: SessionAgent,
+      design: CardDesign
+    ): Promise<SessionAgent> =>
+      fetchPut(
+        `${root}/${node.id}/card-design`,
+        { design, expected_revision: node.card_revision ?? 0 },
+        headers,
+        options
+      ),
     saveTemplate: (body: unknown): Promise<WorkshopTemplate> =>
       fetchPost(`${root}/workshop/templates`, body, headers, options),
     installTemplate: (body: unknown): Promise<SessionAgent> =>

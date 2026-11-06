@@ -73,6 +73,7 @@ const dialogContentVariants = cva(
         sm: 'max-w-[400px]',
         md: 'max-w-[600px]',
         lg: 'max-w-[900px]',
+        workbench: 'max-w-[1440px] w-[calc(100vw-32px)] h-[90vh]',
       },
     },
     defaultVariants: {
