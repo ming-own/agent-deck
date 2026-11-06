@@ -1,10 +1,7 @@
+import { MarkDown } from '@/components/ChatBox/MessageItem/MarkDown';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogContentSection,
-  DialogHeader,
-} from '@/components/ui/dialog';
+import { DialogContentSection } from '@/components/ui/dialog';
 import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,7 +12,16 @@ import {
   type SessionAgent,
 } from '@/service/sessionAgentApi';
 import { resolveNodeConnection } from '@/service/sessionAgentModels';
-import { Play } from 'lucide-react';
+import { useReactFlow } from '@xyflow/react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  Circle,
+  CircleAlert,
+  CircleMinus,
+  Clock3,
+  Play,
+} from 'lucide-react';
 import {
   createContext,
   useCallback,
@@ -26,10 +32,16 @@ import {
   type ReactNode,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NodeInspector } from './NodeInspector';
 
-type Region = { id: string; agents: SessionAgent[] };
+type Region = { id: string; name?: string; agents: SessionAgent[] };
 type PickNode = { project: string; agent: SessionAgent };
-type Choice = { project: string; id: string; results: boolean };
+type Choice = {
+  project: string;
+  id: string;
+  results: boolean;
+  opener?: HTMLButtonElement;
+};
 type Step = CanvasTrial['steps'][number];
 const Context = createContext<{
   trials: Record<string, CanvasTrial>;
@@ -47,16 +59,39 @@ export function TrialAction({ project, agent }: PickNode) {
     { open, trials } = useContext(Context);
   return (
     <Button
-      className="nodrag nopan"
+      className="nodrag nopan shrink-0"
       variant="ghost"
       size="xs"
-      buttonContent="icon-only"
       aria-label={t('chat.canvas-trial') + ' · ' + agent.name}
       title={t('chat.canvas-trial')}
       disabled={trials[project]?.status === 'running'}
-      onClick={() => open({ project, id: agent.id, results: false })}
+      onClick={(e) =>
+        open({ project, id: agent.id, results: false, opener: e.currentTarget })
+      }
     >
       <DsIcon icon={Play} recipe="main-compact" />
+      {t('chat.canvas-trial')}
+    </Button>
+  );
+}
+export function TrialPreview({ project, agent }: PickNode) {
+  const { trials, open } = useContext(Context);
+  const step = trials[project]?.steps.find((s) => s.agent_id === agent.id);
+  if (!step?.output) return null;
+  return (
+    <Button
+      size="xs"
+      variant="text"
+      className="nodrag nopan min-w-0 justify-start"
+      title={step.output}
+      aria-label={step.output}
+      onClick={(e) =>
+        open({ project, id: agent.id, results: true, opener: e.currentTarget })
+      }
+    >
+      <DsText role="meta" className="truncate">
+        {step.output}
+      </DsText>
     </Button>
   );
 }
@@ -70,23 +105,47 @@ export function TrialResult({
   const step = trials[project]?.steps.find((s) => s.agent_id === agent.id);
   if (!step) return <>{children}</>;
   return (
-    <button
-      type="button"
-      className="nodrag nopan rounded-ds-control flex min-w-0 items-baseline gap-ds-6 bg-transparent text-left text-ds-ink-default-default"
-      onClick={() => open({ project, id: agent.id, results: true })}
+    <Button
+      size="xs"
+      variant="text"
+      className="nodrag nopan min-w-0 flex-1 justify-start px-0"
+      onClick={(e) =>
+        open({ project, id: agent.id, results: true, opener: e.currentTarget })
+      }
       title={t('chat.node-run-result') + ' · ' + agent.name}
       aria-label={t('chat.node-run-result') + ' · ' + agent.name}
     >
-      <DsText role="meta" weight="semibold" className="shrink-0">
+      <DsIcon
+        recipe="main-compact"
+        icon={stateIcon(step.status)}
+        className={stateColor(step.status)}
+      />
+      <DsText role="meta" className="truncate">
         {t(statusKey(step.status))}
       </DsText>
-      <DsText role="base" className="truncate">
-        {step.output || agent.model.name}
-      </DsText>
-    </button>
+    </Button>
   );
 }
-
+function stateIcon(status: Step['status']) {
+  return status === 'completed'
+    ? CheckCircle2
+    : status === 'running'
+      ? Play
+      : status === 'failed'
+        ? CircleAlert
+        : status === 'waiting'
+          ? Clock3
+          : CircleMinus;
+}
+function stateColor(status: Step['status']) {
+  return status === 'completed'
+    ? 'text-ds-text-success-strong-default'
+    : status === 'failed'
+      ? 'text-ds-text-error-strong-default'
+      : status === 'running'
+        ? 'text-ds-text-information-strong-default'
+        : 'text-ds-ink-muted-default';
+}
 // Poll only sessions that have an active execution. Closing a dialog never owns the run.
 function Watch({
   account,
@@ -145,22 +204,55 @@ export function CanvasTrials({
   choices,
   email,
   children,
+  inspectorOpen,
+  onInspect,
 }: {
   account: string;
   regions: Region[];
   choices: ConfiguredModelChoice[];
   email: string;
   children: ReactNode;
+  inspectorOpen?: boolean;
+  onInspect?: () => void;
 }) {
   const [trials, setTrials] = useState<Record<string, CanvasTrial>>({}),
     [epochs, setEpochs] = useState<Record<string, number>>({});
-  const [pick, open] = useState<Choice | null>(null);
+  const [pick, setPick] = useState<Choice | null>(null);
+  const flow = useReactFlow();
+  const open = (choice: Choice) => {
+    onInspect?.();
+    setPick(choice);
+  };
+  useEffect(() => {
+    if (inspectorOpen) setPick(null);
+  }, [inspectorOpen]);
+  const region = regions.find((r) => r.id === pick?.project);
+  const pathIds =
+    pick && region
+      ? pick.results
+        ? trials[region.id]?.steps.map((s) => s.agent_id)
+        : pathFrom(region.agents, pick.id)?.map((n) => n.id)
+      : undefined;
+  const routeKey = JSON.stringify(pathIds);
+  useEffect(() => {
+    if (!routeKey) return;
+    const ids: string[] = JSON.parse(routeKey);
+    // The inline inspector changes canvas width; fit once after that layout.
+    const frame = requestAnimationFrame(() => {
+      void flow.fitView({
+        nodes: ids.map((id) => ({ id })),
+        padding: 0.24,
+        maxZoom: 1,
+        minZoom: 0.3,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [routeKey, flow]);
   const receive = useCallback(
     (project: string, row: CanvasTrial) =>
       setTrials((old) => ({ ...old, [project]: row })),
     []
   );
-  const region = regions.find((r) => r.id === pick?.project);
   return (
     <Context.Provider value={{ trials, open }}>
       {regions
@@ -174,27 +266,29 @@ export function CanvasTrials({
             receive={receive}
           />
         ))}
-      {children}
-      {pick && region && (
-        <TrialDialog
-          key={pick.project + pick.id + pick.results}
-          pick={pick}
-          region={region}
-          choices={choices}
-          email={email}
-          account={account}
-          trial={trials[region.id]}
-          close={() => open(null)}
-          accepted={(row) => {
-            receive(region.id, row);
-            setEpochs((old) => ({
-              ...old,
-              [region.id]: (old[region.id] ?? 0) + 1,
-            }));
-            open(null);
-          }}
-        />
-      )}
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
+        {children}
+        {pick && region && (
+          <TrialDialog
+            key={pick.project + pick.results}
+            pick={pick}
+            region={region}
+            choices={choices}
+            email={email}
+            account={account}
+            trial={trials[region.id]}
+            close={() => setPick(null)}
+            accepted={(row) => {
+              receive(region.id, row);
+              setEpochs((old) => ({
+                ...old,
+                [region.id]: (old[region.id] ?? 0) + 1,
+              }));
+              setPick({ ...pick, results: true });
+            }}
+          />
+        )}
+      </div>
     </Context.Provider>
   );
 }
@@ -224,7 +318,11 @@ function TrialDialog({
   const lock = useRef(false),
     request = useRef({ key: '', id: '' });
   const path = pathFrom(region.agents, pick.id);
-  const step = trial?.steps.find((s) => s.agent_id === pick.id);
+  const [chosen, setChosen] = useState(pick.id);
+  useEffect(() => setChosen(pick.id), [pick.id]);
+  const step = trial?.steps.find((s) => s.agent_id === chosen);
+  const previous =
+    trial && step ? trial.steps[trial.steps.indexOf(step) - 1] : undefined;
   const start = async () => {
     if (lock.current || !path || !prompt.trim()) return;
     lock.current = true;
@@ -271,41 +369,144 @@ function TrialDialog({
     }
   };
   return (
-    <Dialog
-      open
-      onOpenChange={(v) => {
-        if (!v && !busy) close();
-      }}
+    <NodeInspector
+      docked
+      inline
+      expanded={!pick.results}
+      busy={busy}
+      title={t(pick.results ? 'chat.node-run-result' : 'chat.canvas-trial')}
+      subtitle={region.name}
+      close={close}
+      restoreFocus={() => pick.opener?.focus({ preventScroll: true })}
     >
-      <DialogContent
-        size="md"
-        overlayVariant="dimmed"
-        aria-describedby={undefined}
-      >
-        <DialogHeader
-          title={t(pick.results ? 'chat.node-run-result' : 'chat.canvas-trial')}
-          subtitle={
-            pick.results ? step?.name : path?.map((n) => n.name).join(' → ')
-          }
-        />
-        <DialogContentSection className="scrollbar-always-visible flex flex-col gap-ds-stack-related">
-          {pick.results && step ? (
-            <>
-              <DsText role="meta" className="text-ds-ink-muted-default">
-                {trial?.prompt}
+      <DialogContentSection className="scrollbar-always-visible flex flex-col gap-ds-16">
+        {pick.results && step && trial ? (
+          <>
+            <details>
+              <summary className="cursor-pointer text-ds-text-meta text-ds-ink-muted-default focus-visible:ring-2 focus-visible:ring-ds-ring-focus">
+                {t('chat.trial-input')}
+              </summary>
+              <DsText
+                role="base"
+                className="pt-ds-8 break-words whitespace-pre-wrap"
+              >
+                {trial.prompt}
               </DsText>
-              <DsText role="base" weight="semibold" aria-live="polite">
-                {t(statusKey(step.status))}
-              </DsText>
-              <DsText role="base" className="break-words whitespace-pre-wrap">
-                {step.output ||
-                  (step.status === 'failed'
-                    ? t('chat.session-agents-run-error')
-                    : '')}
-              </DsText>
-            </>
-          ) : path ? (
-            <>
+            </details>
+            <nav
+              aria-label={t('chat.node-run-result')}
+              className="flex flex-wrap items-center gap-ds-4"
+            >
+              {trial.steps.map((s, i) => (
+                <div
+                  key={s.agent_id}
+                  className="flex min-w-0 items-center gap-ds-4"
+                >
+                  {i > 0 && (
+                    <DsIcon
+                      icon={ArrowRight}
+                      recipe="main-compact"
+                      className="text-ds-ink-muted-default"
+                    />
+                  )}
+                  <Button
+                    size="sm"
+                    variant={chosen === s.agent_id ? 'secondary' : 'ghost'}
+                    aria-pressed={chosen === s.agent_id}
+                    onClick={() => setChosen(s.agent_id)}
+                    className="min-w-0"
+                    title={s.name}
+                  >
+                    <DsIcon
+                      icon={stateIcon(s.status)}
+                      className={stateColor(s.status)}
+                    />
+                    <span className="truncate">{s.name}</span>
+                  </Button>
+                </div>
+              ))}
+            </nav>
+            <section
+              className="flex min-w-0 flex-col gap-ds-12"
+              aria-label={step.name}
+            >
+              <div className="flex flex-wrap items-center gap-ds-control-gap">
+                <DsText
+                  as="h3"
+                  role="body-large"
+                  weight="semibold"
+                  className="min-w-0 flex-1 break-words"
+                >
+                  {step.name}
+                </DsText>
+                <Badge
+                  size="sm"
+                  variant="secondary"
+                  tone={
+                    step.status === 'completed'
+                      ? 'success'
+                      : step.status === 'failed'
+                        ? 'error'
+                        : step.status === 'running'
+                          ? 'information'
+                          : 'neutral'
+                  }
+                  aria-live="polite"
+                >
+                  {t(statusKey(step.status))}
+                </Badge>
+              </div>
+              {step.output ? (
+                <MarkDown
+                  content={step.output}
+                  enableTypewriter={false}
+                  profile="compact"
+                />
+              ) : (
+                <DsText role="base" className="text-ds-ink-muted-default">
+                  {t(
+                    step.status === 'failed'
+                      ? 'chat.session-agents-run-error'
+                      : step.status === 'interrupted'
+                        ? 'chat.session-agents-interrupted'
+                        : statusKey(step.status)
+                  )}
+                </DsText>
+              )}
+            </section>
+            {previous?.output && (
+              <details className="border-x-0 border-t border-b-0 border-solid border-ds-hairline-default-default pt-ds-12">
+                <summary className="cursor-pointer text-ds-text-base text-ds-ink-muted-default focus-visible:outline focus-visible:outline-2 focus-visible:outline-ds-ring-focus">
+                  {t('chat.handoff-reference')} · {previous.name}
+                </summary>
+                <MarkDown
+                  content={previous.output}
+                  enableTypewriter={false}
+                  profile="compact"
+                  className="pt-ds-12"
+                />
+              </details>
+            )}
+          </>
+        ) : path ? (
+          <>
+            <div className="flex flex-wrap items-center gap-ds-control-gap">
+              {path.map((n, i) => (
+                <div key={n.id} className="flex min-w-0 items-center gap-ds-6">
+                  {i > 0 && (
+                    <DsIcon
+                      icon={ArrowRight}
+                      recipe="main-compact"
+                      className="text-ds-ink-muted-default"
+                    />
+                  )}
+                  <DsText role="base" className="break-words">
+                    {n.name}
+                  </DsText>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-col gap-ds-8">
               <label htmlFor="canvas-trial-input">
                 <DsText role="base" weight="semibold">
                   {t('chat.trial-input')}
@@ -313,31 +514,44 @@ function TrialDialog({
               </label>
               <Textarea
                 id="canvas-trial-input"
-                autoFocus
                 variant="outlined"
                 size="sm"
-                rows={4}
+                rows={5}
                 maxLength={32000}
                 disabled={busy}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
               />
-              {error && <div role="alert">{t(error)}</div>}
-              <Button
-                size="sm"
-                className="self-end"
-                disabled={busy || !prompt.trim() || trial?.status === 'running'}
-                onClick={() => void start()}
+            </div>
+            {error && (
+              <DsText
+                role="base"
+                as="p"
+                aria-live="assertive"
+                className="text-ds-text-error-strong-default"
               >
-                <DsIcon icon={Play} />
-                {t('chat.canvas-trial')}
-              </Button>
-            </>
-          ) : (
-            <DsText role="base">{t('chat.trial-linear')}</DsText>
-          )}
-        </DialogContentSection>
-      </DialogContent>
-    </Dialog>
+                {t(error)}
+              </DsText>
+            )}
+          </>
+        ) : (
+          <DsText role="base">{t('chat.trial-linear')}</DsText>
+        )}
+      </DialogContentSection>
+      {!pick.results && path && (
+        <footer className="flex shrink-0 justify-end p-ds-panel-inset">
+          <Button
+            size="sm"
+            disabled={busy || !prompt.trim() || trial?.status === 'running'}
+            onClick={() => void start()}
+          >
+            <DsIcon icon={busy ? Circle : Play} />
+            {t(
+              busy ? 'chat.session-agents-status-running' : 'chat.canvas-trial'
+            )}
+          </Button>
+        </footer>
+      )}
+    </NodeInspector>
   );
 }

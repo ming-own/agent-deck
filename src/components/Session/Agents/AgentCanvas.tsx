@@ -1,4 +1,10 @@
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { DsIcon } from '@/components/ui/ds-icon';
 import { DsText } from '@/components/ui/ds-text';
 import {
@@ -24,6 +30,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  useViewport,
   type Edge,
   type Node,
   type NodeProps,
@@ -41,6 +48,7 @@ import {
   Link2,
   Maximize,
   Minus,
+  MoreHorizontal,
   Plus,
   Settings2,
   Workflow,
@@ -48,7 +56,12 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CanvasLinks } from './CanvasLinks';
-import { CanvasTrials, TrialAction, TrialResult } from './CanvasTrial';
+import {
+  CanvasTrials,
+  TrialAction,
+  TrialPreview,
+  TrialResult,
+} from './CanvasTrial';
 
 type EditNode = (
   project: string,
@@ -63,7 +76,7 @@ type Region = {
   retry: () => void;
 };
 type AreaNode = Node<
-  { region: Region; edit: EditNode; current: boolean },
+  { region: Region; edit: EditNode; current: boolean; openRouter: OpenRouter },
   'sessionArea'
 >;
 type ShowLinks = (project: string, id: string, target?: string) => void;
@@ -85,14 +98,11 @@ type OpenRouter = (
   agents: SessionAgent[],
   opener: HTMLButtonElement
 ) => void;
-type RouterNode = Node<{ region: Region; openRouter: OpenRouter }, 'router'>;
-type BoardNode = AreaNode | AgentNode | RouterNode;
-// A pinned router occupies the strip above the editable Agent layout.
-const ROUTER_STRIP = 52;
+type BoardNode = AreaNode | AgentNode;
 
 // Flow-space geometry, in unscaled world coordinates. Cards live inside their parent region.
 const CARD_W = 224,
-  CARD_H = 100,
+  CARD_H = 120,
   PAD = 24,
   HEADER = 64,
   GUTTER = 48;
@@ -104,7 +114,7 @@ const initialPosition = (index: number) => ({
 function SessionArea({ data }: NodeProps<AreaNode>) {
   const { t } = useTranslation();
   return (
-    <div className="flex h-full w-full flex-col rounded-ds-panel border border-x border-y border-solid border-ds-hairline-default-default bg-ds-neutral-subtle-default">
+    <div className="flex h-full w-full flex-col rounded-ds-panel border border-x border-y border-dashed border-ds-hairline-default-default bg-ds-neutral-muted-default">
       <div className="flex items-center gap-ds-control-gap px-ds-panel-inset py-ds-12">
         <DsIcon
           icon={Folder}
@@ -127,6 +137,23 @@ function SessionArea({ data }: NodeProps<AreaNode>) {
         </DsText>
         <Button
           className="nodrag nopan pointer-events-auto ml-auto"
+          size="sm"
+          variant="ghost"
+          title={t('chat.route-node')}
+          onClick={(e) =>
+            data.openRouter(
+              data.region.id,
+              data.region.name,
+              data.region.agents,
+              e.currentTarget
+            )
+          }
+        >
+          <DsIcon icon={Workflow} />
+          {t('chat.route-node')}
+        </Button>
+        <Button
+          className="nodrag nopan pointer-events-auto"
           size="sm"
           variant="ghost"
           buttonContent="icon-only"
@@ -162,9 +189,11 @@ function SessionArea({ data }: NodeProps<AreaNode>) {
 function AgentCard({ data, selected }: NodeProps<AgentNode>) {
   const { t } = useTranslation(),
     a = data.agent;
+  const opener = useRef<HTMLButtonElement>(null);
+  const transferFocus = useRef(false);
   return (
     <div
-      className={`flex h-full min-w-0 flex-col justify-center gap-ds-6 rounded-ds-card border border-x border-y border-solid bg-ds-neutral-subtle-default px-ds-12 ${selected ? 'border-ds-accent-strong-default' : 'border-ds-hairline-default-default'}`}
+      className={`flex h-full min-w-0 flex-col justify-center gap-ds-4 rounded-ds-card border border-x border-y border-solid bg-ds-neutral-subtle-default px-ds-12 ${selected ? 'border-ds-accent-strong-default' : 'border-ds-hairline-default-default'}`}
     >
       <Handle
         type="target"
@@ -179,102 +208,126 @@ function AgentCard({ data, selected }: NodeProps<AgentNode>) {
         className="!size-ds-8 !border-ds-ink-muted-default !bg-ds-ink-muted-default after:absolute after:-inset-ds-8 after:rounded-full after:content-['']"
       />
       <div className="flex min-w-0 items-center gap-ds-control-gap">
-        <DsIcon icon={a.workforce ? Workflow : Bot} />
-        <DsText
-          role="body-large"
-          weight="semibold"
-          className="min-w-0 flex-1 truncate"
-          title={a.name}
-        >
-          {a.name}
-        </DsText>
-        <TrialAction project={data.project} agent={a} />
+        <DsIcon
+          icon={a.workforce ? Workflow : Bot}
+          className="text-ds-ink-muted-default"
+        />
         <Button
-          className="nodrag nopan"
-          size="xs"
-          variant="ghost"
-          buttonContent="icon-only"
-          title={t('chat.canvas-links')}
-          aria-label={t('chat.canvas-links') + ' · ' + a.name}
-          onClick={() => data.showLinks(data.project, a.id)}
-        >
-          <DsIcon icon={Link2} recipe="main-compact" />
-        </Button>
-        <Button
-          className="nodrag nopan"
-          size="xs"
-          variant="ghost"
-          buttonContent="icon-only"
+          ref={opener}
           data-node-config
+          size="xs"
+          variant="text"
+          className="nodrag nopan min-w-0 flex-1 justify-start px-0"
           aria-label={t('chat.canvas-edit-node', { name: a.name })}
-          title={t('chat.session-agents-edit')}
+          title={a.name}
           onClick={(e) => data.edit(data.project, e.currentTarget, a)}
         >
-          <DsIcon icon={Settings2} recipe="main-compact" />
+          <DsText role="body-large" weight="semibold" className="truncate">
+            {a.name}
+          </DsText>
         </Button>
+        <DropdownMenu
+          onOpenChange={(open) => {
+            if (open) transferFocus.current = false;
+          }}
+        >
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="xs"
+              variant="ghost"
+              buttonContent="icon-only"
+              className="nodrag nopan"
+              aria-label={t('layout.more-actions') + ' · ' + a.name}
+              title={t('layout.more-actions')}
+            >
+              <DsIcon icon={MoreHorizontal} recipe="main-compact" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            onCloseAutoFocus={(e) => {
+              if (transferFocus.current) e.preventDefault();
+            }}
+          >
+            <DropdownMenuItem
+              onSelect={() => {
+                transferFocus.current = true;
+                if (opener.current) data.edit(data.project, opener.current, a);
+              }}
+            >
+              <DsIcon icon={Settings2} />
+              {t('chat.session-agents-edit')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                transferFocus.current = true;
+                data.showLinks(data.project, a.id);
+              }}
+            >
+              <DsIcon icon={Link2} />
+              {t('chat.canvas-links')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-      <TrialResult project={data.project} agent={a}>
-        <DsText role="base" className="truncate" title={a.model.name}>
+      <div className="flex min-w-0 items-center gap-ds-control-gap">
+        <DsText
+          role="meta"
+          className="min-w-0 flex-1 truncate text-ds-ink-muted-default"
+          title={a.model.name}
+        >
           {a.model.name}
           {a.template_version ? ' · v' + a.template_version : ''}
         </DsText>
-      </TrialResult>
-      {a.workforce ? (
-        <Button
-          size="xs"
-          variant="text"
-          className="nodrag nopan self-start"
-          aria-expanded={data.expanded}
-          aria-label={t('chat.team-members') + ' · ' + a.name}
-          onClick={() => data.toggle(a.id)}
-        >
-          <DsIcon
-            icon={data.expanded ? ChevronDown : ChevronRight}
-            recipe="main-compact"
-          />
-          {t('chat.canvas-branches', { n: a.workforce.branches.length })}
-        </Button>
-      ) : (
-        <DsText
-          role="meta"
-          className="truncate text-ds-ink-muted-default"
-          title={data.parentName}
-        >
-          {data.parentName ||
-            (a.harness_id === 'plan_execute'
-              ? t('chat.node-harness-plan-execute')
-              : t('chat.node-harness-standard'))}
-        </DsText>
-      )}
+        {a.workforce && (
+          <Button
+            size="xs"
+            variant="text"
+            className="nodrag nopan shrink-0"
+            aria-expanded={data.expanded}
+            aria-label={t('chat.team-members') + ' · ' + a.name}
+            onClick={() => data.toggle(a.id)}
+          >
+            <DsIcon
+              icon={data.expanded ? ChevronDown : ChevronRight}
+              recipe="main-compact"
+            />
+            {t('chat.canvas-branches', { n: a.workforce.branches.length })}
+          </Button>
+        )}
+      </div>
+      <TrialPreview project={data.project} agent={a} />
+      <div className="flex min-w-0 items-center gap-ds-control-gap">
+        <TrialResult project={data.project} agent={a}>
+          <DsText
+            role="meta"
+            className="min-w-0 flex-1 truncate text-ds-ink-muted-default"
+            title={data.parentName}
+          >
+            {data.parentName ||
+              (!a.workforce &&
+                (a.harness_id === 'plan_execute'
+                  ? t('chat.node-harness-plan-execute')
+                  : t('chat.node-harness-standard')))}
+          </DsText>
+        </TrialResult>
+        <TrialAction project={data.project} agent={a} />
+      </div>
     </div>
   );
 }
-function RouterCard({ data }: NodeProps<RouterNode>) {
-  const { t } = useTranslation();
+const types = { sessionArea: SessionArea, agentCard: AgentCard };
+function ZoomLevel() {
+  const { zoom } = useViewport();
   return (
-    <Button
-      variant="secondary"
-      size="sm"
-      className="nodrag nopan pointer-events-auto"
-      onClick={(e) =>
-        data.openRouter(
-          data.region.id,
-          data.region.name,
-          data.region.agents,
-          e.currentTarget
-        )
-      }
+    <DsText
+      role="meta"
+      className="px-ds-4 text-ds-ink-muted-default tabular-nums"
     >
-      <DsIcon icon={Workflow} />
-      {t('chat.route-node')}
-    </Button>
+      {Math.round(zoom * 100)}%
+    </DsText>
   );
 }
-const types = {
-  sessionArea: SessionArea,
-  agentCard: AgentCard,
-  router: RouterCard,
-};
 function buildBoard(
   regions: Region[],
   current: string,
@@ -340,33 +393,23 @@ function buildBoard(
         type: 'sessionArea',
         position: { x, y },
         width,
-        height: height + ROUTER_STRIP,
+        height,
         draggable: false,
         selectable: false,
         focusable: false,
-        data: { region, edit, current: region.id === current },
-      });
-      nodes.push({
-        id: 'router:' + region.id,
-        type: 'router',
-        parentId,
-        position: { x: PAD, y: HEADER },
-        draggable: false,
-        selectable: false,
-        focusable: false,
-        data: { region, openRouter },
+        data: { region, edit, current: region.id === current, openRouter },
       });
       visible.forEach((a, j) =>
         nodes.push({
           id: a.id,
           type: 'agentCard',
           parentId,
-          position: { x: positions[j].x, y: positions[j].y + ROUTER_STRIP },
+          position: { x: positions[j].x, y: positions[j].y },
           width: CARD_W,
           height: CARD_H,
           extent: [
-            [PAD, HEADER + ROUTER_STRIP],
-            [1_000_000 + CARD_W, 1_000_000 + CARD_H + ROUTER_STRIP],
+            [PAD, HEADER],
+            [1_000_000 + CARD_W, 1_000_000 + CARD_H],
           ],
           ariaLabel: a.name,
           data: {
@@ -380,7 +423,7 @@ function buildBoard(
           },
         })
       );
-      rowHeight = Math.max(rowHeight, height + ROUTER_STRIP);
+      rowHeight = Math.max(rowHeight, height);
       x += width + GUTTER;
     }
     y += rowHeight + GUTTER;
@@ -412,6 +455,8 @@ export function AgentCanvas(props: {
   email: string;
   openRouter: OpenRouter;
   edit: EditNode;
+  inspectorOpen?: boolean;
+  onInspect?: () => void;
 }) {
   return (
     <ReactFlowProvider>
@@ -428,6 +473,8 @@ function CanvasBody({
   email,
   openRouter,
   edit,
+  inspectorOpen,
+  onInspect,
 }: {
   account: string;
   projectId: string;
@@ -436,6 +483,8 @@ function CanvasBody({
   email: string;
   openRouter: OpenRouter;
   edit: EditNode;
+  inspectorOpen?: boolean;
+  onInspect?: () => void;
 }) {
   const { t } = useTranslation();
   const meta = useSpaceStore((s) => s.getProjectMeta(projectId));
@@ -726,7 +775,7 @@ function CanvasBody({
       if (n?.type !== 'agentCard') continue;
       const pos = {
         x: Math.round(ch.position.x),
-        y: Math.round(ch.position.y - ROUTER_STRIP),
+        y: Math.round(ch.position.y),
       };
       setOffsets((old) => ({ ...old, [n.id]: pos }));
       if (!ch.dragging) void save(n, pos);
@@ -737,6 +786,8 @@ function CanvasBody({
       key={account}
       account={account}
       regions={regions}
+      inspectorOpen={inspectorOpen}
+      onInspect={onInspect}
       choices={choices}
       email={email}
     >
@@ -855,6 +906,7 @@ function CanvasBody({
             </Panel>
             <Panel position="bottom-left">
               <div className="flex items-center gap-ds-4 rounded-ds-field bg-ds-neutral-subtle-default p-ds-4 shadow-ds-elevation-control">
+                <ZoomLevel />
                 {[
                   {
                     icon: Minus,

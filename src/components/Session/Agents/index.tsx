@@ -470,6 +470,11 @@ function AgentInstances({
           projectId={projectId}
           refreshKey={canvasEpoch}
           edit={editCanvasNode}
+          inspectorOpen={!!editor || !!team}
+          onInspect={() => {
+            setEditor(null);
+            setTeam(null);
+          }}
         />
       )}
       {!canvas && !loading && !error && !nodes.length && (
