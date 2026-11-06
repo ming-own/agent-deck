@@ -14,6 +14,7 @@
 
 import { proxyFetchGet } from '@/api/http';
 import i18n from '@/i18n';
+import { getAccountEnvironmentKey } from '@/lib/authEnvironment';
 import { notifyExecutionError } from '@/lib/notifyError';
 import { withoutTriggerPlaceholderTasks } from '@/lib/projectRuntimeHydration';
 import { parseServerTimestamp } from '@/lib/serverTimestamp';
@@ -26,6 +27,10 @@ import {
   proxyFetchTrigger,
   proxyUpdateTriggerExecution,
 } from '@/service/triggerApi';
+import {
+  executeWorkspaceAutomation,
+  reconcileWorkspaceAutomationExecutions,
+} from '@/service/workspaceAutomationExecution';
 import { useAuthStore } from '@/store/authStore';
 import { useInstallationStore } from '@/store/installationStore';
 import {
@@ -113,7 +118,8 @@ export function useTriggerTaskExecutor() {
   const loadProjectFromHistory = useCallback(
     async (
       projectId: string,
-      store: typeof projectStoreRef.current
+      store: typeof projectStoreRef.current,
+      accountKey: string
     ): Promise<boolean> => {
       try {
         console.log(
@@ -123,8 +129,13 @@ export function useTriggerTaskExecutor() {
 
         // Fetch grouped history to find the project
         const historyProject = await proxyFetchGet(
-          `/api/v1/chat/histories/grouped/${projectId}?include_tasks=true`
+          `/api/v1/chat/histories/grouped/${projectId}?include_tasks=true`,
+          undefined,
+          undefined,
+          { expectedAccountKey: accountKey }
         );
+        if (getAccountEnvironmentKey(useAuthStore.getState()) !== accountKey)
+          throw new Error('Automation account changed before delivery');
 
         const tasks = withoutTriggerPlaceholderTasks<{
           id?: string | number | null;
@@ -176,6 +187,16 @@ export function useTriggerTaskExecutor() {
     []
   );
 
+  const admitExecution = useCallback((key: string): boolean => {
+    const admitted = admittedExecutionIds.current;
+    if (admitted.has(key)) return false;
+    admitted.add(key);
+    if (admitted.size > ADMITTED_EXECUTION_LIMIT) {
+      admitted.delete(admitted.values().next().value as string);
+    }
+    return true;
+  }, []);
+
   /**
    * Execute a triggered task by:
    * 1. Creating or selecting a project (loading from history if needed)
@@ -184,6 +205,16 @@ export function useTriggerTaskExecutor() {
    */
   const executeTask = useCallback(
     async (task: TriggeredTask) => {
+      const accountKey = getAccountEnvironmentKey(useAuthStore.getState());
+      const admissionKey = JSON.stringify([
+        accountKey,
+        task.executionId || task.id,
+      ]);
+      if (!admitExecution(admissionKey)) return;
+      const assertCurrent = () => {
+        if (getAccountEnvironmentKey(useAuthStore.getState()) !== accountKey)
+          throw new Error('Automation account changed before delivery');
+      };
       console.log(
         '[TriggerTaskExecutor] Executing task:',
         task.id,
@@ -209,7 +240,8 @@ export function useTriggerTaskExecutor() {
             triggerId: task.triggerId,
             triggerName: task.triggerName,
             projectId: task.projectId || undefined,
-          }
+          },
+          accountKey
         ).catch((error) =>
           console.warn(
             '[TriggerTaskExecutor] Could not report the execution start:',
@@ -220,9 +252,54 @@ export function useTriggerTaskExecutor() {
 
       try {
         const store = projectStoreRef.current;
+        // Bindings belong to the event's Space, never the Space currently open
+        // on screen. Older events can recover it from their canonical Session.
+        let spaceId =
+          task.spaceId ||
+          (task.projectId
+            ? store.getProjectById(task.projectId)?.spaceId ||
+              useSpaceStore.getState().getProjectMeta(task.projectId)?.spaceId
+            : undefined);
+        let trigger = useTriggerStore.getState().getTriggerById(task.triggerId);
+        const fallbackName = i18n.t('triggers.automation-fallback-name', {
+          id: task.triggerId,
+        });
+        if (
+          !spaceId ||
+          !task.triggerName.trim() ||
+          task.triggerName === fallbackName
+        ) {
+          // Execution websocket payloads from older servers omit space_id.
+          // The websocket can also beat Run now before its name is cached.
+          trigger ??= await proxyFetchTrigger(task.triggerId);
+          assertCurrent();
+          spaceId ||=
+            trigger?.space_id ||
+            (trigger?.project_id
+              ? store.getProjectById(trigger.project_id)?.spaceId ||
+                useSpaceStore.getState().getProjectMeta(trigger.project_id)
+                  ?.spaceId
+              : undefined);
+        }
+        if (trigger?.name?.trim())
+          task = { ...task, triggerName: trigger.name };
+        if (spaceId) {
+          const automation = await executeWorkspaceAutomation(task, {
+            accountKey,
+            spaceId,
+            name: automationProjectName(task),
+            onProject: (project) => {
+              assertCurrent();
+              store.upsertProjectsFromServer([project]);
+            },
+          });
+          assertCurrent();
+          if (automation) return;
+        }
         let targetProjectId = task.projectId;
         if (targetProjectId)
           await requireLegacyExecution(executionScope(targetProjectId));
+        assertCurrent();
 
         if (!targetProjectId) {
           // No project specified, create a new project for this automation.
@@ -247,7 +324,12 @@ export function useTriggerTaskExecutor() {
 
           if (!existingProject) {
             // Project doesn't exist locally, try to load from history
-            const loaded = await loadProjectFromHistory(targetProjectId, store);
+            const loaded = await loadProjectFromHistory(
+              targetProjectId,
+              store,
+              accountKey
+            );
+            assertCurrent();
 
             if (!loaded) {
               console.log(
@@ -285,6 +367,7 @@ export function useTriggerTaskExecutor() {
           attachmentPaths: [],
           source: 'scheduled',
         });
+        assertCurrent();
 
         // The renderer mirrors the durable Brain queue for immediate UI. It
         // is not the authority and may be rebuilt after a restart.
@@ -327,6 +410,10 @@ export function useTriggerTaskExecutor() {
           queuedTaskId
         );
       } catch (error: any) {
+        admittedExecutionIds.current.delete(admissionKey);
+        // A stale response must not write toasts or state into the next account.
+        if (getAccountEnvironmentKey(useAuthStore.getState()) !== accountKey)
+          return;
         console.error('[TriggerTaskExecutor] Task queueing failed:', error);
         notifyExecutionError(
           i18n.t('triggers.execution-failed-toast', { name: task.triggerName }),
@@ -340,31 +427,13 @@ export function useTriggerTaskExecutor() {
         );
       }
     },
-    [activeSpaceId, loadProjectFromHistory]
+    [activeSpaceId, loadProjectFromHistory, admitExecution]
   );
-
-  const admitExecution = useCallback((executionId: string): boolean => {
-    if (!executionId) return true;
-    const admitted = admittedExecutionIds.current;
-    if (admitted.has(executionId)) return false;
-    admitted.add(executionId);
-    if (admitted.size > ADMITTED_EXECUTION_LIMIT) {
-      admitted.delete(admitted.values().next().value as string);
-    }
-    return true;
-  }, []);
 
   // Watch for new tasks via WebSocket events and route to projectStore
   useEffect(() => {
     if (!pendingEventCount) return;
     for (const event of useTriggerStore.getState().takeWebSocketEvents()) {
-      if (!admitExecution(event.executionId)) {
-        console.log(
-          '[TriggerTaskExecutor] Execution already started:',
-          event.executionId
-        );
-        continue;
-      }
       console.log(
         '[TriggerTaskExecutor] WebSocket event received:',
         event.executionId
@@ -387,7 +456,7 @@ export function useTriggerTaskExecutor() {
       // Execute the task (adds to projectStore queuedMessages)
       void executeTask(task);
     }
-  }, [pendingEventCount, admitExecution, executeTask]);
+  }, [pendingEventCount, executeTask]);
 
   /** Start executions that were created but never reached this app. */
   const reconcilePendingExecutions = useCallback(async () => {
@@ -402,12 +471,30 @@ export function useTriggerTaskExecutor() {
       return;
     }
     reconciling.current = true;
+    const accountKey = getAccountEnvironmentKey(useAuthStore.getState());
+    const current = () =>
+      getAccountEnvironmentKey(useAuthStore.getState()) === accountKey;
     try {
       do {
         reconcileAgain.current = false;
+        await reconcileWorkspaceAutomationExecutions(
+          (project) => {
+            if (current())
+              projectStoreRef.current.upsertProjectsFromServer([project]);
+          },
+          async (task) => {
+            if (current()) await executeTask(task);
+          }
+        );
+        if (!current()) return;
         const now = Date.now();
         for (const execution of await proxyFetchPendingExecutions()) {
-          if (admittedExecutionIds.current.has(execution.execution_id))
+          if (!current()) return;
+          if (
+            admittedExecutionIds.current.has(
+              JSON.stringify([accountKey, execution.execution_id])
+            )
+          )
             continue;
           const age = now - parseServerTimestamp(execution.created_at);
           if (!(age <= RECONCILE_MAX_AGE_MS)) continue;
@@ -416,6 +503,7 @@ export function useTriggerTaskExecutor() {
             const trigger =
               store.getTriggerById(execution.trigger_id) ??
               (await proxyFetchTrigger(execution.trigger_id));
+            if (!current()) return;
             console.log(
               '[TriggerTaskExecutor] Starting an execution the websocket missed:',
               execution.execution_id
@@ -445,7 +533,7 @@ export function useTriggerTaskExecutor() {
     } finally {
       reconciling.current = false;
     }
-  }, []);
+  }, [executeTask]);
 
   // Run now and pending executions are only started in this window.
   useEffect(() => {

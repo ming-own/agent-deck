@@ -123,6 +123,20 @@ def latest_canvas_trial(
         raise translate(exc) from exc
 
 
+@router.get("/{project_id}/canvas/trials/{trial_id}")
+def get_canvas_trial(
+    project_id: str,
+    trial_id: str,
+    account: Annotated[str, Depends(owner)],
+):
+    try:
+        return canvas_trials.get(
+            service().store, (account, project_id), trial_id
+        )
+    except NotFound as exc:
+        raise translate(exc) from exc
+
+
 @router.put("/{project_id}/{agent_id}")
 async def update_agent(
     project_id: str,

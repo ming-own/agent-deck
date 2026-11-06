@@ -41,7 +41,10 @@ def test_pre_task_database_migrates_once_and_keeps_original_turn(tmp_path):
         """)
     for _ in range(2):
         store = AgentStore(path)
-        assert store.tasks(*scope) == [{"id": "default", "name": ""}]
+        [task] = store.tasks(*scope)
+        assert task["id"] == "default" and task["name"] == ""
+        assert task["last_run"]["id"] == run["id"]
+        assert task["last_run"]["status"] == "completed"
         [record] = store.runs(*scope)
         assert record["id"] == run["id"] and record["task_id"] == "default"
         assert store.history(*scope) == [
@@ -182,3 +185,64 @@ def test_forward_keeps_the_exact_source_turn_and_target_context(tmp_path):
     )
     assert restored.history(*scope, target, task) == [(prompt, "120")]
     assert restored.history(*scope, target) == []
+
+
+def test_tasks_include_latest_scoped_run_summary_with_bounded_queries(
+    tmp_path, monkeypatch
+):
+    from contextlib import contextmanager
+
+    store = AgentStore(tmp_path / "tasks.db")
+    agent = node(store)
+    scope = ("owner", "session", agent)
+    empty = store.create_task(*scope, CreateTask(id=uuid4(), name="Empty"))
+    failed = store.create_task(*scope, CreateTask(id=uuid4(), name="Failed"))
+    for index in range(20):
+        store.create_task(
+            *scope, CreateTask(id=uuid4(), name=f"Pending {index}")
+        )
+    earlier, _ = store.begin(*scope, 1, "earlier", "Private earlier prompt")
+    store.finish(earlier["id"], "completed", "Private earlier output")
+    latest, _ = store.begin(*scope, 1, "latest", "Private current prompt")
+    failure, _ = store.begin(
+        *scope, 1, "failure", "Private failed prompt", task_id=failed["id"]
+    )
+    store.finish(failure["id"], "failed", error="provider_failed")
+    other = node(store)
+    store.begin("owner", "session", other, 1, "unrelated", "Unrelated prompt")
+    queries = []
+    original_connect = store.connect
+
+    @contextmanager
+    def trace_connect():
+        with original_connect() as db:
+            db.set_trace_callback(queries.append)
+            yield db
+
+    monkeypatch.setattr(store, "connect", trace_connect)
+    tasks = {task["id"]: task for task in store.tasks(*scope)}
+    assert tasks["default"]["last_run"] == {
+        "id": latest["id"],
+        "status": "running",
+        "created_at": latest["created_at"],
+        "finished_at": None,
+    }
+    assert tasks[failed["id"]]["last_run"]["id"] == failure["id"]
+    assert tasks[failed["id"]]["last_run"]["status"] == "failed"
+    assert tasks[failed["id"]]["last_run"]["finished_at"] is not None
+    assert tasks[empty["id"]] == empty
+    assert "Private" not in str(tasks) and "provider_failed" not in str(tasks)
+    assert (
+        len(
+            [
+                q
+                for q in queries
+                if q.lstrip().upper().startswith(("SELECT", "WITH"))
+            ]
+        )
+        <= 2
+    )
+    with pytest.raises(NotFound):
+        store.tasks("another", "session", agent)
+    with pytest.raises(NotFound):
+        store.tasks("owner", "other-session", agent)

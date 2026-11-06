@@ -48,3 +48,16 @@
 复用 Button（xs/sm，text/ghost/secondary）、DropdownMenu、Badge（语义状态色）、Textarea、DsText、DsIcon、MarkDown、NodeInspector 和共用自适应栏宽。采用 Neutral、Hairline、Ink 与 Success/Error/Information 语义；未新增设计规范例外，画布几何继续使用既有第三方视口规则。
 
 验证：type-check、check:design-tokens、focused ESLint、17 项相关 Vitest、git diff --check。Impeccable 检测无机械违规。
+
+
+## 2026-11-06：工作区统一画布
+
+统一入口复用既有 Space/Session、任务、trigger、memory 的原始 ID。会话使用容器区域，Agent 使用双框卡牌结构，其他对象使用紧凑资源节点。任务和团队内部节点按需展开，减少默认画布密度；资源默认放在执行节点左侧，连线沿读取与执行方向进入节点。画布与目录编辑的是同一记录，原会话入口、试运行、断开连线和手动转交仍可用。
+
+复用 ContentHeader、NodeInspector、AgentForm、CanvasNodeTasks、CanvasTrials、WorkforceDetails、TaskRouter、Button（text/ghost/secondary）、Tabs、Input、Select、Checkbox、Textarea、DsText、DsIcon。继续使用 Neutral/Ink/Hairline/Accent 与状态语义色、ds-card/panel/field 圆角和共用栏宽。卡牌装饰为几何线条，没有引入新字体、原始颜色或设计例外。
+
+检查了加载、错误反馈、资源编辑/引用保存、选中、执行状态、删除后引用解除、明暗主题，1440×900 与 780×650 桌面视口。窄窗口沿用底部检查面板，打开节点时自动定位所选卡牌；未做真机触屏、屏幕阅读器认证。布局、折叠状态和视口恢复经桌面重开验证。源文件机械扫描无发现（Impeccable detect 返回 []）。截图在本地忽略目录 .agentdeck-run.local/ui-previews/workspace-graph/。
+
+功能验收使用独立测试会话，不改写已有用户对话。真实模型确认选择的资料/记忆进入执行；修改资料保留历史版本；两次手动自动化生成独立会话，重复投递没有额外运行。自动化验收样本保持 inactive，无天气定时或外部通知。
+
+验证通过：88 项相关 Vitest、34 项后端 pytest、type-check、focused ESLint、check:design-tokens、check:i18n、git diff --check。pytest 报告仓库既有 asyncio fixture 弃用警告。最终定向代码复审通过。

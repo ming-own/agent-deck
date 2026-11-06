@@ -55,6 +55,10 @@ export interface CanvasTrial {
 export interface AgentTask {
   id: string;
   name: string;
+  last_run?: Pick<
+    SessionAgentRun,
+    'id' | 'status' | 'created_at' | 'finished_at'
+  >;
 }
 
 export interface SourceAnswer {
@@ -177,6 +181,13 @@ export function sessionAgentApi(account: string, projectId: string) {
   const headers = { 'X-AgentDeck-Account': account };
   const options = { expectedAccountKey: account };
   return {
+    trial: (id: string): Promise<CanvasTrial | null> =>
+      fetchGet(
+        `${root}/canvas/trials/${encodeURIComponent(id)}`,
+        undefined,
+        headers,
+        options
+      ),
     latestTrial: (): Promise<CanvasTrial | null> =>
       fetchGet(`${root}/canvas/trials/latest`, undefined, headers, options),
     startTrial: (body: Record<string, unknown>): Promise<CanvasTrial> =>

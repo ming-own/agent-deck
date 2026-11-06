@@ -74,6 +74,12 @@ vi.mock('@/api/http', () => ({
 
 vi.mock('@/service/triggerApi', () => ({
   proxyUpdateTriggerExecution: vi.fn(() => Promise.resolve()),
+  proxyFetchTrigger: vi.fn().mockResolvedValue({}),
+}));
+
+vi.mock('@/service/workspaceAutomationExecution', () => ({
+  executeWorkspaceAutomation: vi.fn().mockResolvedValue(null),
+  reconcileWorkspaceAutomationExecutions: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('sonner', () => ({
@@ -90,6 +96,8 @@ vi.mock('react-router-dom', () => ({
 }));
 
 import { useTriggerTaskExecutor } from '@/hooks/useTriggerTaskExecutor';
+import { proxyFetchTrigger } from '@/service/triggerApi';
+import { executeWorkspaceAutomation } from '@/service/workspaceAutomationExecution';
 import { useProjectStore } from '@/store/projectStore';
 import { useTriggerStore } from '@/store/triggerStore';
 import type { TriggeredTask } from '@/store/triggerTaskStore';
@@ -113,6 +121,7 @@ function makeTask(overrides: Partial<TriggeredTask> = {}): TriggeredTask {
     executionId: overrides.executionId ?? `exec-${Date.now()}-${Math.random()}`,
     triggerType: (overrides.triggerType ?? 'webhook') as TriggerType,
     projectId: overrides.projectId ?? null,
+    spaceId: overrides.spaceId,
     inputData: overrides.inputData ?? {},
     timestamp: overrides.timestamp ?? Date.now(),
     formattedMessage: overrides.formattedMessage,
@@ -623,6 +632,112 @@ describe('useTriggerTaskExecutor — hook behavior', () => {
     expect(result.current.executeTask).toBeDefined();
     expect(typeof result.current.executeTask).toBe('function');
   });
+
+  it('runs a bound workspace target through its own Session without adding a legacy message', async () => {
+    vi.mocked(executeWorkspaceAutomation).mockResolvedValueOnce({
+      projectId: 'automation-session',
+      agentId: 'cloned-agent',
+      run: { id: 'agent-run', status: 'running' } as any,
+    });
+    const { result } = renderHook(() => useTriggerTaskExecutor());
+    const task = makeTask({
+      projectId: 'proj-A',
+      spaceId: 'space-A',
+      executionId: 'bound-event',
+    });
+    await act(async () => {
+      await result.current.executeTask(task);
+      await result.current.executeTask(task);
+    });
+    expect(executeWorkspaceAutomation).toHaveBeenCalledOnce();
+    expect(executeWorkspaceAutomation).toHaveBeenCalledWith(
+      task,
+      expect.objectContaining({ spaceId: 'space-A' })
+    );
+    expect(fetchPost).not.toHaveBeenCalled();
+    expect(
+      useProjectStore.getState().getProjectById('proj-A')!.queuedMessages
+    ).toHaveLength(0);
+  });
+
+  it('does not fall back to legacy chat when a bound target is missing', async () => {
+    vi.mocked(executeWorkspaceAutomation).mockRejectedValueOnce(
+      new Error('Automation source is unavailable')
+    );
+    const { result } = renderHook(() => useTriggerTaskExecutor());
+    await act(async () => {
+      await result.current.executeTask(
+        makeTask({ projectId: 'proj-A', spaceId: 'space-A' })
+      );
+    });
+    expect(fetchPost).not.toHaveBeenCalled();
+    expect(
+      useProjectStore.getState().getProjectById('proj-A')!.queuedMessages
+    ).toHaveLength(0);
+  });
+
+  it('recovers the workspace of a websocket event that omitted spaceId before selecting its execution lane', async () => {
+    vi.mocked(proxyFetchTrigger).mockResolvedValueOnce({
+      id: 987,
+      space_id: 'space-remote',
+    } as any);
+    vi.mocked(executeWorkspaceAutomation).mockResolvedValueOnce({
+      projectId: 'automation-session',
+      agentId: 'cloned-agent',
+      run: { id: 'run' } as any,
+    });
+    const { result } = renderHook(() => useTriggerTaskExecutor());
+    await act(async () => {
+      await result.current.executeTask(
+        makeTask({
+          triggerId: 987,
+          projectId: 'unloaded-project',
+          executionId: 'missing-space',
+        })
+      );
+    });
+    expect(executeWorkspaceAutomation).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ spaceId: 'space-remote' })
+    );
+    expect(fetchPost).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, 'space-remote'])(
+    'uses the canonical Automation name when the websocket won the Run now race (spaceId: %s)',
+    async (spaceId) => {
+      vi.mocked(proxyFetchTrigger).mockResolvedValueOnce({
+        id: 987,
+        name: 'Canonical Daily',
+        space_id: 'space-remote',
+      } as any);
+      vi.mocked(executeWorkspaceAutomation).mockResolvedValueOnce({
+        projectId: 'automation-session',
+        agentId: 'cloned-agent',
+        run: { id: 'run' } as any,
+      });
+      const { result } = renderHook(() => useTriggerTaskExecutor());
+      await act(async () => {
+        await result.current.executeTask(
+          makeTask({
+            triggerId: 987,
+            triggerName: 'Automation #987',
+            projectId: 'unloaded-project',
+            spaceId,
+            executionId: 'name-race',
+          })
+        );
+      });
+      expect(executeWorkspaceAutomation).toHaveBeenCalledWith(
+        expect.objectContaining({ triggerName: 'Canonical Daily' }),
+        expect.objectContaining({
+          spaceId: 'space-remote',
+          name: 'Automation: Canonical Daily',
+        })
+      );
+      expect(fetchPost).not.toHaveBeenCalled();
+    }
+  );
 
   it('should queue messages with triggerId and triggerName metadata', async () => {
     const { result } = renderHook(() => useTriggerTaskExecutor());

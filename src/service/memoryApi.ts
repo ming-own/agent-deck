@@ -103,13 +103,19 @@ const scopePath = (scopeType: MemoryScopeType, scopeId: string) =>
 export const listMemoryEntries = (
   scopeType: MemoryScopeType,
   scopeId: string,
-  includeDeleted = false
+  includeDeleted = false,
+  account?: string
 ): Promise<MemoryListResponse> =>
-  fetchGet('/memory/entries', {
-    scope_type: scopeType,
-    scope_id: scopeId,
-    include_deleted: includeDeleted,
-  });
+  fetchGet(
+    '/memory/entries',
+    {
+      scope_type: scopeType,
+      scope_id: scopeId,
+      include_deleted: includeDeleted,
+    },
+    undefined,
+    account ? { expectedAccountKey: account } : undefined
+  );
 
 export const listMemoryScopeSummaries = (
   scopes: Array<{ scopeType: MemoryScopeType; scopeId: string }>
@@ -166,7 +172,8 @@ export const consolidateMemoryScope = (
 export const createMemoryEntry = (
   scopeType: MemoryScopeType,
   scopeId: string,
-  input: { content: string; kind: MemoryKind; reason: string }
+  input: { content: string; kind: MemoryKind; reason: string },
+  account?: string
 ) =>
   fetchPost(
     `/memory/entries?scope_type=${encodeURIComponent(scopeType)}&scope_id=${encodeURIComponent(scopeId)}`,
@@ -175,23 +182,31 @@ export const createMemoryEntry = (
       content: input.content,
       kind: input.kind,
       reason: input.reason,
-    }
+    },
+    undefined,
+    account ? { expectedAccountKey: account } : undefined
   );
 
 export const updateMemoryEntry = (
   entry: MemoryEntry,
-  input: { content: string; kind: MemoryKind; reason: string }
+  input: { content: string; kind: MemoryKind; reason: string },
+  account?: string
 ) =>
-  fetchPatch(`/memory/entries/${encodeURIComponent(entry.memory_id)}`, {
-    request_id: crypto.randomUUID(),
-    expected_version: entry.version,
-    content: input.content,
-    kind: input.kind,
-    priority: entry.priority,
-    sensitivity: entry.sensitivity,
-    source_refs: entry.source_refs,
-    reason: input.reason,
-  });
+  fetchPatch(
+    `/memory/entries/${encodeURIComponent(entry.memory_id)}`,
+    {
+      request_id: crypto.randomUUID(),
+      expected_version: entry.version,
+      content: input.content,
+      kind: input.kind,
+      priority: entry.priority,
+      sensitivity: entry.sensitivity,
+      source_refs: entry.source_refs,
+      reason: input.reason,
+    },
+    undefined,
+    account ? { expectedAccountKey: account } : undefined
+  );
 
 const transitionMemoryEntry = (
   entry: MemoryEntry,

@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { ConfiguredModelChoice } from '@/lib/configuredModels';
 import {
   sessionAgentApi,
+  type AgentTask,
   type CanvasTrial,
   type SessionAgent,
 } from '@/service/sessionAgentApi';
@@ -99,10 +100,30 @@ export function TrialResult({
   project,
   agent,
   children,
-}: PickNode & { children: ReactNode }) {
+  latestRun,
+  onLatestRun,
+}: PickNode & {
+  children: ReactNode;
+  latestRun?: AgentTask['last_run'];
+  onLatestRun?: () => void;
+}) {
   const { t } = useTranslation(),
     { open, trials } = useContext(Context);
   const step = trials[project]?.steps.find((s) => s.agent_id === agent.id);
+  if (latestRun && latestRun.id !== step?.run_id && step?.status !== 'running')
+    return (
+      <Button
+        size="xs"
+        variant="text"
+        className="nodrag nopan min-w-0 flex-1 justify-start px-0"
+        onClick={onLatestRun}
+        aria-label={t('chat.node-run-result') + ' · ' + agent.name}
+      >
+        <DsText role="meta" className="truncate">
+          {t('chat.session-agents-status-' + latestRun.status)}
+        </DsText>
+      </Button>
+    );
   if (!step) return <>{children}</>;
   return (
     <Button
@@ -205,6 +226,7 @@ export function CanvasTrials({
   email,
   children,
   inspectorOpen,
+  flowNodeId,
   onInspect,
 }: {
   account: string;
@@ -213,6 +235,7 @@ export function CanvasTrials({
   email: string;
   children: ReactNode;
   inspectorOpen?: boolean;
+  flowNodeId?: (id: string) => string;
   onInspect?: () => void;
 }) {
   const [trials, setTrials] = useState<Record<string, CanvasTrial>>({}),
@@ -233,7 +256,9 @@ export function CanvasTrials({
         ? trials[region.id]?.steps.map((s) => s.agent_id)
         : pathFrom(region.agents, pick.id)?.map((n) => n.id)
       : undefined;
-  const routeKey = JSON.stringify(pathIds);
+  const routeKey = JSON.stringify(
+    pathIds?.map((id) => (flowNodeId ? flowNodeId(id) : id))
+  );
   useEffect(() => {
     if (!routeKey) return;
     const ids: string[] = JSON.parse(routeKey);

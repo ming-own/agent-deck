@@ -545,6 +545,7 @@ function CanvasNodeTasks({
   account,
   project,
   modelsLoading,
+  initialTaskId,
   openRouter,
 }: {
   node: SessionAgent;
@@ -554,6 +555,7 @@ function CanvasNodeTasks({
   account: string;
   project: string;
   modelsLoading: boolean;
+  initialTaskId?: string;
   openRouter: (r: RouterLocation) => void;
 }) {
   const { t } = useTranslation();
@@ -590,6 +592,7 @@ function CanvasNodeTasks({
     <AgentTasks
       key={current.id}
       agentId={current.id}
+      initialTaskId={initialTaskId}
       api={api}
       storageKey={
         'agentdeck:agent-task:' + JSON.stringify([account, project, current.id])
@@ -1497,3 +1500,5 @@ function QueueConfirmation({
     </div>
   );
 }
+
+export { AgentForm, CanvasNodeTasks };

@@ -51,6 +51,7 @@ vi.mock('@/components/Toast/trafficToast', () => ({
 
 import {
   fetchGet,
+  fetchPatch,
   fetchPost,
   fetchPut,
   getBaseURL,
@@ -100,7 +101,7 @@ describe('api/http handleResponse', () => {
     });
   });
 
-  it.each(['brain', 'brain-put', 'server'])(
+  it.each(['brain', 'brain-put', 'brain-patch', 'server'])(
     'does not send a %s request under a changed account after async URL resolution',
     async (target) => {
       const fetch = vi.spyOn(globalThis, 'fetch');
@@ -110,19 +111,21 @@ describe('api/http handleResponse', () => {
       const request =
         target === 'brain'
           ? fetchGet('/runs/exact-run', undefined, undefined, options)
-          : target === 'brain-put'
-            ? fetchPut(
-                '/workspace-bundles/install-proposals/p/local-values',
-                {},
-                undefined,
-                options
-              )
-            : proxyFetchPut(
-                '/api/v1/execution/exact-execution',
-                { status: 'completed' },
-                undefined,
-                options
-              );
+          : target === 'brain-patch'
+            ? fetchPatch('/memory/entries/id', {}, undefined, options)
+            : target === 'brain-put'
+              ? fetchPut(
+                  '/workspace-bundles/install-proposals/p/local-values',
+                  {},
+                  undefined,
+                  options
+                )
+              : proxyFetchPut(
+                  '/api/v1/execution/exact-execution',
+                  { status: 'completed' },
+                  undefined,
+                  options
+                );
       mocked.auth = { token: 'test-other-account', user_id: 2 };
       await expect(request).rejects.toThrow('account changed');
       expect(fetch).not.toHaveBeenCalled();

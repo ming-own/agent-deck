@@ -49,6 +49,20 @@ def latest(store, scope):
         )
 
 
+def get(store, scope, trial_id):
+    """Look up the exact idempotent execution, independent of later trials."""
+    with store.connect() as db:
+        db.execute("BEGIN")
+        store.require_open(db, *scope)
+        return receipt(
+            db,
+            db.execute(
+                "SELECT * FROM canvas_trials WHERE owner=? AND project=? AND id=?",
+                (*scope, trial_id),
+            ).fetchone(),
+        )
+
+
 def start(service, scope, body):
     store = service.store
     key = (*scope, str(body.id))

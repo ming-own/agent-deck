@@ -350,6 +350,13 @@ interface ProjectModelSelection {
 }
 
 interface ProjectMetadata {
+  /** Provenance of a cloned Agent/Workforce automation Session. No credentials. */
+  workspaceAutomation?: {
+    triggerId: number;
+    executionId: string;
+    sourceProjectId: string;
+    sourceAgentId: string;
+  };
   /** Session-owned Agent instances; independent of the legacy chat model pin. */
   agentSession?: boolean;
   canvasAgents?: boolean;

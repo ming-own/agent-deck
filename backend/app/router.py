@@ -43,6 +43,7 @@ from app.controller import (
     workspace_config_controller,
     workspace_controller,
     workspace_git_controller,
+    workspace_graph_controller,
 )
 
 logger = logging.getLogger("router")
@@ -62,6 +63,12 @@ def register_routers(app: FastAPI, prefix: str = "") -> None:
         prefix: Optional global prefix for all routes (e.g., "/api")
     """
     routers_config = [
+        {
+            "router": workspace_graph_controller.router,
+            "tags": ["Workspace Graph"],
+            "description": "Workspace resource metadata and explicit Agent references",
+            "self_authenticated": True,
+        },
         {
             "router": session_agent_controller.router,
             "tags": ["Session Agents"],

@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+import WorkspaceGraph from '@/components/Workspace/WorkspaceGraph';
 // ========= Copyright 2025-2026 @ Eigent.ai All Rights Reserved. =========
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -401,14 +403,29 @@ export default function WorkspacePage() {
     [chatStore, setActiveWorkspaceTab, t]
   );
 
+  const [workspaceConversation, setWorkspaceConversation] = useState(false);
   const renderActiveWorkspaceTab = () => {
     switch (activeWorkspaceTab) {
       case 'workforce':
+        if (!workspaceConversation)
+          return (
+            <WorkspaceGraph
+              onConversation={() => setWorkspaceConversation(true)}
+            />
+          );
         return (
           <div className={workspaceMainContentClass}>
             {workspacePatternOverlayEl}
             <div className={cn(workspaceMainForegroundClass, 'flex-row')}>
               <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="self-start"
+                  onClick={() => setWorkspaceConversation(false)}
+                >
+                  {t('chat.canvas-title')}
+                </Button>
                 <Workspace />
               </div>
               <SpaceOverviewPanel />

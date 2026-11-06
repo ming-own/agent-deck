@@ -49,6 +49,11 @@ vi.mock('@/service/triggerApi', () => ({
   proxyFetchTrigger: vi.fn(),
 }));
 
+vi.mock('@/service/workspaceAutomationExecution', () => ({
+  executeWorkspaceAutomation: vi.fn().mockResolvedValue(null),
+  reconcileWorkspaceAutomationExecutions: vi.fn().mockResolvedValue(undefined),
+}));
+
 const windowMessages = vi.hoisted(() => ({
   listeners: new Set<(message: { type: string }) => void>(),
   posted: [] as Array<{ type: string }>,
