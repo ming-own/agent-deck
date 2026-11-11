@@ -19,6 +19,11 @@ release
 *.local
 *.tsbuildinfo
 
+# Native build output and local development evidence
+/native/target/
+/.local/
+/.planning/
+
 # Local design review captures and reference-only artwork
 .impeccable/mocks/
 .impeccable/review/
