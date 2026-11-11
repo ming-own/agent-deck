@@ -4,10 +4,9 @@ use agentdeck_runtime::{client, protocol::*};
 use gpui_kit::{
     base::Disableable,
     component::{
-        ActiveTheme, Sizable,
+        ActiveTheme, IconName, Sizable,
         button::{Button, ButtonVariants},
     },
-    prelude::FluentBuilder,
     *,
 };
 use std::{
@@ -388,6 +387,14 @@ pub fn state_label(state: NodeState) -> &'static str {
         NodeState::Cancelled => "已停止",
     }
 }
+pub fn state_colors(state: NodeState, cx: &App) -> (Hsla, Hsla) {
+    match state {
+        NodeState::Running | NodeState::Queued => (cx.theme().info, cx.theme().info_foreground),
+        NodeState::Succeeded => (cx.theme().success, cx.theme().success_foreground),
+        NodeState::Cancelled => (cx.theme().secondary, cx.theme().muted_foreground),
+    }
+}
+
 pub fn panel(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement + use<> {
     let run = this.service.run();
     let active = run.is_some_and(|r| r.status() == NodeState::Running);
@@ -396,25 +403,73 @@ pub fn panel(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement + us
         .as_ref()
         .and_then(|id| this.state.editor.graph().node(id))
         .filter(|n| n.kind == agentdeck_canvas_core::NodeKind::Agent);
-    let text = run
-        .map(|r| {
-            format!(
-                "{} · {} · {} 个节点",
-                crate::cards::session_title(&r.session_id),
-                state_label(r.status()),
-                r.nodes.len()
-            )
-        })
-        .unwrap_or_else(|| "尚无演示运行".into());
-    let summary = format!(
-        "执行服务 · {}   {text}",
-        if this.service.online {
-            "已连接"
-        } else {
-            "未连接"
-        }
+    let summary = run
+        .map(|r| format!("{} · {} 个节点", state_label(r.status()), r.nodes.len()))
+        .unwrap_or_else(|| "就绪".into());
+    let summary = if this.service.online {
+        summary
+    } else {
+        "服务未连接".into()
+    };
+    let mut controls = div().flex().flex_none().items_center().gap_2();
+    if !this.service.online {
+        controls = controls.child(
+            Button::new("service-connect")
+                .small()
+                .rounded_full()
+                .primary()
+                .disabled(this.service.busy)
+                .label("启动 / 连接服务")
+                .on_click(cx.listener(|this, _, _, cx| this.connect_service(true, cx))),
+        );
+    } else if active {
+        controls = controls.child(
+            Button::new("stop-run")
+                .small()
+                .rounded_full()
+                .icon(IconName::Square)
+                .label("停止运行")
+                .disabled(this.service.busy || this.service.pending.is_some())
+                .on_click(cx.listener(|this, _, _, cx| this.stop_run(cx))),
+        );
+    } else {
+        controls = controls.child(
+            Button::new("demo-run")
+                .small()
+                .rounded_full()
+                .primary()
+                .icon(IconName::Play)
+                .label("演示运行")
+                .disabled(this.service.busy || this.service.pending.is_some() || target.is_none())
+                .tooltip(if target.is_none() {
+                    "请先选择起始 Agent"
+                } else {
+                    "沿消息连线演示执行，不调用模型"
+                })
+                .on_click(cx.listener(|this, _, _, cx| this.demo_run(cx))),
+        );
+    }
+    controls = controls.child(
+        Button::new("toggle-run-details")
+            .small()
+            .ghost()
+            .icon(if this.show_run_details {
+                IconName::ChevronDown
+            } else {
+                IconName::ChevronUp
+            })
+            .accessibility_label(if this.show_run_details {
+                "收起运行详情"
+            } else {
+                "展开运行详情"
+            })
+            .tooltip("运行详情与服务管理")
+            .on_click(cx.listener(|this, _, _, cx| {
+                this.show_run_details = !this.show_run_details;
+                cx.notify();
+            })),
     );
-    div()
+    let mut panel = div()
         .flex_none()
         .px_4()
         .py_2()
@@ -431,114 +486,115 @@ pub fn panel(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement + us
                 .gap_3()
                 .child(
                     div()
-                        .id("service-status")
-                        .role(Role::Status)
-                        .aria_label(summary.clone())
-                        .text_size(px(12.))
-                        .child(summary),
-                )
-                .child(
-                    div()
+                        .min_w_0()
+                        .flex_1()
                         .flex()
-                        .gap_2()
+                        .flex_col()
+                        .gap_1()
                         .child(
-                            Button::new("service-connect")
-                                .small()
-                                .rounded_full()
-                                .disabled(this.service.busy)
-                                .label(if this.service.online {
-                                    "重新连接"
-                                } else {
-                                    "启动 / 连接服务"
-                                })
-                                .on_click(
-                                    cx.listener(|this, _, _, cx| this.connect_service(true, cx)),
-                                ),
+                            div()
+                                .id("service-status")
+                                .role(Role::Status)
+                                .aria_label(summary.clone())
+                                .text_ellipsis()
+                                .font_weight(FontWeight::MEDIUM)
+                                .child(summary),
                         )
                         .child(
-                            Button::new("demo-run")
-                                .small()
-                                .rounded_full()
-                                .primary()
-                                .disabled(
-                                    !this.service.online
-                                        || this.service.busy
-                                        || this.service.pending.is_some()
-                                        || target.is_none(),
-                                )
-                                .label("演示运行")
-                                .on_click(cx.listener(|this, _, _, cx| this.demo_run(cx))),
-                        )
-                        .child(
-                            Button::new("stop-run")
-                                .small()
-                                .rounded_full()
-                                .disabled(
-                                    !this.service.online
-                                        || this.service.busy
-                                        || !active
-                                        || this.service.pending.is_some(),
-                                )
-                                .label("停止运行")
-                                .on_click(cx.listener(|this, _, _, cx| this.stop_run(cx))),
-                        )
-                        .child(
-                            Button::new("stop-service")
-                                .small()
-                                .rounded_full()
-                                .disabled(
-                                    !this.service.online
-                                        || this.service.busy
-                                        || this.service.pending.is_some(),
-                                )
-                                .label("停止服务")
-                                .on_click(cx.listener(|this, _, _, cx| this.stop_service(cx))),
+                            div()
+                                .text_size(px(11.0))
+                                .text_color(cx.theme().muted_foreground)
+                                .child("本机演示 · 不调用模型"),
                         ),
-                ),
-        )
-        .child(
+                )
+                .child(controls),
+        );
+    if this.show_run_details {
+        let target_label = target
+            .map(|n| format!("起点：{}", n.title))
+            .unwrap_or_else(|| "请选择一个 Agent 作为起点".into());
+        panel = panel.child(
             div()
-                .id("service-message")
-                .role(Role::Status)
-                .aria_label(this.service.message.clone())
-                .text_size(px(11.))
-                .text_color(cx.theme().muted_foreground)
-                .child(format!(
-                    "{} · {}",
-                    target
-                        .map(|n| format!("目标：{} 起始的节点链", n.title))
-                        .unwrap_or_else(|| "请选择一个 Agent 作为起点".into()),
-                    this.service.message
-                )),
-        )
-        .when(run.is_some(), |el| {
-            el.child(
+                .id("run-target")
+                .role(Role::Group)
+                .aria_label(target_label.clone())
+                .text_ellipsis()
+                .text_size(px(11.0))
+                .child(target_label),
+        );
+        if let Some(run) = run {
+            panel = panel.child(
                 div()
                     .id("run-node-statuses")
-                    .max_h(px(72.))
+                    .max_h(px(96.0))
                     .overflow_y_scroll()
                     .flex()
-                    .flex_wrap()
-                    .gap_2()
-                    .children(run.unwrap().nodes.iter().map(|node| {
+                    .flex_col()
+                    .gap_1()
+                    .children(run.nodes.iter().map(|node| {
                         let id = node.node_id.clone();
-                        let label = this
+                        let title = this
                             .state
                             .editor
                             .graph()
                             .node(&id)
                             .map(|n| n.title.as_str())
                             .unwrap_or(&id);
+                        let label = format!("{title} · {}", state_label(node.state));
                         Button::new(SharedString::from(format!("run-node-{id}")))
                             .small()
                             .ghost()
-                            .label(format!("{label} · {}", state_label(node.state)))
+                            .w_full()
+                            .accessibility_label(label.clone())
+                            .tooltip(label.clone())
+                            .child(div().w_full().min_w_0().text_ellipsis().child(label))
                             .on_click(cx.listener(move |this, _, window, cx| {
+                                this.state.selected.clear();
                                 this.state.select(&id, false);
                                 this.inspect(&id, window, cx);
+                                this.show_inspector = true;
+                                this.inspector_tab = crate::inspector::InspectorTab::Result;
                                 cx.notify();
                             }))
                     })),
-            )
-        })
+            );
+        }
+        if this.service.online {
+            panel = panel.child(
+                div()
+                    .flex()
+                    .gap_2()
+                    .child(
+                        Button::new("service-connect")
+                            .small()
+                            .ghost()
+                            .rounded_full()
+                            .label("重新连接")
+                            .disabled(this.service.busy)
+                            .on_click(cx.listener(|this, _, _, cx| this.connect_service(true, cx))),
+                    )
+                    .child(
+                        Button::new("stop-service")
+                            .small()
+                            .ghost()
+                            .rounded_full()
+                            .label("停止服务")
+                            .disabled(this.service.busy || this.service.pending.is_some())
+                            .on_click(cx.listener(|this, _, _, cx| this.stop_service(cx))),
+                    ),
+            );
+        }
+    }
+    // Keep errors/recovery guidance visible even when execution details are collapsed.
+    panel.child(
+        div()
+            .id("service-message")
+            .role(Role::Status)
+            .aria_label(this.service.message.clone())
+            .max_h(px(48.0))
+            .overflow_y_scroll()
+            .text_size(px(11.0))
+            .text_color(cx.theme().muted_foreground)
+            .child(this.service.message.clone()),
+    )
 }

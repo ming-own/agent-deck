@@ -1,6 +1,6 @@
 use crate::{canvas::Desktop, theme};
 use agentdeck_canvas_core::{Node, NodeKind, Point as WorldPoint, Port};
-use agentdeck_desktop::interaction::{CARD_WIDTH, node_height, output_port};
+use agentdeck_desktop::interaction::{CARD_WIDTH, input_port, node_height, output_port};
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::{component::ActiveTheme, *};
 use std::collections::BTreeMap;
@@ -97,28 +97,43 @@ pub fn scene(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement + us
             edges.push((
                 anchor(this, source, edge.source_port, true),
                 anchor(this, target, edge.target_port, false),
-                this.service.edge_state(&edge.source, &edge.target)
-                    == Some(agentdeck_runtime::protocol::NodeState::Running),
+                if edge.source_port == Port::Result && edge.target_port == Port::Message {
+                    this.service.edge_state(&edge.source, &edge.target)
+                } else {
+                    None
+                },
             ));
         }
     }
     if let Some(wire) = &this.state.wire
         && let Some(source) = this.state.editor.graph().node(&wire.source)
     {
-        edges.push((anchor(this, source, wire.port, true), this.pointer, true));
+        edges.push((
+            anchor(this, source, wire.port, true),
+            this.pointer,
+            Some(agentdeck_runtime::protocol::NodeState::Running),
+        ));
     }
     let edge_color = cx.theme().foreground.opacity(0.65);
-    let active_color = cx.theme().primary;
+    let active_color = cx.theme().info_foreground;
+    let completed_color = cx.theme().success_foreground;
     layer = layer.child(
         canvas(
             |_, _, _| (),
             move |bounds, _, window, _| {
-                for (a, b, pending) in edges {
+                for (a, b, state) in edges {
+                    let active =
+                        matches!(state, Some(agentdeck_runtime::protocol::NodeState::Running));
+                    let color = match state {
+                        Some(agentdeck_runtime::protocol::NodeState::Running) => active_color,
+                        Some(agentdeck_runtime::protocol::NodeState::Succeeded) => completed_color,
+                        _ => edge_color,
+                    };
                     let origin = bounds.origin;
                     let start = point(px(a.x), px(a.y)) + origin;
                     let end = point(px(b.x), px(b.y)) + origin;
                     let bend = px(((b.x - a.x).abs() * 0.45).clamp(48.0, 180.0));
-                    let mut path = PathBuilder::stroke(px(if pending { 2.5 } else { 1.75 }));
+                    let mut path = PathBuilder::stroke(px(if active { 2.5 } else { 1.75 }));
                     path.move_to(start);
                     path.cubic_bezier_to(
                         end,
@@ -126,7 +141,15 @@ pub fn scene(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement + us
                         end - point(bend, px(0.0)),
                     );
                     if let Ok(path) = path.build() {
-                        window.paint_path(path, if pending { active_color } else { edge_color });
+                        window.paint_path(path, color);
+                    }
+                    let tip = end - point(px(14.0), px(0.0));
+                    let mut arrow = PathBuilder::stroke(px(1.75));
+                    arrow.move_to(tip - point(px(6.0), px(4.0)));
+                    arrow.line_to(tip);
+                    arrow.line_to(tip - point(px(6.0), px(-4.0)));
+                    if let Ok(path) = arrow.build() {
+                        window.paint_path(path, color);
                     }
                 }
             },
@@ -186,7 +209,7 @@ fn card(
                 .bottom_0()
                 .w_full()
                 .p(px(12.0 * zoom))
-                .bg(material.paper.opacity(0.92))
+                .bg(material.paper.opacity(0.88))
                 .text_color(material.ink)
                 .child(
                     div()
@@ -207,7 +230,7 @@ fn card(
                 .when(zoom > 0.65, |el| {
                     el.child(div().text_size(px(11.0 * zoom)).text_ellipsis().child(
                         if node.description.is_empty() {
-                            "双击编辑节点说明".into()
+                            "双击编辑".into()
                         } else {
                             node.description.clone()
                         },
@@ -232,7 +255,12 @@ fn card(
         .bg(material.edge)
         .cursor_pointer()
         .role(Role::Group)
-        .aria_label(format!("{}，{}", kind_name(node.kind), node.title))
+        .aria_label(format!(
+            "{}，{}{}",
+            kind_name(node.kind),
+            node.title,
+            if selected { "，已选中" } else { "" }
+        ))
         .on_mouse_down(
             MouseButton::Left,
             cx.listener(move |this, event: &MouseDownEvent, window, cx| {
@@ -248,6 +276,8 @@ fn card(
                             .screen_to_world(this.local(event.position)),
                     );
                     if event.click_count == 2 {
+                        this.show_inspector = true;
+                        this.inspector_tab = crate::inspector::InspectorTab::Edit;
                         this.title.update(cx, |state, cx| state.focus(window, cx));
                     }
                 }
@@ -257,6 +287,7 @@ fn card(
         )
         .child(image);
     if let Some(execution) = this.service.node(&node.id) {
+        let (fill, ink) = crate::execution::state_colors(execution.state, cx);
         card = card.child(
             div()
                 .absolute()
@@ -266,8 +297,8 @@ fn card(
                 .py_1()
                 .rounded_full()
                 .text_size(px(11.))
-                .bg(cx.theme().background)
-                .text_color(cx.theme().foreground)
+                .bg(fill)
+                .text_color(ink)
                 .id(SharedString::from(format!("run-state-{}", node.id)))
                 .role(Role::Status)
                 .aria_label(format!(
@@ -284,7 +315,18 @@ fn card(
         for input in [Port::Message, Port::Context, Port::Memory, Port::Trigger] {
             if zoom >= 0.7
                 || input == Port::Message
-                || this.state.wire.as_ref().is_some_and(|w| w.port == input)
+                || this
+                    .state
+                    .wire
+                    .as_ref()
+                    .is_some_and(|w| input_port(w.port) == input)
+                || this
+                    .state
+                    .editor
+                    .graph()
+                    .connections()
+                    .iter()
+                    .any(|e| e.target == node.id && e.target_port == input)
             {
                 card = card.child(port(this, node, input, false, cx));
             }
@@ -303,6 +345,13 @@ fn port(
     let zoom = this.state.viewport.zoom();
     let id = node.id.clone();
     let release_id = id.clone();
+    let compatible = !output
+        && this
+            .state
+            .wire
+            .as_ref()
+            .is_some_and(|wire| wire.source != node.id && input_port(wire.port) == port);
+    let show_label = compatible || (zoom >= 0.7 && this.state.selected.contains(&id));
     let y = if node.kind == NodeKind::Agent {
         port_y(port)
     } else {
@@ -341,7 +390,11 @@ fn port(
                 this.pointer = this.local(event.position);
                 if output {
                     this.state.start_wire_at(&id, port, this.pointer);
-                    this.notice = format!("{} → 点击或拖到同名输入端口；Esc 取消", port_name(port));
+                    this.notice = format!(
+                        "{} → {}输入；点击或拖动连接，Esc 取消",
+                        port_name(port),
+                        port_name(input_port(port))
+                    );
                 } else if this.state.wire.is_some() {
                     this.finish_wire(&id, port, cx);
                 } else {
@@ -369,6 +422,25 @@ fn port(
                 .rounded_full()
                 .border_2()
                 .border_color(cx.theme().primary)
-                .bg(cx.theme().background),
+                .bg(if compatible {
+                    cx.theme().primary
+                } else {
+                    cx.theme().background
+                }),
         )
+        .when(show_label, |el| {
+            el.child(
+                div()
+                    .absolute()
+                    .when(output, |el| el.right(px(28.0)))
+                    .when(!output, |el| el.left(px(28.0)))
+                    .px_1()
+                    .rounded(px(4.0))
+                    .text_size(px(11.0))
+                    .whitespace_nowrap()
+                    .bg(cx.theme().background)
+                    .text_color(cx.theme().foreground)
+                    .child(port_name(port)),
+            )
+        })
 }
