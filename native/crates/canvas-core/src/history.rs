@@ -3,9 +3,17 @@ use std::collections::VecDeque;
 
 pub enum Edit {
     AddNode(Node),
+    UpdateNode {
+        id: String,
+        title: String,
+        description: String,
+    },
     MoveNodes(Vec<(String, Point)>),
     Connect(Connection),
-    Reconnect { id: String, replacement: Connection },
+    Reconnect {
+        id: String,
+        replacement: Connection,
+    },
     RemoveConnection(String),
     RemoveNode(String),
 }
@@ -32,6 +40,18 @@ impl Editor {
         let mut candidate = self.graph.clone();
         match edit {
             Edit::AddNode(node) => candidate.add_node(node)?,
+            Edit::UpdateNode {
+                id,
+                title,
+                description,
+            } => {
+                let node = candidate
+                    .nodes
+                    .get_mut(&id)
+                    .ok_or(GraphError::MissingNode)?;
+                node.title = title;
+                node.description = description;
+            }
             Edit::Connect(edge) => candidate.connect(edge)?,
             Edit::Reconnect { id, replacement } => candidate.reconnect(&id, replacement)?,
             Edit::RemoveConnection(id) => {

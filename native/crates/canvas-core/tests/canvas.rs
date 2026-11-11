@@ -9,10 +9,42 @@ fn node(id: &str, kind: NodeKind, session: Option<&str>) -> Node {
     Node {
         id: id.into(),
         title: id.into(),
+        description: String::new(),
         kind,
         session: session.map(str::to_owned),
         position: point(0.0, 0.0),
     }
+}
+
+#[test]
+fn editing_node_text_preserves_identity_connections_and_undo() {
+    let mut graph = pair();
+    graph.connect(message("ab", "a", "b")).unwrap();
+    let mut editor = Editor::new(graph.clone());
+    editor
+        .apply(Edit::UpdateNode {
+            id: "a".into(),
+            title: "资料核验员".into(),
+            description: "说明🔎\n第二行".into(),
+        })
+        .unwrap();
+    assert_eq!(editor.graph().node("a").unwrap().title, "资料核验员");
+    assert_eq!(editor.graph().node("a").unwrap().session, Some("s1".into()));
+    assert_eq!(editor.graph().connections(), graph.connections());
+    let restored = Layout::from_json(
+        &Layout::new(editor.graph().clone(), Viewport::default())
+            .to_json()
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(restored.graph, *editor.graph());
+    assert!(editor.undo());
+    assert_eq!(editor.graph(), &graph);
+    assert!(editor.redo());
+    assert_eq!(
+        editor.graph().node("a").unwrap().description,
+        "说明🔎\n第二行"
+    );
 }
 fn edge(id: &str, source: &str, source_port: Port, target: &str, target_port: Port) -> Connection {
     Connection {

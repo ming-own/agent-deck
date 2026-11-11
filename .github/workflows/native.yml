@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - 'native/**'
+      - 'src/assets/cards/**'
+      - 'src/style/tokens/**'
       - '.github/workflows/native.yml'
   push:
     branches: [main]
     paths:
       - 'native/**'
+      - 'src/assets/cards/**'
+      - 'src/style/tokens/**'
       - '.github/workflows/native.yml'
 
 permissions:
@@ -32,6 +36,23 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all --check
       - name: Test canvas transactions and layout persistence
-        run: cargo test -p agentdeck-canvas-core --locked
+        run: cargo test -p agentdeck-canvas-core -p agentdeck-runtime --locked
       - name: Check Rust diagnostics
-        run: cargo clippy -p agentdeck-canvas-core --all-targets --locked -- -D warnings
+        run: cargo clippy -p agentdeck-canvas-core -p agentdeck-runtime --all-targets --locked -- -D warnings
+
+  desktop:
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: native
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pinned Rust toolchain
+        run: rustup show
+      - name: Test native editing and persistence
+        run: cargo test --workspace --locked
+      - name: Check native diagnostics
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Build GPUI preview
+        run: cargo build --workspace --locked
