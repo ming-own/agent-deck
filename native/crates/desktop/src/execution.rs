@@ -157,19 +157,20 @@ fn connect(path: &Path, request: &Request, launch: bool) -> io::Result<Reply> {
         .parent()
         .ok_or_else(|| io::Error::other("Missing application directory"))?
         .join("agentdeckd");
-    let mut child = Process::new(daemon)
+    let child = Process::new(daemon)
         .arg("--socket")
         .arg(path)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()?;
+    let exit = client::monitor_child(child);
     for _ in 0..40 {
         if let Ok(reply) = client::exchange(path, request) {
             return Ok(reply);
         }
-        if let Some(status) = child.try_wait()? {
-            return Err(io::Error::other(format!("执行服务启动失败：{status}")));
+        if let Ok(status) = exit.try_recv() {
+            return Err(io::Error::other(format!("执行服务启动失败：{}", status?)));
         }
         std::thread::sleep(Duration::from_millis(50));
     }

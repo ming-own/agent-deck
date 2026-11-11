@@ -22,7 +22,6 @@ pub struct Desktop {
     sidebar: Entity<crate::sidebar::Sidebar>,
     pub bounds: Bounds<Pixels>,
     pub pointer: WorldPoint,
-    pub pan: Option<(WorldPoint, Viewport)>,
     pub space_down: bool,
     pub inspector_id: Option<String>,
     pub title: Entity<InputState>,
@@ -89,7 +88,6 @@ impl Desktop {
             focus,
             bounds: Bounds::default(),
             pointer: WorldPoint::default(),
-            pan: None,
             space_down: false,
             inspector_id: None,
             title: cx.new(|cx| InputState::new(window, cx)),
@@ -326,7 +324,6 @@ impl Desktop {
             .on_action(cx.listener(|this, _: &Redo, window, cx| this.undo(true, window, cx)))
             .on_action(cx.listener(|this, _: &Cancel, _, cx| {
                 this.state.cancel();
-                this.pan = None;
                 this.space_down = false;
                 this.notice = "已取消当前操作".into();
                 cx.notify();
@@ -360,7 +357,7 @@ impl Desktop {
                 cx.listener(|this, event: &MouseDownEvent, window, cx| {
                     this.focus.focus(window, cx);
                     if this.space_down {
-                        this.pan = Some((this.local(event.position), this.state.viewport));
+                        this.state.begin_pan(this.local(event.position));
                     } else {
                         this.state.selected.clear();
                         this.state.cancel();
@@ -372,7 +369,7 @@ impl Desktop {
                 MouseButton::Middle,
                 cx.listener(|this, event: &MouseDownEvent, window, cx| {
                     this.focus.focus(window, cx);
-                    this.pan = Some((this.local(event.position), this.state.viewport));
+                    this.state.begin_pan(this.local(event.position));
                 }),
             )
             .on_mouse_move(cx.listener(|this, event: &MouseMoveEvent, _, cx| {
@@ -380,18 +377,10 @@ impl Desktop {
                 if event.dragging() {
                     this.state.wire_move(this.pointer);
                 }
-                if let Some((start, original)) = this.pan {
-                    let offset = original.offset();
-                    if let Ok(view) = Viewport::new(
-                        WorldPoint {
-                            x: offset.x + this.pointer.x - start.x,
-                            y: offset.y + this.pointer.y - start.y,
-                        },
-                        original.zoom(),
-                    ) {
-                        this.state.viewport = view;
-                    }
-                } else if event.dragging() {
+                let panning = this
+                    .state
+                    .pan_to(this.pointer, event.pressed_button.is_some());
+                if !panning && event.dragging() {
                     this.state
                         .move_to(this.state.viewport.screen_to_world(this.pointer));
                 }
@@ -402,7 +391,6 @@ impl Desktop {
             .on_mouse_up(
                 MouseButton::Left,
                 cx.listener(|this, _, _, cx| {
-                    this.pan = None;
                     if let Err(e) = this.state.finish_move() {
                         this.notice = e.to_string();
                     }
@@ -412,12 +400,18 @@ impl Desktop {
             )
             .on_mouse_up(
                 MouseButton::Middle,
-                cx.listener(|this, _, _, _| this.pan = None),
+                cx.listener(|this, _, _, _| this.state.release_pointer(false)),
+            )
+            .on_mouse_up_out(
+                MouseButton::Middle,
+                cx.listener(|this, _, _, cx| {
+                    this.state.release_pointer(true);
+                    cx.notify();
+                }),
             )
             .on_mouse_up_out(
                 MouseButton::Left,
                 cx.listener(|this, _, _, cx| {
-                    this.pan = None;
                     this.state.release_pointer(true);
                     cx.notify();
                 }),

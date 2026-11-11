@@ -42,10 +42,10 @@ pub struct CanvasState {
     pub viewport: Viewport,
     pub selected: BTreeSet<String>,
     pub wire: Option<Wire>,
+    panning: Option<(Point, Viewport)>,
     moving: Option<Move>,
     wire_start: Option<Point>,
     wire_dragged: bool,
-    next_id: u64,
     reserved_ids: BTreeSet<String>,
 }
 
@@ -62,10 +62,10 @@ impl CanvasState {
             viewport: layout.viewport,
             selected: BTreeSet::new(),
             wire: None,
+            panning: None,
             moving: None,
             wire_start: None,
             wire_dragged: false,
-            next_id: 1,
             reserved_ids,
         }
     }
@@ -204,6 +204,7 @@ impl CanvasState {
     }
 
     pub fn cancel(&mut self) {
+        self.panning = None;
         self.moving = None;
         self.wire = None;
         self.wire_start = None;
@@ -232,6 +233,7 @@ impl CanvasState {
     }
 
     pub fn release_pointer(&mut self, outside: bool) {
+        self.panning = None;
         if outside {
             self.moving = None;
         }
@@ -240,6 +242,31 @@ impl CanvasState {
         }
         self.wire_start = None;
         self.wire_dragged = false;
+    }
+
+    pub fn begin_pan(&mut self, pointer: Point) {
+        self.panning = Some((pointer, self.viewport));
+    }
+
+    pub fn pan_to(&mut self, pointer: Point, pressed: bool) -> bool {
+        // Mouse-up can be lost outside the window; idle movement must never pan.
+        if !pressed {
+            self.panning = None;
+        }
+        let Some((start, original)) = self.panning else {
+            return false;
+        };
+        let offset = original.offset();
+        if let Ok(view) = Viewport::new(
+            Point {
+                x: offset.x + pointer.x - start.x,
+                y: offset.y + pointer.y - start.y,
+            },
+            original.zoom(),
+        ) {
+            self.viewport = view;
+        }
+        true
     }
 
     pub fn start_rewire(&mut self, id: &str) -> Result<(), GraphError> {
@@ -287,9 +314,8 @@ impl CanvasState {
 
     pub fn unique_id(&mut self, prefix: &str) -> String {
         loop {
-            let index = self.next_id;
-            self.next_id += 1;
-            let id = format!("{prefix}-{index}");
+            // Service runs outlive a window and may retain deleted node IDs.
+            let id = format!("{prefix}-{}", uuid::Uuid::new_v4());
             if self.reserved_ids.insert(id.clone()) {
                 return id;
             }

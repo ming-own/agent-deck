@@ -3,8 +3,20 @@ use std::{
     io::{self, Read, Write},
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
+    process::{Child, ExitStatus},
+    sync::mpsc::{self, Receiver},
     time::Duration,
 };
+
+/// Reap an independently running service when it exits. Dropping the receiver
+/// neither terminates the service nor prevents cleanup by this waiter.
+pub fn monitor_child(mut child: Child) -> Receiver<io::Result<ExitStatus>> {
+    let (sender, receiver) = mpsc::channel();
+    std::thread::spawn(move || {
+        let _ = sender.send(child.wait());
+    });
+    receiver
+}
 
 pub fn default_socket() -> io::Result<PathBuf> {
     Ok(PathBuf::from(

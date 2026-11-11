@@ -238,7 +238,7 @@ fn card(
             cx.listener(move |this, event: &MouseDownEvent, window, cx| {
                 this.focus.focus(window, cx);
                 if this.space_down {
-                    this.pan = Some((this.local(event.position), this.state.viewport));
+                    this.state.begin_pan(this.local(event.position));
                 } else {
                     this.state.select(&id, event.modifiers.shift);
                     this.inspect(&id, window, cx);

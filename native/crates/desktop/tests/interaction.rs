@@ -63,6 +63,22 @@ fn point(x: f32, y: f32) -> Point {
 }
 
 #[test]
+fn panning_stops_after_outside_release_or_a_missed_mouse_up() {
+    let mut state = CanvasState::demo();
+    state.begin_pan(point(10.0, 20.0));
+    assert!(state.pan_to(point(30.0, 40.0), true));
+    let released = state.viewport;
+    state.release_pointer(true);
+    assert!(!state.pan_to(point(100.0, 200.0), false));
+    assert_eq!(state.viewport, released);
+    state.begin_pan(point(30.0, 40.0));
+    assert!(!state.pan_to(point(100.0, 200.0), false));
+    assert_eq!(state.viewport, released);
+    assert!(!state.pan_to(point(120.0, 220.0), true));
+    assert_eq!(state.viewport, released);
+}
+
+#[test]
 fn drag_is_a_preview_until_release_and_cancel_keeps_the_original() {
     let mut state = CanvasState::demo();
     let original = state.editor.graph().clone();
@@ -140,6 +156,24 @@ fn new_nodes_are_unique_after_layout_reload() {
     assert_ne!(first, second);
     assert!(state.editor.graph().node(&first).is_none());
     assert!(state.editor.graph().node(&second).is_some());
+}
+
+#[test]
+fn deleted_identity_is_not_reused_after_saving_and_reopening() {
+    let mut state = CanvasState::demo();
+    let id = state
+        .add(NodeKind::Agent, "session-1", point(0.0, 0.0))
+        .unwrap();
+    state.editor.apply(Edit::RemoveNode(id.clone())).unwrap();
+    let saved = state.layout().to_json().unwrap();
+    let mut reopened = CanvasState::from_layout(Layout::from_json(&saved).unwrap());
+    let replacement = reopened
+        .add(NodeKind::Agent, "session-1", point(0.0, 0.0))
+        .unwrap();
+    assert_ne!(
+        id, replacement,
+        "surviving service runs must not attach to a new node"
+    );
 }
 
 #[test]
