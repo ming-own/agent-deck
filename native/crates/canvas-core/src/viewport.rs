@@ -1,5 +1,9 @@
 use crate::GraphError;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+
+// Keep persisted geometry within a useful f32 precision range and well away
+// from overflow during zoom, projection, and hit testing.
+const MAX_COORDINATE: f32 = 1_000_000.0;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -9,13 +13,12 @@ pub struct Point {
 }
 
 impl Point {
-    pub(crate) fn is_finite(self) -> bool {
-        self.x.is_finite() && self.y.is_finite()
+    pub(crate) fn is_valid(self) -> bool {
+        self.x.abs() <= MAX_COORDINATE && self.y.abs() <= MAX_COORDINATE
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub struct Viewport {
     offset: Point,
     zoom: f32,
@@ -32,7 +35,7 @@ impl Default for Viewport {
 
 impl Viewport {
     pub fn new(offset: Point, zoom: f32) -> Result<Self, GraphError> {
-        if !offset.is_finite() || !(0.15..=3.0).contains(&zoom) {
+        if !offset.is_valid() || !(0.15..=3.0).contains(&zoom) {
             return Err(GraphError::InvalidGeometry);
         }
         Ok(Self { offset, zoom })
@@ -60,7 +63,7 @@ impl Viewport {
     }
 
     pub fn zoom_at(&mut self, pointer: Point, zoom: f32) -> Result<(), GraphError> {
-        if !pointer.is_finite() || !zoom.is_finite() || zoom <= 0.0 {
+        if !pointer.is_valid() || !zoom.is_finite() || zoom <= 0.0 {
             return Err(GraphError::InvalidGeometry);
         }
         let world = self.screen_to_world(pointer);
@@ -73,5 +76,18 @@ impl Viewport {
             zoom,
         )?;
         Ok(())
+    }
+}
+
+impl<'de> Deserialize<'de> for Viewport {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct StoredViewport {
+            offset: Point,
+            zoom: f32,
+        }
+        let stored = StoredViewport::deserialize(deserializer)?;
+        Self::new(stored.offset, stored.zoom).map_err(serde::de::Error::custom)
     }
 }

@@ -228,3 +228,108 @@ fn invalid_imported_edges_are_not_allowed_to_bypass_graph_validation() {
     json["graph"]["connections"][0]["target"] = "missing".into();
     assert!(Layout::from_json(&json.to_string()).is_err());
 }
+
+#[test]
+fn duplicate_node_keys_are_rejected_before_records_can_be_overwritten() {
+    let a = serde_json::to_string(&node("a", NodeKind::Agent, Some("s1"))).unwrap();
+    let json = format!(r#"{{"nodes":{{"a":{a},"a":{a}}},"connections":[]}}"#);
+    assert!(serde_json::from_str::<Graph>(&json).is_err());
+}
+
+#[test]
+fn deserializing_a_viewport_cannot_bypass_its_validated_constructor() {
+    for zoom in [0.0, -1.0, 0.1, 4.0] {
+        let json = format!(r#"{{"offset":{{"x":0,"y":0}},"zoom":{zoom}}}"#);
+        assert!(serde_json::from_str::<Viewport>(&json).is_err());
+    }
+    let view = Viewport::new(point(-100.0, 50.0), 0.15).unwrap();
+    assert_eq!(
+        serde_json::from_str::<Viewport>(&serde_json::to_string(&view).unwrap()).unwrap(),
+        view
+    );
+}
+
+#[test]
+fn saving_reports_when_pretty_format_would_exceed_the_read_limit() {
+    let mut graph = pair();
+    let mut large = node("large", NodeKind::Context, None);
+    large.title.clear();
+    graph.add_node(large.clone()).unwrap();
+    let overhead = serde_json::to_string(&Layout::new(graph, Viewport::default()))
+        .unwrap()
+        .len();
+    large.title = "x".repeat(16 * 1024 * 1024 - overhead);
+    let mut graph = pair();
+    graph.add_node(large).unwrap();
+    let compact = serde_json::to_string(&Layout::new(graph, Viewport::default())).unwrap();
+    assert_eq!(compact.len(), 16 * 1024 * 1024);
+    let restored = Layout::from_json(&compact).unwrap();
+    assert!(
+        restored.to_json().is_err(),
+        "must not report a successful save that cannot be reopened"
+    );
+}
+
+#[test]
+fn extreme_finite_geometry_cannot_enter_the_saved_canvas() {
+    assert!(Viewport::new(point(f32::MAX, 0.0), 3.0).is_err());
+    let mut graph = pair();
+    let mut extreme = node("extreme", NodeKind::Context, None);
+    extreme.position = point(f32::MAX, 0.0);
+    assert!(graph.add_node(extreme).is_err());
+    let mut editor = Editor::new(graph.clone());
+    assert!(
+        editor
+            .apply(Edit::MoveNodes(vec![("a".into(), point(f32::MAX, 0.0))]))
+            .is_err()
+    );
+    assert_eq!(editor.graph(), &graph);
+}
+
+#[test]
+fn disconnect_is_undoable_without_removing_either_node_or_other_edges() {
+    let mut graph = pair();
+    graph
+        .add_node(node("c", NodeKind::Agent, Some("s1")))
+        .unwrap();
+    graph.connect(message("ab", "a", "b")).unwrap();
+    graph.connect(message("ac", "a", "c")).unwrap();
+    let mut editor = Editor::new(graph.clone());
+    assert!(
+        editor
+            .apply(Edit::RemoveConnection("missing".into()))
+            .is_err()
+    );
+    assert!(!editor.undo());
+    editor.apply(Edit::RemoveConnection("ab".into())).unwrap();
+    assert_eq!(editor.graph().nodes().count(), 3);
+    assert_eq!(editor.graph().connections(), &[message("ac", "a", "c")]);
+    assert!(editor.undo());
+    assert_eq!(editor.graph(), &graph);
+    assert!(editor.redo());
+    assert_eq!(editor.graph().connections(), &[message("ac", "a", "c")]);
+}
+
+#[test]
+fn a_thousand_node_reverse_order_chain_loads_and_rejects_a_closing_cycle() {
+    let mut graph = Graph::default();
+    for i in 0..1000 {
+        graph
+            .add_node(node(&i.to_string(), NodeKind::Agent, Some("s1")))
+            .unwrap();
+    }
+    let mut json = serde_json::to_value(Layout::new(graph, Viewport::default())).unwrap();
+    let edges: Vec<_> = (1..1000)
+        .rev()
+        .map(|i| message(&format!("e{i}"), &(i - 1).to_string(), &i.to_string()))
+        .collect();
+    json["graph"]["connections"] = serde_json::to_value(edges).unwrap();
+    let mut restored = Layout::from_json(&json.to_string()).unwrap();
+    assert_eq!(restored.graph.connections().len(), 999);
+    assert!(
+        restored
+            .graph
+            .connect(message("cycle", "999", "0"))
+            .is_err()
+    );
+}

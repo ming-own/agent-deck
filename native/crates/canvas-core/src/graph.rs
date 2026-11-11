@@ -69,7 +69,7 @@ impl Graph {
         {
             return Err(GraphError::InvalidIdentity);
         }
-        if !node.position.is_finite() {
+        if !node.position.is_valid() {
             return Err(GraphError::InvalidGeometry);
         }
         if self.nodes.contains_key(&node.id) {
@@ -140,6 +140,12 @@ impl Graph {
     }
 
     fn reaches(&self, start: &str, target: &str) -> bool {
+        let mut outgoing: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+        for edge in &self.connections {
+            if edge.source_port == Port::Result {
+                outgoing.entry(&edge.source).or_default().push(&edge.target);
+            }
+        }
         let mut pending = vec![start];
         let mut visited = BTreeSet::new();
         while let Some(node) = pending.pop() {
@@ -147,12 +153,7 @@ impl Graph {
                 return true;
             }
             if visited.insert(node) {
-                pending.extend(
-                    self.connections
-                        .iter()
-                        .filter(|edge| edge.source == node && edge.source_port == Port::Result)
-                        .map(|edge| edge.target.as_str()),
-                );
+                pending.extend(outgoing.get(node).into_iter().flatten().copied());
             }
         }
         false
@@ -164,6 +165,7 @@ impl<'de> Deserialize<'de> for Graph {
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
         struct StoredGraph {
+            #[serde(deserialize_with = "unique_nodes")]
             nodes: BTreeMap<String, Node>,
             connections: Vec<Connection>,
         }
@@ -180,4 +182,31 @@ impl<'de> Deserialize<'de> for Graph {
         }
         Ok(graph)
     }
+}
+
+fn unique_nodes<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<BTreeMap<String, Node>, D::Error> {
+    struct NodesVisitor;
+    impl<'de> serde::de::Visitor<'de> for NodesVisitor {
+        type Value = BTreeMap<String, Node>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a node map with unique keys")
+        }
+
+        fn visit_map<A: serde::de::MapAccess<'de>>(
+            self,
+            mut entries: A,
+        ) -> Result<Self::Value, A::Error> {
+            let mut nodes = BTreeMap::new();
+            while let Some((key, node)) = entries.next_entry::<String, Node>()? {
+                if nodes.insert(key, node).is_some() {
+                    return Err(serde::de::Error::custom(GraphError::DuplicateNode));
+                }
+            }
+            Ok(nodes)
+        }
+    }
+    deserializer.deserialize_map(NodesVisitor)
 }

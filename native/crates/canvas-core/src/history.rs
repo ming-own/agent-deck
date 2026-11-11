@@ -6,6 +6,7 @@ pub enum Edit {
     MoveNodes(Vec<(String, Point)>),
     Connect(Connection),
     Reconnect { id: String, replacement: Connection },
+    RemoveConnection(String),
     RemoveNode(String),
 }
 
@@ -33,9 +34,17 @@ impl Editor {
             Edit::AddNode(node) => candidate.add_node(node)?,
             Edit::Connect(edge) => candidate.connect(edge)?,
             Edit::Reconnect { id, replacement } => candidate.reconnect(&id, replacement)?,
+            Edit::RemoveConnection(id) => {
+                let index = candidate
+                    .connections
+                    .iter()
+                    .position(|edge| edge.id == id)
+                    .ok_or(GraphError::MissingConnection)?;
+                candidate.connections.remove(index);
+            }
             Edit::MoveNodes(positions) => {
                 for (id, position) in positions {
-                    if !position.is_finite() {
+                    if !position.is_valid() {
                         return Err(GraphError::InvalidGeometry);
                     }
                     candidate

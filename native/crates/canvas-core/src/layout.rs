@@ -1,6 +1,8 @@
 use crate::{Graph, GraphError, Viewport};
 use serde::{Deserialize, Serialize};
 
+const MAX_LAYOUT_BYTES: usize = 16 * 1024 * 1024;
+
 /// An isolated canvas document. It contains no messages, credentials or grants.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct Layout {
@@ -19,11 +21,15 @@ impl Layout {
     }
 
     pub fn to_json(&self) -> Result<String, GraphError> {
-        serde_json::to_string_pretty(self).map_err(|_| GraphError::InvalidLayout)
+        let json = serde_json::to_string_pretty(self).map_err(|_| GraphError::InvalidLayout)?;
+        if json.len() > MAX_LAYOUT_BYTES {
+            return Err(GraphError::InvalidLayout);
+        }
+        Ok(json)
     }
 
     pub fn from_json(json: &str) -> Result<Self, GraphError> {
-        if json.len() > 16 * 1024 * 1024 {
+        if json.len() > MAX_LAYOUT_BYTES {
             return Err(GraphError::InvalidLayout);
         }
         #[derive(Deserialize)]
@@ -38,7 +44,6 @@ impl Layout {
         if stored.version != 1 {
             return Err(GraphError::InvalidLayout);
         }
-        let viewport = Viewport::new(stored.viewport.offset(), stored.viewport.zoom())?;
-        Ok(Self::new(stored.graph, viewport))
+        Ok(Self::new(stored.graph, stored.viewport))
     }
 }
