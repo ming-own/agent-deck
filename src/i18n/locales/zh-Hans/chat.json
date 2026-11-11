@@ -702,6 +702,7 @@
   "node-tool-consent": "本轮允许使用",
   "node-tool-used": "已授权 · 调用 {{count}} 次",
   "node-tool-withheld": "本轮未授权",
+  "node-task-saved-config": "任务使用已保存的配置，当前未保存的修改不会应用。",
   "node-harness": "执行方式（Harness）",
   "node-harness-standard": "标准执行",
   "node-harness-unrecorded": "当时未记录",

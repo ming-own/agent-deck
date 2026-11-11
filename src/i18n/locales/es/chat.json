@@ -710,6 +710,7 @@
   "node-tool-consent": "Permitir en este turno",
   "node-tool-used": "Permitido · Llamadas: {{count}}",
   "node-tool-withheld": "Sin permiso en este turno",
+  "node-task-saved-config": "Las tareas usan la configuración guardada. Los cambios sin guardar no se aplican.",
   "node-harness": "Modo de ejecución",
   "node-harness-standard": "Ejecución estándar",
   "node-harness-unrecorded": "Sin registrar",

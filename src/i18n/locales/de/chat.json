@@ -706,6 +706,7 @@
   "node-tool-consent": "Für diese Runde erlauben",
   "node-tool-used": "Erlaubt · Aufrufe: {{count}}",
   "node-tool-withheld": "Für diese Runde gesperrt",
+  "node-task-saved-config": "Aufgaben verwenden die gespeicherte Konfiguration. Ungespeicherte Änderungen werden nicht angewendet.",
   "node-harness": "Ausführungsmodus",
   "node-harness-standard": "Standardausführung",
   "node-harness-unrecorded": "Nicht erfasst",

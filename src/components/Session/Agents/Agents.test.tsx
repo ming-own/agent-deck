@@ -1,3 +1,5 @@
+import { runAfterWorkspaceConfigurationSave } from '@/lib/workspaceConfigurationNavigationGuard';
+import type { SessionAgent, sessionAgentApi } from '@/service/sessionAgentApi';
 import {
   act,
   fireEvent,
@@ -7,7 +9,7 @@ import {
   within,
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SessionAgents } from './index';
+import { CanvasNodeTasks, SessionAgents } from './index';
 
 const mocks = vi.hoisted(() => ({
   api: {
@@ -478,6 +480,7 @@ it('edits node instructions while keeping the previous run configuration visible
 });
 
 it('keeps unsaved instructions in the form after a failed save and cancels without changing the node', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
   mocks.api.update.mockRejectedValue(new Error('conflict'));
   render(<SessionAgents projectId="s" />);
   fireEvent.click(await screen.findByRole('button', { name: 'Edit Agent' }));
@@ -491,10 +494,12 @@ it('keeps unsaved instructions in the form after a failed save and cancels witho
     screen.getByRole('textbox', { name: 'Instructions (optional)' })
   ).toHaveValue('Unsaved draft');
   fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+  expect(confirm).toHaveBeenCalledOnce();
   fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
   expect(
     screen.getByRole('textbox', { name: 'Instructions (optional)' })
   ).toHaveValue('');
+  confirm.mockRestore();
 });
 
 it('preserves a missing skill across a catalog failure and lets the user remove it', async () => {
@@ -580,4 +585,146 @@ it('requires a fresh per-turn grant after an uncertain send and a changed prompt
   fireEvent.click(send);
   await waitFor(() => expect(mocks.api.start).toHaveBeenCalledTimes(2));
   expect(mocks.api.start.mock.calls[1][1].approved_tools).toEqual([]);
+});
+
+it('uses newly saved configuration without remounting the open task or losing its prompt', async () => {
+  const props = {
+    api: mocks.api as unknown as ReturnType<typeof sessionAgentApi>,
+    choices: [first, second].map(({ model }) => ({
+      id: model.id,
+      name: model.name,
+      group: 'codex-subscription' as const,
+      codexModelType: model.model_type,
+    })),
+    email: 'test@example.com',
+    account: 'owner',
+    project: 's',
+    modelsLoading: false,
+    openRouter: vi.fn(),
+  };
+  const view = render(
+    <CanvasNodeTasks {...props} node={first as SessionAgent} />
+  );
+  const message = await screen.findByRole('textbox', {
+    name: 'Message this Agent',
+  });
+  fireEvent.change(message, { target: { value: 'Keep this prompt' } });
+  view.rerender(
+    <CanvasNodeTasks
+      {...props}
+      node={{ ...first, revision: 2, model: second.model } as SessionAgent}
+    />
+  );
+  expect(
+    screen.getByRole('textbox', { name: 'Message this Agent' })
+  ).toHaveValue('Keep this prompt');
+  const send = screen.getByRole('button', { name: 'Send', exact: true });
+  await waitFor(() => expect(send).toBeEnabled());
+  fireEvent.click(send);
+  await waitFor(() =>
+    expect(mocks.api.start).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({
+        expected_revision: 2,
+        connection: expect.objectContaining({ model_type: 'model-b' }),
+      })
+    )
+  );
+});
+
+it('restores protection for the existing conversation after a clean editor closes', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  const leave = vi.fn();
+  render(<SessionAgents projectId="s" />);
+  fireEvent.change(
+    await screen.findByRole('textbox', { name: 'Message this Agent' }),
+    { target: { value: 'Keep this unsent prompt' } }
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Edit Agent' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel', exact: true }));
+  await waitFor(() =>
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  );
+  expect(confirm).not.toHaveBeenCalled();
+  await act(async () => {
+    await runAfterWorkspaceConfigurationSave(leave);
+  });
+  expect(leave).not.toHaveBeenCalled();
+  expect(confirm).toHaveBeenCalledOnce();
+  expect(
+    screen.getByRole('textbox', { name: 'Message this Agent' })
+  ).toHaveValue('Keep this unsent prompt');
+  confirm.mockRestore();
+});
+
+it('guards task selection, repeated result requests and task creation without remounting rejected drafts', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  mocks.api.tasks.mockResolvedValue([
+    { id: 'default', name: '' },
+    { id: 'review', name: 'Review' },
+  ]);
+  mocks.api.createTask.mockResolvedValue({
+    id: 'new-task',
+    name: 'New review',
+  });
+  const props = {
+    api: mocks.api as unknown as ReturnType<typeof sessionAgentApi>,
+    node: first as SessionAgent,
+    choices: [first].map(({ model }) => ({
+      id: model.id,
+      name: model.name,
+      group: 'codex-subscription' as const,
+      codexModelType: model.model_type,
+    })),
+    email: 'test@example.com',
+    account: 'owner',
+    project: 's',
+    modelsLoading: false,
+    openRouter: vi.fn(),
+  };
+  const view = render(<CanvasNodeTasks {...props} />);
+  const message = await screen.findByRole('textbox', {
+    name: 'Message this Agent',
+  });
+  fireEvent.change(message, { target: { value: 'Original draft' } });
+  const task = screen.getByRole('combobox', { name: 'Select task' });
+  fireEvent.change(task, { target: { value: 'review' } });
+  expect(task).toHaveValue('default');
+  expect(message).toHaveValue('Original draft');
+  view.rerender(
+    <CanvasNodeTasks {...props} taskRequest={{ id: 'review', sequence: 1 }} />
+  );
+  expect(task).toHaveValue('default');
+  expect(message).toHaveValue('Original draft');
+  confirm.mockReturnValue(true);
+  view.rerender(
+    <CanvasNodeTasks {...props} taskRequest={{ id: 'review', sequence: 2 }} />
+  );
+  await waitFor(() => expect(task).toHaveValue('review'));
+  expect(
+    screen.getByRole('textbox', { name: 'Message this Agent' })
+  ).toHaveValue('');
+  fireEvent.change(
+    screen.getByRole('textbox', { name: 'Message this Agent' }),
+    { target: { value: 'Review draft' } }
+  );
+  fireEvent.click(
+    screen.getByRole('button', { name: 'New task', exact: true })
+  );
+  const dialog = within(screen.getByRole('dialog'));
+  fireEvent.change(dialog.getByRole('textbox', { name: 'Task name' }), {
+    target: { value: 'New review' },
+  });
+  confirm.mockReturnValue(false);
+  fireEvent.click(
+    dialog.getByRole('button', { name: 'New task', exact: true })
+  );
+  expect(mocks.api.createTask).not.toHaveBeenCalled();
+  confirm.mockReturnValue(true);
+  fireEvent.click(
+    dialog.getByRole('button', { name: 'New task', exact: true })
+  );
+  await waitFor(() => expect(task).toHaveValue('new-task'));
+  expect(mocks.api.createTask).toHaveBeenCalledOnce();
+  confirm.mockRestore();
 });

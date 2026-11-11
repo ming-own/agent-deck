@@ -722,6 +722,7 @@
   "node-tool-consent": "السماح لهذه الجولة",
   "node-tool-used": "مسموح · عدد الاستدعاءات: {{count}}",
   "node-tool-withheld": "غير مسموح لهذه الجولة",
+  "node-task-saved-config": "تستخدم المهام الإعدادات المحفوظة. لا تُطبَّق التغييرات غير المحفوظة.",
   "node-harness": "إطار التنفيذ",
   "node-harness-standard": "التنفيذ القياسي",
   "node-harness-unrecorded": "غير مسجل",

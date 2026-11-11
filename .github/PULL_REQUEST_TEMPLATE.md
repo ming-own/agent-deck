@@ -1,38 +1,16 @@
-<!-- Thank you for contributing! -->
+## Changes
 
-# Pull Request
+<!-- Describe the problem and resulting behavior. -->
 
-## Related Issue
+## Validation
 
-<!-- REQUIRED: Link to the issue this PR resolves. PRs without a linked issue will be closed. -->
+<!-- List relevant checks, failures and limits. Keep local plans, screenshots,
+     design drafts and one-off test scripts out of the commit. -->
 
-<!-- Example: Closes #123 or Fixes #456 -->
+## Review
 
-Closes #
+<!-- Link the concise independent review for the current commit. -->
 
-## Description
-
-<!-- REQUIRED: Describe what this PR does and why. PRs without a description will not be reviewed. -->
-
-## Testing Evidence (REQUIRED)
-
-<!-- REQUIRED: Every PR must include human-verified testing proof (e.g., test logs, screenshots, or screen recordings). -->
-
-<!-- REQUIRED for frontend/UI changes: You MUST attach at least one screenshot or screen recording in this PR. -->
-
-<!-- Frontend/UI PRs without visual evidence will not be reviewed. -->
-
-- [ ] I have included human-verified testing evidence in this PR.
-- [ ] This PR includes frontend/UI changes, and I attached screenshot(s) or screen recording(s).
-- [ ] No frontend/UI changes in this PR.
-
-## What is the purpose of this pull request? <!-- (put an "X" next to an item) -->
-
-- [ ] Bug fix
-- [ ] New Feature
-- [ ] Documentation update
-- [ ] Other
-
-## Contribution Guidelines Acknowledgement
-
-- [ ] I have read and agree to the [AgentDeck Contribution Guideline](https://github.com/ming-own/agent-deck/blob/main/CONTRIBUTING.md)
+- [ ] Followed AGENTS.md and kept the change scoped.
+- [ ] Verified the behavior and disclosed remaining limitations.
+- [ ] Reviewed the current diff; no unresolved P0/P1 findings.
