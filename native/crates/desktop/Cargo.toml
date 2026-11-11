@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 agentdeck-canvas-core = { path = "../canvas-core" }
+agentdeck-runtime = { path = "../runtime" }
 gpui-kit = "=0.9.1"
 serde.workspace = true
 serde_json.workspace = true

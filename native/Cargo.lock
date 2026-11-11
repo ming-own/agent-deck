@@ -122,10 +122,21 @@ name = "agentdeck-desktop"
 version = "0.1.0"
 dependencies = [
  "agentdeck-canvas-core",
+ "agentdeck-runtime",
  "gpui-kit",
  "objc2 0.6.5",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "agentdeck-runtime"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

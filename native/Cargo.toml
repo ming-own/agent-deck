@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/canvas-core", "crates/desktop"]
+members = ["crates/canvas-core", "crates/desktop", "crates/runtime"]
 default-members = ["crates/canvas-core"]
 resolver = "2"
 

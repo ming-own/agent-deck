@@ -3,6 +3,7 @@ use gpui_kit::*;
 mod assets;
 mod canvas;
 mod cards;
+mod execution;
 mod inspector;
 mod sidebar;
 mod termination;

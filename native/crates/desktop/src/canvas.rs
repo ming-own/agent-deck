@@ -17,6 +17,7 @@ actions!(canvas, [Undo, Redo, Save, Cancel, Delete, Fit, Quit]);
 
 pub struct Desktop {
     pub state: CanvasState,
+    pub service: crate::execution::ServiceView,
     pub focus: FocusHandle,
     sidebar: Entity<crate::sidebar::Sidebar>,
     pub bounds: Bounds<Pixels>,
@@ -76,7 +77,12 @@ impl Desktop {
         focus.focus(window, cx);
         let owner = cx.weak_entity();
         let sidebar = cx.new(|_| crate::sidebar::Sidebar::new(owner));
+        let service_owner = cx.weak_entity();
+        cx.defer(move |cx| {
+            let _ = service_owner.update(cx, |this, cx| this.connect_service(false, cx));
+        });
         Self {
+            service: crate::execution::ServiceView::default(),
             sidebar,
             saved,
             state,
@@ -498,6 +504,7 @@ impl Render for Desktop {
                     .child(self.surface(cx))
                     .child(crate::inspector::inspector(self, cx)),
             )
+            .child(crate::execution::panel(self, cx))
             .child(crate::inspector::status(self, cx))
     }
 }

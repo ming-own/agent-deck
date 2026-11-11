@@ -97,7 +97,8 @@ pub fn scene(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement + us
             edges.push((
                 anchor(this, source, edge.source_port, true),
                 anchor(this, target, edge.target_port, false),
-                false,
+                this.service.edge_state(&edge.source, &edge.target)
+                    == Some(agentdeck_runtime::protocol::NodeState::Running),
             ));
         }
     }
@@ -255,6 +256,28 @@ fn card(
             }),
         )
         .child(image);
+    if let Some(execution) = this.service.node(&node.id) {
+        card = card.child(
+            div()
+                .absolute()
+                .top(px(8.))
+                .left(px(8.))
+                .px_2()
+                .py_1()
+                .rounded_full()
+                .text_size(px(11.))
+                .bg(cx.theme().background)
+                .text_color(cx.theme().foreground)
+                .id(SharedString::from(format!("run-state-{}", node.id)))
+                .role(Role::Status)
+                .aria_label(format!(
+                    "{}：{}",
+                    node.title,
+                    crate::execution::state_label(execution.state)
+                ))
+                .child(crate::execution::state_label(execution.state)),
+        );
+    }
     let output = output_port(node.kind);
     card = card.child(port(this, node, output, true, cx));
     if node.kind == NodeKind::Agent {

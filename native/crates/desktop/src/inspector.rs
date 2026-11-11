@@ -178,6 +178,22 @@ pub fn inspector(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement 
                 .text_color(cx.theme().muted_foreground)
                 .child("修改保留在草稿中；点击顶部保存后写入本机布局。"),
         );
+    if let Some(execution) = this.service.node(&node.id) {
+        panel = panel.child(div().font_weight(FontWeight::SEMIBOLD).child(format!(
+            "演示结果 · {}",
+            crate::execution::state_label(execution.state)
+        )));
+        if let Some(result) = &execution.result {
+            panel = panel.child(
+                div()
+                    .id("node-demo-result")
+                    .role(Role::Group)
+                    .aria_label(format!("演示结果：{result}"))
+                    .text_size(px(12.))
+                    .child(result.clone()),
+            );
+        }
+    }
     let source = node.id.clone();
     let output = output_port(node.kind);
     panel = panel.child(
@@ -289,6 +305,9 @@ pub fn status(this: &Desktop, cx: &mut Context<Desktop>) -> impl IntoElement + u
         .border_color(cx.theme().border)
         .child(
             div()
+                .id("canvas-status")
+                .role(Role::Status)
+                .aria_label(this.notice.clone())
                 .text_size(px(11.0))
                 .text_color(cx.theme().muted_foreground)
                 .child(format!(
