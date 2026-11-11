@@ -1,0 +1,58 @@
+{
+  "light": {
+    "name": "AgentDeck",
+    "mode": "light",
+    "font.size": 13,
+    "radius": 12,
+    "radius.lg": 24,
+    "shadow": false,
+    "colors": {
+      "background": "#faf7f6",
+      "foreground": "#1d1d1d",
+      "border": "#1d1d1d26",
+      "muted.background": "#e7e4e3",
+      "muted.foreground": "#535352",
+      "primary.background": "#1d1d1d",
+      "primary.foreground": "#ffffff",
+      "primary.hover.background": "#353535",
+      "primary.active.background": "#0b0b0b",
+      "secondary.background": "#f0edec",
+      "secondary.foreground": "#1d1d1d",
+      "popover.background": "#faf7f6",
+      "popover.foreground": "#1d1d1d",
+      "sidebar.background": "#f0edec",
+      "sidebar.foreground": "#1d1d1d",
+      "sidebar.border": "#1d1d1d26",
+      "ring": "#0f0d089e",
+      "input.border": "#1d1d1d26"
+    }
+  },
+  "dark": {
+    "name": "AgentDeck",
+    "mode": "dark",
+    "font.size": 13,
+    "radius": 12,
+    "radius.lg": 24,
+    "shadow": false,
+    "colors": {
+      "background": "#1f1f1f",
+      "foreground": "#f2ece8",
+      "border": "#f2ece826",
+      "muted.background": "#313130",
+      "muted.foreground": "#bebab7",
+      "primary.background": "#ede1db",
+      "primary.foreground": "#636363",
+      "primary.hover.background": "#ffffff",
+      "primary.active.background": "#dec4b6",
+      "secondary.background": "#292828",
+      "secondary.foreground": "#f2ece8",
+      "popover.background": "#1f1f1f",
+      "popover.foreground": "#f2ece8",
+      "sidebar.background": "#292828",
+      "sidebar.foreground": "#f2ece8",
+      "sidebar.border": "#f2ece826",
+      "ring": "#ffd8c49e",
+      "input.border": "#f2ece826"
+    }
+  }
+}

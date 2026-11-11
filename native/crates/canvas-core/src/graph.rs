@@ -26,6 +26,8 @@ pub enum Port {
 pub struct Node {
     pub id: String,
     pub title: String,
+    #[serde(default)]
+    pub description: String,
     pub kind: NodeKind,
     pub session: Option<String>,
     pub position: Point,
