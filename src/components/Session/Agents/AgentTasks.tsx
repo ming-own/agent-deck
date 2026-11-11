@@ -17,8 +17,15 @@ import {
 } from '@/components/ui/select';
 import type { AgentTask, sessionAgentApi } from '@/service/sessionAgentApi';
 import { Plus, Workflow } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCardDraftGuard } from './useCardDraftGuard';
 
 const defaultTask: AgentTask = { id: 'default', name: '' };
 
@@ -27,6 +34,8 @@ export function AgentTasks({
   api,
   storageKey,
   initialTaskId,
+  taskRequest,
+  beforeTaskChange,
   openRouter,
   refreshKey,
   children,
@@ -35,6 +44,8 @@ export function AgentTasks({
   api: ReturnType<typeof sessionAgentApi>;
   storageKey: string;
   initialTaskId?: string;
+  taskRequest?: { id: string; sequence: number };
+  beforeTaskChange?: () => boolean;
   refreshKey: number;
   openRouter: (taskId: string, name: string, opener: HTMLButtonElement) => void;
   children: (id: string) => ReactNode;
@@ -58,6 +69,16 @@ export function AgentTasks({
   const [failed, setFailed] = useState(false);
   const pending = useRef(false);
   const request = useRef('');
+  const handledRequest = useRef<number>();
+  useCardDraftGuard(open ? name : '', { busy: saving });
+  const selectTask = useCallback(
+    (id: string) => {
+      if (id === selected || pending.current || beforeTaskChange?.() === false)
+        return;
+      setSelected(id);
+    },
+    [selected, beforeTaskChange]
+  );
   useEffect(() => {
     let current = true;
     api
@@ -86,10 +107,25 @@ export function AgentTasks({
       /* Device preference only. */
     }
   }, [storageKey, selected, loaded]);
+  useEffect(() => {
+    if (
+      !loaded ||
+      !taskRequest ||
+      handledRequest.current === taskRequest.sequence
+    )
+      return;
+    handledRequest.current = taskRequest.sequence;
+    if (items.some((task) => task.id === taskRequest.id))
+      selectTask(taskRequest.id);
+  }, [loaded, taskRequest, items, selectTask]);
   return (
     <>
       <div className="mx-auto flex w-full max-w-[736px] min-w-0 shrink-0 items-center gap-ds-control-gap px-ds-panel-inset py-ds-8">
-        <Select value={selected} onValueChange={setSelected} disabled={!loaded}>
+        <Select
+          value={selected}
+          onValueChange={selectTask}
+          disabled={!loaded || saving}
+        >
           <SelectTrigger
             size="xs"
             variant="secondary"
@@ -145,6 +181,7 @@ export function AgentTasks({
               onSubmit={async (event) => {
                 event.preventDefault();
                 if (!name.trim() || pending.current) return;
+                if (beforeTaskChange?.() === false) return;
                 pending.current = true;
                 setSaving(true);
                 setFailed(false);

@@ -272,8 +272,10 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content> & {
+    contentClassName?: string;
+  }
+>(({ className, contentClassName, children, ...props }, ref) => {
   return (
     <TabsPrimitive.Content
       ref={ref}
@@ -290,7 +292,7 @@ const TabsContent = React.forwardRef<
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex flex-col gap-4"
+          className={cn('flex flex-col gap-4', contentClassName)}
         >
           {children}
         </motion.div>

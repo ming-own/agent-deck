@@ -1,3 +1,4 @@
+import { registerWorkspaceConfigurationNavigationGuard } from '@/lib/workspaceConfigurationNavigationGuard';
 import type { CanvasTrial, SessionAgent } from '@/service/sessionAgentApi';
 import {
   fireEvent,
@@ -131,4 +132,31 @@ it('opens the result panel after submitting and closes when node configuration t
   ).toBeInTheDocument();
   view.rerender(<App inspectorOpen />);
   expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+});
+
+it('keeps the current editor when leaving its draft for a trial is refused', async () => {
+  const onInspect = vi.fn();
+  const unregister = registerWorkspaceConfigurationNavigationGuard({
+    hasPendingChanges: () => true,
+    flushSave: async () => false,
+  });
+  try {
+    render(
+      <CanvasTrials
+        account="owner"
+        regions={[{ id: 'p', name: 'Session', agents: [a, b] }]}
+        choices={[]}
+        email="test@example.com"
+        onInspect={onInspect}
+      >
+        <TrialAction project="p" agent={a} />
+      </CanvasTrials>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Test run · A' }));
+    await waitFor(() => expect(onInspect).not.toHaveBeenCalled());
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
+    expect(mocks.start).not.toHaveBeenCalled();
+  } finally {
+    unregister();
+  }
 });

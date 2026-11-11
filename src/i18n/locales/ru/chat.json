@@ -714,6 +714,7 @@
   "node-tool-consent": "Разрешить на этот ход",
   "node-tool-used": "Разрешено · Вызовов: {{count}}",
   "node-tool-withheld": "На этот ход не разрешено",
+  "node-task-saved-config": "Задачи используют сохранённые настройки. Несохранённые изменения не применяются.",
   "node-harness": "Режим выполнения",
   "node-harness-standard": "Стандартное выполнение",
   "node-harness-unrecorded": "Не указан",

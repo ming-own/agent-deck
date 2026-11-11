@@ -710,6 +710,7 @@
   "node-tool-consent": "Autoriser pour ce tour",
   "node-tool-used": "Autorisé · Appels : {{count}}",
   "node-tool-withheld": "Non autorisé pour ce tour",
+  "node-task-saved-config": "Les tâches utilisent la configuration enregistrée. Les modifications non enregistrées ne sont pas appliquées.",
   "node-harness": "Mode d’exécution",
   "node-harness-standard": "Exécution standard",
   "node-harness-unrecorded": "Non enregistré",

@@ -45,6 +45,7 @@ import { getAccountEnvironmentKey } from '@/lib/authEnvironment';
 import { selectableConfiguredModels } from '@/lib/configuredModels';
 import { ensureProjectRuntimeLoaded } from '@/lib/projectRuntimeHydration';
 import { getActiveSpaceTriggerLabel } from '@/lib/spaceLabel';
+import { runAfterWorkspaceConfigurationSave } from '@/lib/workspaceConfigurationNavigationGuard';
 import { sessionAgentApi } from '@/service/sessionAgentApi';
 import { modelReference } from '@/service/sessionAgentModels';
 import { proxyCreateSpaceProject } from '@/service/spaceApi';
@@ -97,6 +98,7 @@ import {
 } from './ResourceEditors';
 import { useWorkspaceGraph, type WorkspaceAgent } from './useWorkspaceGraph';
 const agentFlowId = (id: string) => nodeId('agent', id);
+type AgentView = 'general' | 'capabilities' | 'conversation' | 'references';
 const nodeTypes = {
   object: WorkspaceObjectNode,
   session: WorkspaceSessionNode,
@@ -158,11 +160,17 @@ function WorkspaceGraphBody({
     target: string;
   } | null>(null);
   const restored = useRef(false);
+  const canvas = useRef<HTMLDivElement>(null);
+  const restoreEditorFocus = useRef(false);
   const [view, setView] = useState('canvas'),
     [pick, setPick] = useState<GraphItem | null>(null),
     [edit, setEdit] = useState<{
       projectId: string;
       node?: WorkspaceAgent;
+      tab?: AgentView;
+      taskId?: string;
+      taskRequest?: { id: string; sequence: number };
+      opener?: HTMLElement | null;
     } | null>(null),
     [panelTab, setPanelTab] = useState('details');
   const expansionKey =
@@ -211,16 +219,62 @@ function WorkspaceGraphBody({
   const cameraKey =
     'agentdeck:workspace-camera:' + JSON.stringify([account, spaceId]);
   const openSettings = () =>
-    navigate(
-      '/home?section=spaces&spaceId=' +
-        encodeURIComponent(spaceId) +
-        '&spaceTab=workspace-profile'
+    void runAfterWorkspaceConfigurationSave(() =>
+      navigate(
+        '/home?section=spaces&spaceId=' +
+          encodeURIComponent(spaceId) +
+          '&spaceTab=workspace-profile'
+      )
     );
-  const open = useCallback((item: GraphItem) => {
-    setEdit(null);
-    setPanelTab(item.kind === 'task' ? 'conversation' : 'details');
-    setPick(item);
-  }, []);
+  const open = useCallback(
+    (item: GraphItem, tab?: AgentView) => {
+      const target = item.agent;
+      if (target && !target.workforce) {
+        const nextTab =
+          tab ?? (item.kind === 'task' ? 'conversation' : 'general');
+        if (
+          edit?.node?.id === target.id &&
+          edit.projectId === target.projectId
+        ) {
+          setEdit(
+            (current) =>
+              current && {
+                ...current,
+                tab: nextTab,
+                taskRequest: item.task
+                  ? {
+                      id: item.task.id,
+                      sequence: (current.taskRequest?.sequence ?? 0) + 1,
+                    }
+                  : current.taskRequest,
+              }
+          );
+          return;
+        }
+        const opener =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+        void runAfterWorkspaceConfigurationSave(() => {
+          setPick(null);
+          setEdit({
+            projectId: target.projectId,
+            node: target,
+            tab: nextTab,
+            taskId: item.task?.id,
+            opener,
+          });
+        });
+        return;
+      }
+      void runAfterWorkspaceConfigurationSave(() => {
+        setEdit(null);
+        setPanelTab(tab ?? (item.kind === 'task' ? 'conversation' : 'details'));
+        setPick(item);
+      });
+    },
+    [edit]
+  );
   const toggle = useCallback(
     (id: string) =>
       setExpanded((old) => {
@@ -378,15 +432,17 @@ function WorkspaceGraphBody({
       setError(true);
     }
   };
-  const create = (kind: GraphItem['kind']) => {
-    if (kind === 'automation') {
-      usePageTabStore.getState().setActiveWorkspaceTab('triggers');
-      usePageTabStore.getState().requestOpenTriggerAddDialog();
-      return;
-    }
-    setPanelTab('details');
-    setPick({ kind, id: 'new', name: t('chat.workspace-add-' + kind) });
-  };
+  const create = (kind: GraphItem['kind']) =>
+    void runAfterWorkspaceConfigurationSave(() => {
+      if (kind === 'automation') {
+        usePageTabStore.getState().setActiveWorkspaceTab('triggers');
+        usePageTabStore.getState().requestOpenTriggerAddDialog();
+        return;
+      }
+      setPanelTab('details');
+      setEdit(null);
+      setPick({ kind, id: 'new', name: t('chat.workspace-add-' + kind) });
+    });
   const saved = () => {
     data.refresh();
     setPick(null);
@@ -404,15 +460,28 @@ function WorkspaceGraphBody({
             size="sm"
             variant="secondary"
             onClick={() => {
-              setWorkshopSource(undefined);
-              setWorkshop(
-                pick?.projectId ?? data.sessions[0]?.id ?? '__card-library__'
-              );
+              void runAfterWorkspaceConfigurationSave(() => {
+                setWorkshopSource(undefined);
+                setWorkshop(
+                  edit?.projectId ??
+                    pick?.projectId ??
+                    data.sessions[0]?.id ??
+                    '__card-library__'
+                );
+                setEdit(null);
+                setPick(null);
+              });
             }}
           >
             {t('chat.workshop')}
           </Button>
-          <Button size="sm" variant="ghost" onClick={onConversation}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() =>
+              void runAfterWorkspaceConfigurationSave(onConversation)
+            }
+          >
             <DsIcon icon={MessageCircle} />
             {t('chat.canvas-chat')}
           </Button>
@@ -451,8 +520,11 @@ function WorkspaceGraphBody({
           onValueChange={(v) => {
             if (v === 'settings') openSettings();
             else {
-              setView(v);
-              setPick(null);
+              void runAfterWorkspaceConfigurationSave(() => {
+                setView(v);
+                setPick(null);
+                setEdit(null);
+              });
             }
           }}
         >
@@ -515,7 +587,11 @@ function WorkspaceGraphBody({
           }}
         >
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
-            <div className="workspace-card-canvas relative min-h-0 min-w-0 flex-1">
+            <div
+              ref={canvas}
+              tabIndex={-1}
+              className="workspace-card-canvas relative min-h-0 min-w-0 flex-1 outline-none"
+            >
               {view === 'canvas' ? (
                 <ReactFlow<GraphNode>
                   key={positionEpoch}
@@ -542,7 +618,11 @@ function WorkspaceGraphBody({
                         (a) => nodeId('agent', a.id) === edge.source
                       );
                       if (source)
-                        setLink({ source, target: edge.target.slice(6) });
+                        void runAfterWorkspaceConfigurationSave(() => {
+                          setEdit(null);
+                          setPick(null);
+                          setLink({ source, target: edge.target.slice(6) });
+                        });
                     } else if (
                       edge.data?.relation === 'context' ||
                       edge.data?.relation === 'memory'
@@ -550,10 +630,7 @@ function WorkspaceGraphBody({
                       const target = items.find(
                         (i) => nodeId(i.kind, i.id) === edge.target
                       );
-                      if (target) {
-                        open(target);
-                        setPanelTab('references');
-                      }
+                      if (target) open(target, 'references');
                     } else if (edge.data?.relation === 'trigger') {
                       const source = items.find(
                         (i) => nodeId(i.kind, i.id) === edge.source
@@ -752,7 +829,9 @@ function WorkspaceGraphBody({
                 }
                 subtitle={freshPick.id === 'new' ? undefined : freshPick.name}
                 busy={false}
-                close={() => setPick(null)}
+                close={() =>
+                  void runAfterWorkspaceConfigurationSave(() => setPick(null))
+                }
               >
                 <DialogContentSection className="scrollbar-always-visible flex flex-col gap-ds-16">
                   {freshPick.kind === 'context' && (
@@ -998,6 +1077,110 @@ function WorkspaceGraphBody({
                 </DialogContentSection>
               </NodeInspector>
             )}
+            {edit && !edit.node?.workforce && (
+              <AgentForm
+                key={edit.projectId + ':' + (edit.node?.id ?? 'new')}
+                docked
+                inline
+                node={edit.node}
+                view={edit.tab ?? 'general'}
+                onViewChange={(tab) =>
+                  setEdit((current) => current && { ...current, tab })
+                }
+                choices={choices}
+                loadSkills={api.skills}
+                restoreFocus={() => {
+                  if (!restoreEditorFocus.current) return;
+                  restoreEditorFocus.current = false;
+                  if (edit.opener?.isConnected)
+                    edit.opener.focus({ preventScroll: true });
+                  else canvas.current?.focus({ preventScroll: true });
+                }}
+                onCancel={() => {
+                  restoreEditorFocus.current = true;
+                  setEdit(null);
+                }}
+                actions={
+                  edit.node && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          void runAfterWorkspaceConfigurationSave(() => {
+                            setAppearance(edit.node!);
+                            setEdit(null);
+                          })
+                        }
+                      >
+                        {t('chat.card-appearance')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          void runAfterWorkspaceConfigurationSave(() => {
+                            setWorkshopSource(edit.node);
+                            setWorkshop(edit.projectId);
+                            setEdit(null);
+                          })
+                        }
+                      >
+                        {t('chat.card-save-to-library')}
+                      </Button>
+                    </>
+                  )
+                }
+                references={
+                  edit.node && (
+                    <ReferenceEditor
+                      key={edit.node.id}
+                      data={data}
+                      agent={edit.node}
+                      onSaved={data.refresh}
+                    />
+                  )
+                }
+                conversation={
+                  edit.node && (
+                    <CanvasNodeTasks
+                      key={edit.node.id}
+                      initialTaskId={edit.taskId}
+                      taskRequest={edit.taskRequest}
+                      node={edit.node}
+                      api={api}
+                      choices={choices}
+                      email={email}
+                      account={account}
+                      project={edit.projectId}
+                      modelsLoading={
+                        inventory.loading || inventory.codexModelsLoading
+                      }
+                      openRouter={setRouter}
+                    />
+                  )
+                }
+                onSave={async (name, choice, behavior) => {
+                  const updated = edit.node
+                    ? await api.update(
+                        edit.node,
+                        name,
+                        modelReference(choice),
+                        behavior
+                      )
+                    : await api.create(name, modelReference(choice), behavior);
+                  setExpanded((old) => new Set([...old, edit.projectId]));
+                  setEdit(
+                    (current) =>
+                      current && {
+                        ...current,
+                        node: { ...updated, projectId: edit.projectId },
+                      }
+                  );
+                  data.refresh();
+                }}
+              />
+            )}
           </div>
         </CanvasTrials>
       )}
@@ -1023,55 +1206,31 @@ function WorkspaceGraphBody({
           }}
         />
       )}
-      {edit &&
-        (edit.node?.workforce ? (
-          <WorkforceDetails
-            docked
-            node={edit.node}
-            api={sessionAgentApi(account, edit.projectId)}
-            epoch={data.epoch}
-            choices={choices}
-            email={email}
-            close={() => setEdit(null)}
-            edit={(node) =>
-              setEdit({
-                projectId: edit.projectId,
-                node: { ...node, projectId: edit.projectId },
-              })
-            }
-            save={() => {
-              setWorkshopSource(edit.node);
-              setWorkshop(edit.projectId);
-            }}
-            updated={() => {
-              data.refresh();
-              setEdit(null);
-            }}
-          />
-        ) : (
-          <AgentForm
-            docked
-            node={edit.node}
-            choices={choices}
-            loadSkills={sessionAgentApi(account, edit.projectId).skills}
-            restoreFocus={() => {}}
-            onCancel={() => setEdit(null)}
-            onSave={async (name, choice, behavior) => {
-              const a = sessionAgentApi(account, edit.projectId);
-              if (edit.node)
-                await a.update(
-                  edit.node,
-                  name,
-                  modelReference(choice),
-                  behavior
-                );
-              else await a.create(name, modelReference(choice), behavior);
-              setExpanded((old) => new Set([...old, edit.projectId]));
-              setEdit(null);
-              data.refresh();
-            }}
-          />
-        ))}
+      {edit?.node?.workforce && (
+        <WorkforceDetails
+          docked
+          node={edit.node}
+          api={sessionAgentApi(account, edit.projectId)}
+          epoch={data.epoch}
+          choices={choices}
+          email={email}
+          close={() => setEdit(null)}
+          edit={(node) =>
+            setEdit({
+              projectId: edit.projectId,
+              node: { ...node, projectId: edit.projectId },
+            })
+          }
+          save={() => {
+            setWorkshopSource(edit.node);
+            setWorkshop(edit.projectId);
+          }}
+          updated={() => {
+            data.refresh();
+            setEdit(null);
+          }}
+        />
+      )}
       {router && (
         <TaskRouter
           location={router}
@@ -1130,14 +1289,11 @@ function WorkspaceGraphBody({
           onInstalled={(node, projectId) => {
             setExpanded((old) => new Set([...old, projectId]));
             setView('canvas');
-            setEdit(null);
-            setPanelTab('details');
-            setPick({
-              kind: 'agent',
-              id: node.id,
-              name: node.name,
+            setPick(null);
+            setEdit({
               projectId,
-              agent: { ...node, projectId },
+              node: { ...node, projectId },
+              tab: 'general',
             });
             data.refresh();
           }}

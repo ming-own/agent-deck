@@ -6,6 +6,8 @@ Use <https://github.com/ming-own/agent-deck> for issues and pull requests. Do no
 submit this project's changes to the original Eigent repository.
 
 1. Read [AGENTS.md](AGENTS.md) and the relevant design and terminology guidelines.
+   Frontend changes must follow its multi-Agent plan and PR review gates;
+   see the [project instructions](AGENTS.md).
 2. Keep changes focused on the maintainer's requested behavior.
 3. Preserve existing APIs and data formats unless a migration is explicitly planned.
 4. Run the checks appropriate to the changed files, including `npm run type-check`,

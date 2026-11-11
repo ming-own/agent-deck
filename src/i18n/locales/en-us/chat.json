@@ -706,6 +706,7 @@
   "node-tool-consent": "Allow for this turn",
   "node-tool-used": "Allowed · Calls: {{count}}",
   "node-tool-withheld": "Not granted this turn",
+  "node-task-saved-config": "Tasks use the saved configuration. Unsaved changes do not apply.",
   "node-harness": "Execution harness",
   "node-harness-standard": "Standard execution",
   "node-harness-unrecorded": "Not recorded",

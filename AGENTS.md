@@ -1,5 +1,35 @@
 # AgentDeck Agent Instructions
 
+## Required development and PR workflow
+
+This is the single source of project instructions. `AGENT.md` links here.
+
+1. Before frontend interaction or visual changes, describe at least three
+   alternatives. Have three independent Agents review them from UX, architecture
+   and regression perspectives. Score task fit /30, visual consistency /20, data
+   safety /20, maintainability /20 and verifiability /10. Select the highest mean
+   score after resolving blocking risks; the owner's explicit decision wins.
+2. Keep original scores, design drafts, working notes, screenshots, logs and
+   one-off local verification scripts under ignored `.local/` or `.planning/`.
+   Never fabricate reviews. Do not commit process material or require it as PR
+   evidence. Existing maintained product documentation is separate from drafts.
+3. Verify each increment before continuing. Preserve the approved card style,
+   data and connection contracts. Report failures and limits accurately. Do not
+   trigger paid models or real automations without authorization.
+4. Commit only scoped product changes, reusable automated regression tests,
+   maintained project rules and necessary CI configuration. Test outputs stay in
+   ignored directories. Do not automatically publish local captures as CI
+   artifacts. Check the staged file list and ignore rules before every commit.
+   Isolate work from a committed base when the working copy contains unrelated
+   changes; never package those changes as an unreviewed baseline.
+5. Open PRs only in `ming-own/agent-deck`. A non-implementing Agent reviews the
+   full base-to-head diff; fix confirmed issues and re-review the current commit.
+   Keep the PR description and review summary concise: behavior, actual checks,
+   findings and limitations. Local design/process files need not be uploaded.
+   An author-posted Agent report is not a GitHub `APPROVED` vote. Do not mark
+   ready with unresolved P0/P1 findings or required checks failing. The maintainer
+   decides whether to merge.
+
 ## Repository ownership and branding
 
 - Product: **AgentDeck（智牌）**; repository: `ming-own/agent-deck`.

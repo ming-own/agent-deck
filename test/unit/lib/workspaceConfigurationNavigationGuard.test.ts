@@ -56,3 +56,32 @@ it('coalesces concurrent navigation attempts behind one flush', async () => {
   expect(secondAction).toHaveBeenCalledTimes(1);
   unregister();
 });
+
+it('preserves pending automatic saves beneath an unrelated clean mounted guard', async () => {
+  let pending = true;
+  const save = vi.fn(async () => {
+    pending = false;
+    return true;
+  });
+  const outer = registerWorkspaceConfigurationNavigationGuard({
+    hasPendingChanges: () => pending,
+    flushSave: save,
+  });
+  const inner = registerWorkspaceConfigurationNavigationGuard({
+    hasPendingChanges: () => false,
+    flushSave: async () => true,
+  });
+  try {
+    inner();
+    const action = vi.fn();
+    await expect(runAfterWorkspaceConfigurationSave(action)).resolves.toBe(
+      true
+    );
+    expect(save).toHaveBeenCalledOnce();
+    expect(action).toHaveBeenCalledOnce();
+    expect(pending).toBe(false);
+  } finally {
+    inner();
+    outer();
+  }
+});

@@ -17,28 +17,34 @@ export interface WorkspaceConfigurationNavigationGuard {
   flushSave: () => Promise<boolean>;
 }
 
-let activeGuard: WorkspaceConfigurationNavigationGuard | null = null;
+const guards = new Set<WorkspaceConfigurationNavigationGuard>();
 let activeFlush: Promise<boolean> | null = null;
 
 export function registerWorkspaceConfigurationNavigationGuard(
   guard: WorkspaceConfigurationNavigationGuard
 ): () => void {
-  activeGuard = guard;
+  guards.add(guard);
   return () => {
-    if (activeGuard === guard) activeGuard = null;
+    guards.delete(guard);
   };
 }
 
 export function hasPendingWorkspaceConfigurationChanges(): boolean {
-  return activeGuard?.hasPendingChanges() ?? false;
+  return [...guards].some((guard) => guard.hasPendingChanges());
 }
 
 export async function flushWorkspaceConfigurationBeforeNavigation(): Promise<boolean> {
-  const guard = activeGuard;
-  if (!guard || !guard.hasPendingChanges()) return true;
   if (activeFlush) return activeFlush;
+  if (!hasPendingWorkspaceConfigurationChanges()) return true;
 
-  const flush = guard.flushSave();
+  const flush = (async () => {
+    // A nested editor must not erase an existing conversation or autosave guard.
+    // Set iteration also visits guards mounted while a save is in flight.
+    for (const guard of guards) {
+      if (guard.hasPendingChanges() && !(await guard.flushSave())) return false;
+    }
+    return true;
+  })();
   activeFlush = flush;
   try {
     return await flush;

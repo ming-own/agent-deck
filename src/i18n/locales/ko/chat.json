@@ -702,6 +702,7 @@
   "node-tool-consent": "이번 대화에서 허용",
   "node-tool-used": "허용됨 · 호출 {{count}}회",
   "node-tool-withheld": "이번에는 허용하지 않음",
+  "node-task-saved-config": "작업에는 저장된 설정이 사용됩니다. 저장하지 않은 변경 사항은 적용되지 않습니다.",
   "node-harness": "실행 방식 (Harness)",
   "node-harness-standard": "표준 실행",
   "node-harness-unrecorded": "기록 없음",

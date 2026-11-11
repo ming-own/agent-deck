@@ -1,0 +1,38 @@
+name: Frontend checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-review-checks:
+    name: Frontend review checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies without lifecycle scripts
+        run: npm install --ignore-scripts
+      - name: Type and design contracts
+        run: |
+          npm run type-check
+          npm run check:design-tokens
+          npm run check:i18n
+      - name: Canvas interaction regressions
+        run: >-
+          npx vitest run --config vitest.config.ts
+          src/components/Session/Agents
+          src/components/Workspace/WorkspaceGraph
+          test/unit/lib/workspaceConfigurationNavigationGuard.test.ts

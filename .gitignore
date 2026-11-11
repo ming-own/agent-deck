@@ -86,3 +86,12 @@ server/celerybeat-schedule*
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Agent planning, design drafts and one-off local verification
+/.local/
+/.planning/
+/docs/reviews/
+/test/e2e/node-inspector/
+/task_plan.md
+/findings.md
+/progress.md

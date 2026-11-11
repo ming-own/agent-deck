@@ -7,6 +7,10 @@ import { DsText } from '@/components/ui/ds-text';
 import { Textarea } from '@/components/ui/textarea';
 import type { ConfiguredModelChoice } from '@/lib/configuredModels';
 import {
+  hasPendingWorkspaceConfigurationChanges,
+  runAfterWorkspaceConfigurationSave,
+} from '@/lib/workspaceConfigurationNavigationGuard';
+import {
   sessionAgentApi,
   type AgentTask,
   type CanvasTrial,
@@ -243,8 +247,15 @@ export function CanvasTrials({
   const [pick, setPick] = useState<Choice | null>(null);
   const flow = useReactFlow();
   const open = (choice: Choice) => {
-    onInspect?.();
-    setPick(choice);
+    const inspect = () => {
+      onInspect?.();
+      setPick(choice);
+    };
+    if (hasPendingWorkspaceConfigurationChanges()) {
+      void runAfterWorkspaceConfigurationSave(inspect);
+    } else {
+      inspect();
+    }
   };
   useEffect(() => {
     if (inspectorOpen) setPick(null);
