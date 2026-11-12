@@ -3,6 +3,31 @@ use agentdeck_desktop::editing::Drafts;
 use agentdeck_desktop::{interaction::CanvasState, persistence};
 
 #[test]
+fn suggested_target_ports_create_valid_connections_for_every_node_kind() {
+    use agentdeck_desktop::interaction::{input_port, output_port};
+    for kind in [
+        NodeKind::Agent,
+        NodeKind::Context,
+        NodeKind::Memory,
+        NodeKind::Automation,
+    ] {
+        let mut state = CanvasState::demo();
+        let source = state.add(kind, "session-1", point(0.0, 0.0)).unwrap();
+        let output = output_port(kind);
+        state.start_wire(&source, output);
+        state.finish_wire("a", input_port(output)).unwrap();
+        assert!(
+            state
+                .editor
+                .graph()
+                .connections()
+                .iter()
+                .any(|edge| edge.source == source)
+        );
+    }
+}
+
+#[test]
 fn deleted_node_drafts_return_on_undo_but_clean_fields_do_not_redo_a_rename() {
     let mut state = CanvasState::demo();
     let mut drafts = Drafts::default();

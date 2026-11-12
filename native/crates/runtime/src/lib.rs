@@ -6,3 +6,5 @@ pub use engine::Engine;
 pub mod client;
 #[cfg(unix)]
 pub mod server;
+
+pub mod provider;

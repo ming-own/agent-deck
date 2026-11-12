@@ -24,6 +24,10 @@ pub struct Desktop {
     pub pointer: WorldPoint,
     pub space_down: bool,
     pub inspector_id: Option<String>,
+    pub show_directory: bool,
+    pub show_inspector: bool,
+    pub inspector_tab: crate::inspector::InspectorTab,
+    pub show_run_details: bool,
     pub title: Entity<InputState>,
     pub description: Entity<TextareaState>,
     pub drafts: Drafts,
@@ -47,7 +51,7 @@ impl Desktop {
             Ok(Some(layout)) => (CanvasState::from_layout(layout), "布局已恢复".into(), false),
             Ok(None) => (
                 CanvasState::demo(),
-                "原生画布预览 · 布局可保存，执行服务尚未接入".into(),
+                "原生画布预览 · 布局保存在本机".into(),
                 false,
             ),
             Err(e) => (
@@ -72,7 +76,7 @@ impl Desktop {
             weak.update(cx, |this, cx| this.may_close(cx))
                 .unwrap_or(true)
         });
-        let focus = cx.focus_handle();
+        let focus = cx.focus_handle().tab_stop(true);
         focus.focus(window, cx);
         let owner = cx.weak_entity();
         let sidebar = cx.new(|_| crate::sidebar::Sidebar::new(owner));
@@ -90,6 +94,10 @@ impl Desktop {
             pointer: WorldPoint::default(),
             space_down: false,
             inspector_id: None,
+            show_directory: true,
+            show_inspector: true,
+            inspector_tab: crate::inspector::InspectorTab::Edit,
+            show_run_details: false,
             title: cx.new(|cx| InputState::new(window, cx)),
             description: cx.new(|cx| TextareaState::new(window, cx)),
             drafts: Drafts::default(),
@@ -285,7 +293,7 @@ impl Desktop {
                     "不能直接跨会话连线；跨会话转交将在后续迁移。".into()
                 }
                 agentdeck_canvas_core::GraphError::WrongPort => {
-                    "端口类型不匹配：请连接同名输入端口。".into()
+                    "端口不匹配：结果接入消息；Context、记忆和触发接入同名端口。".into()
                 }
                 _ => format!("无法连接：{e}"),
             },
@@ -315,10 +323,15 @@ impl Desktop {
             .relative()
             .flex_1()
             .min_w_0()
-            .h_full()
+            .min_h_0()
             .overflow_hidden()
-            .bg(cx.theme().muted)
+            .bg(cx.theme().background.blend(cx.theme().muted.opacity(0.45)))
             .track_focus(&self.focus)
+            .border_2()
+            .border_color(cx.theme().transparent)
+            .focus_visible(|style| style.border_color(cx.theme().ring))
+            .role(Role::Group)
+            .aria_label("画布，滚动平移，Command 加滚动缩放；选择节点后可删除或撤销")
             .key_context("Canvas")
             .on_action(cx.listener(|this, _: &Undo, window, cx| this.undo(false, window, cx)))
             .on_action(cx.listener(|this, _: &Redo, window, cx| this.undo(true, window, cx)))
@@ -461,9 +474,12 @@ impl Desktop {
 impl Render for Desktop {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let nodes = crate::sidebar::Sidebar::project(self.state.editor.graph());
-        if self.sidebar.read(cx).nodes != nodes {
+        if self.sidebar.read(cx).nodes != nodes
+            || self.sidebar.read(cx).selected != self.inspector_id
+        {
             self.sidebar.update(cx, |sidebar, cx| {
                 sidebar.nodes = nodes;
+                sidebar.selected = self.inspector_id.clone();
                 cx.notify();
             });
         }
@@ -494,11 +510,22 @@ impl Render for Desktop {
                     .flex()
                     .flex_1()
                     .min_h_0()
-                    .child(sidebar)
-                    .child(self.surface(cx))
-                    .child(crate::inspector::inspector(self, cx)),
+                    .children(self.show_directory.then_some(sidebar))
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .flex_1()
+                            .min_w_0()
+                            .h_full()
+                            .child(self.surface(cx))
+                            .child(crate::execution::panel(self, cx)),
+                    )
+                    .children(
+                        self.show_inspector
+                            .then(|| crate::inspector::inspector(self, cx)),
+                    ),
             )
-            .child(crate::execution::panel(self, cx))
             .child(crate::inspector::status(self, cx))
     }
 }

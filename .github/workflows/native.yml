@@ -36,9 +36,9 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all --check
       - name: Test canvas transactions and layout persistence
-        run: cargo test -p agentdeck-canvas-core -p agentdeck-runtime --locked
+        run: cargo test -p agentdeck-canvas-core -p agentdeck-product -p agentdeck-runtime --locked
       - name: Check Rust diagnostics
-        run: cargo clippy -p agentdeck-canvas-core -p agentdeck-runtime --all-targets --locked -- -D warnings
+        run: cargo clippy -p agentdeck-canvas-core -p agentdeck-product -p agentdeck-runtime --all-targets --locked -- -D warnings
 
   desktop:
     runs-on: macos-15

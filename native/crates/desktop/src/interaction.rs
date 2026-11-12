@@ -15,6 +15,13 @@ pub fn node_height(kind: NodeKind) -> f32 {
     }
 }
 
+pub fn input_port(output: Port) -> Port {
+    match output {
+        Port::Result => Port::Message,
+        port => port,
+    }
+}
+
 pub fn output_port(kind: NodeKind) -> Port {
     match kind {
         NodeKind::Agent => Port::Result,
