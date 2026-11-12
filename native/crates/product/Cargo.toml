@@ -1,0 +1,12 @@
+[package]
+name = "agentdeck-product"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+canvas-core = { package = "agentdeck-canvas-core", path = "../canvas-core" }
+serde.workspace = true
+serde_json.workspace = true
+uuid = { version = "1", features = ["v4"] }
+libc = "0.2"
