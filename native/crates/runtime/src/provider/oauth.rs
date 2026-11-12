@@ -55,11 +55,16 @@ pub struct OAuthLogin {
     task: tokio::task::JoinHandle<()>,
 }
 impl OAuthLogin {
+    /// Nonblocking metadata poll. A guarded private-store publication is Pending
+    /// until its synchronous write has finished; polling never waits on Keychain.
     pub fn status(&self) -> OAuthStatus {
-        self.status
-            .lock()
-            .map(|s| s.clone())
-            .unwrap_or(OAuthStatus::Failed(ErrorCode::CredentialStore))
+        match self.status.try_lock() {
+            Ok(status) => status.clone(),
+            Err(std::sync::TryLockError::WouldBlock) => OAuthStatus::Pending,
+            Err(std::sync::TryLockError::Poisoned(_)) => {
+                OAuthStatus::Failed(ErrorCode::CredentialStore)
+            }
+        }
     }
     /// Synchronous publication barrier, also used by Drop. May wait for a private
     /// store write in progress; no auth credential can be saved after return.
@@ -183,22 +188,28 @@ async fn begin_with_listener(
     let http = http_client()?;
     let task = tokio::spawn(async move {
         let result = tokio::select! { biased; _ = stop.cancelled() => Err(ProviderError::new(ErrorCode::Cancelled)), _ = tokio::time::sleep_until(deadline) => Err(ProviderError::new(ErrorCode::OAuthExpired)), result = callback(listener, &pkce, &http, &token_url, &redirect) => result };
-        // This guard linearizes publication with cancel/Drop. A token check
-        // followed by an unlocked save would still allow a late credential to
-        // restore a connection after the caller cancels and deletes it.
-        if let Ok(mut status) = update.lock()
-            && *status == OAuthStatus::Pending
-        {
-            *status = if stop.is_cancelled() {
-                OAuthStatus::Cancelled
-            } else {
-                match result.and_then(|credential| store.save(&id, credential)) {
-                    Ok(()) => OAuthStatus::Connected,
-                    Err(e) if e.code == ErrorCode::Cancelled => OAuthStatus::Cancelled,
-                    Err(e) => OAuthStatus::Failed(e.code),
-                }
-            };
-        }
+        // Private stores are synchronous and may wait on OS authentication UI.
+        // Keep that wait off Tokio workers so callback timers and other model
+        // tasks remain responsive while the publication guard is held.
+        let _ = tokio::task::spawn_blocking(move || {
+            // This guard linearizes publication with cancel/Drop. A token check
+            // followed by an unlocked save would still allow a late credential to
+            // restore a connection after the caller cancels and deletes it.
+            if let Ok(mut status) = update.lock()
+                && *status == OAuthStatus::Pending
+            {
+                *status = if stop.is_cancelled() {
+                    OAuthStatus::Cancelled
+                } else {
+                    match result.and_then(|credential| store.save(&id, credential)) {
+                        Ok(()) => OAuthStatus::Connected,
+                        Err(e) if e.code == ErrorCode::Cancelled => OAuthStatus::Cancelled,
+                        Err(e) => OAuthStatus::Failed(e.code),
+                    }
+                };
+            }
+        })
+        .await;
     });
     Ok(OAuthLogin {
         authorization_url,
@@ -784,7 +795,10 @@ mod tests {
             self.0.release();
         }
     }
-    async fn assert_publication_linearizes_before_connection_change(replacement: bool) {
+    async fn assert_publication_linearizes_before_connection_change(
+        replacement: bool,
+        poll_status: bool,
+    ) {
         let (entered_tx, entered_rx) = tokio::sync::oneshot::channel();
         let (published_tx, published_rx) = tokio::sync::oneshot::channel();
         let store = Arc::new(PublicationBarrierStore {
@@ -792,6 +806,19 @@ mod tests {
             gate: (Mutex::new((false, false)), std::sync::Condvar::new()),
             entered: Mutex::new(Some(entered_tx)),
             published: Mutex::new(Some(published_tx)),
+        });
+        // A real Tokio timeout cannot bound a regression that starves the
+        // scheduler itself. The OS-thread watchdog releases only the artificial
+        // store gate and fails the test instead of hanging the entire suite.
+        let (watch_tx, watch_rx) = std::sync::mpsc::channel();
+        let watch_store = store.clone();
+        let watchdog = std::thread::spawn(move || {
+            if watch_rx.recv_timeout(Duration::from_secs(2)).is_err() {
+                watch_store.release();
+                true
+            } else {
+                false
+            }
         });
         let (url, token_task) = token_fixture("200 OK", token("private-access")).await;
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -819,6 +846,13 @@ mod tests {
         entered_rx.await.unwrap();
         token_task.await.unwrap();
         // The auth worker is now inside save but paused before mutating its store.
+        if poll_status {
+            assert_eq!(
+                login.status(),
+                OAuthStatus::Pending,
+                "status polling must not wait for private-store publication"
+            );
+        }
         let (started_tx, started_rx) = tokio::sync::oneshot::channel();
         let (finished_tx, mut finished_rx) = tokio::sync::oneshot::channel();
         let disconnect_store = store.clone();
@@ -846,9 +880,15 @@ mod tests {
         store.release();
         published_rx.await.unwrap();
         disconnect.join().unwrap();
+        let _ = watch_tx.send(());
+        let watchdog_released_gate = watchdog.join().unwrap();
         if !completed_before_publication {
             finished_rx.await.unwrap();
         }
+        assert!(
+            !watchdog_released_gate,
+            "blocking OAuth publication starved the runtime timer"
+        );
         let expected = replacement.then(|| Credential::ApiKey(SecretString::new("replacement")));
         assert_eq!(
             store.load("publication").unwrap(),
@@ -861,12 +901,16 @@ mod tests {
         );
     }
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn polling_login_status_does_not_wait_for_store_publication() {
+        assert_publication_linearizes_before_connection_change(false, true).await;
+    }
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn cancelling_login_linearizes_before_disconnect() {
-        assert_publication_linearizes_before_connection_change(false).await;
+        assert_publication_linearizes_before_connection_change(false, false).await;
     }
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn dropping_login_linearizes_before_replacement() {
-        assert_publication_linearizes_before_connection_change(true).await;
+        assert_publication_linearizes_before_connection_change(true, false).await;
     }
 }
 
