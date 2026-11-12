@@ -39,8 +39,15 @@ pub enum OAuthStatus {
     Cancelled,
     Failed(ErrorCode),
 }
-/// Owns a single callback listener. Dropping/cancelling this handle closes it.
+/// Owns a single callback listener. Cancelling/dropping signals its task to close.
 /// Poll `status()` for metadata; tokens never cross the authentication API.
+///
+/// Cancel/drop synchronizes with final credential publication and can wait for
+/// an already-started synchronous private-store write. After it returns, this
+/// login cannot publish again. To disconnect or replace credentials, first
+/// cancel/drop this handle, then delete/save the credential. Do not reverse
+/// that order. Publication that already won the guard may complete before
+/// cancellation; cancellation alone does not delete a connected credential.
 pub struct OAuthLogin {
     pub authorization_url: String,
     status: Arc<Mutex<OAuthStatus>>,
@@ -54,20 +61,23 @@ impl OAuthLogin {
             .map(|s| s.clone())
             .unwrap_or(OAuthStatus::Failed(ErrorCode::CredentialStore))
     }
+    /// Synchronous publication barrier, also used by Drop. May wait for a private
+    /// store write in progress; no auth credential can be saved after return.
     pub fn cancel(&self) {
+        let mut status = self
+            .status
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         self.cancel.cancel();
         self.task.abort();
-        if let Ok(mut status) = self.status.lock()
-            && *status == OAuthStatus::Pending
-        {
+        if *status == OAuthStatus::Pending {
             *status = OAuthStatus::Cancelled;
         }
     }
 }
 impl Drop for OAuthLogin {
     fn drop(&mut self) {
-        self.cancel.cancel();
-        self.task.abort();
+        self.cancel();
     }
 }
 /// Binds IPv4 loopback port 1455; UI opens the returned URL in the system browser.
@@ -173,15 +183,21 @@ async fn begin_with_listener(
     let http = http_client()?;
     let task = tokio::spawn(async move {
         let result = tokio::select! { biased; _ = stop.cancelled() => Err(ProviderError::new(ErrorCode::Cancelled)), _ = tokio::time::sleep_until(deadline) => Err(ProviderError::new(ErrorCode::OAuthExpired)), result = callback(listener, &pkce, &http, &token_url, &redirect) => result };
-        let next = match result.and_then(|credential| store.save(&id, credential)) {
-            Ok(()) => OAuthStatus::Connected,
-            Err(e) if e.code == ErrorCode::Cancelled => OAuthStatus::Cancelled,
-            Err(e) => OAuthStatus::Failed(e.code),
-        };
+        // This guard linearizes publication with cancel/Drop. A token check
+        // followed by an unlocked save would still allow a late credential to
+        // restore a connection after the caller cancels and deletes it.
         if let Ok(mut status) = update.lock()
             && *status == OAuthStatus::Pending
         {
-            *status = next;
+            *status = if stop.is_cancelled() {
+                OAuthStatus::Cancelled
+            } else {
+                match result.and_then(|credential| store.save(&id, credential)) {
+                    Ok(()) => OAuthStatus::Connected,
+                    Err(e) if e.code == ErrorCode::Cancelled => OAuthStatus::Cancelled,
+                    Err(e) => OAuthStatus::Failed(e.code),
+                }
+            };
         }
     });
     Ok(OAuthLogin {
@@ -713,6 +729,144 @@ mod tests {
         })
         .await
         .unwrap();
+    }
+    struct PublicationBarrierStore {
+        inner: MemoryCredentialStore,
+        gate: (Mutex<(bool, bool)>, std::sync::Condvar),
+        entered: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
+        published: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
+    }
+    impl PublicationBarrierStore {
+        fn release(&self) {
+            self.gate.0.lock().unwrap().1 = true;
+            self.gate.1.notify_all();
+        }
+    }
+    impl CredentialStore for PublicationBarrierStore {
+        fn load(&self, id: &str) -> Result<Option<Credential>> {
+            self.inner.load(id)
+        }
+        fn delete(&self, id: &str) -> Result<()> {
+            self.inner.delete(id)
+        }
+        fn replace_if_unchanged(
+            &self,
+            id: &str,
+            expected: &Credential,
+            replacement: Credential,
+        ) -> Result<bool> {
+            self.inner.replace_if_unchanged(id, expected, replacement)
+        }
+        fn save(&self, id: &str, credential: Credential) -> Result<()> {
+            let first = {
+                let mut gate = self.gate.0.lock().unwrap();
+                let first = !gate.0;
+                gate.0 = true;
+                first
+            };
+            if first {
+                let _ = self.entered.lock().unwrap().take().unwrap().send(());
+                let mut gate = self.gate.0.lock().unwrap();
+                while !gate.1 {
+                    gate = self.gate.1.wait(gate).unwrap();
+                }
+            }
+            self.inner.save(id, credential)?;
+            if first {
+                let _ = self.published.lock().unwrap().take().unwrap().send(());
+            }
+            Ok(())
+        }
+    }
+    struct ReleasePublicationOnDrop(Arc<PublicationBarrierStore>);
+    impl Drop for ReleasePublicationOnDrop {
+        fn drop(&mut self) {
+            self.0.release();
+        }
+    }
+    async fn assert_publication_linearizes_before_connection_change(replacement: bool) {
+        let (entered_tx, entered_rx) = tokio::sync::oneshot::channel();
+        let (published_tx, published_rx) = tokio::sync::oneshot::channel();
+        let store = Arc::new(PublicationBarrierStore {
+            inner: MemoryCredentialStore::default(),
+            gate: (Mutex::new((false, false)), std::sync::Condvar::new()),
+            entered: Mutex::new(Some(entered_tx)),
+            published: Mutex::new(Some(published_tx)),
+        });
+        let (url, token_task) = token_fixture("200 OK", token("private-access")).await;
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let login = begin_with_listener(
+            "publication".into(),
+            store.clone(),
+            listener,
+            url,
+            format!("http://localhost:{}/auth/callback", address.port()),
+            EXPIRY,
+        )
+        .await
+        .unwrap();
+        let _release_on_panic = ReleasePublicationOnDrop(store.clone());
+        let auth = Url::parse(&login.authorization_url).unwrap();
+        let state = auth
+            .query_pairs()
+            .find(|(key, _)| key == "state")
+            .unwrap()
+            .1
+            .into_owned();
+        let mut socket = tokio::net::TcpStream::connect(address).await.unwrap();
+        socket.write_all(format!("GET /auth/callback?state={state}&code=private-code HTTP/1.1\r\nHost: localhost:{}\r\n\r\n", address.port()).as_bytes()).await.unwrap();
+        entered_rx.await.unwrap();
+        token_task.await.unwrap();
+        // The auth worker is now inside save but paused before mutating its store.
+        let (started_tx, started_rx) = tokio::sync::oneshot::channel();
+        let (finished_tx, mut finished_rx) = tokio::sync::oneshot::channel();
+        let disconnect_store = store.clone();
+        let disconnect = std::thread::spawn(move || {
+            let _ = started_tx.send(());
+            if replacement {
+                drop(login);
+                disconnect_store
+                    .save(
+                        "publication",
+                        Credential::ApiKey(SecretString::new("replacement")),
+                    )
+                    .unwrap();
+            } else {
+                login.cancel();
+                disconnect_store.delete("publication").unwrap();
+            }
+            let _ = finished_tx.send(());
+        });
+        started_rx.await.unwrap();
+        let completed_before_publication =
+            tokio::time::timeout(Duration::from_millis(50), &mut finished_rx)
+                .await
+                .is_ok();
+        store.release();
+        published_rx.await.unwrap();
+        disconnect.join().unwrap();
+        if !completed_before_publication {
+            finished_rx.await.unwrap();
+        }
+        let expected = replacement.then(|| Credential::ApiKey(SecretString::new("replacement")));
+        assert_eq!(
+            store.load("publication").unwrap(),
+            expected,
+            "late OAuth publication overwrote disconnect/replacement"
+        );
+        assert!(
+            !completed_before_publication,
+            "cancel/drop returned before an active credential publication completed"
+        );
+    }
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn cancelling_login_linearizes_before_disconnect() {
+        assert_publication_linearizes_before_connection_change(false).await;
+    }
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn dropping_login_linearizes_before_replacement() {
+        assert_publication_linearizes_before_connection_change(true).await;
     }
 }
 

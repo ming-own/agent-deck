@@ -463,3 +463,43 @@ fn sse_parser_accepts_utf8_split_at_every_byte() {
     }
     assert_eq!(events, vec!["你好"]);
 }
+
+async fn assert_cancellation_wins_buffered_completion(kind: ProviderKind, body: &str) {
+    // A single small HTTP write contains every SSE event, so terminal markers
+    // are buffered when the delta callback cancels without yielding to select.
+    let body = body.to_owned();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let task = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut bytes = [0; 4096];
+        let _ = socket.read(&mut bytes).await.unwrap();
+        let reply = format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        socket.write_all(reply.as_bytes()).await.unwrap();
+    });
+    let cancel = CancellationToken::new();
+    let stop = cancel.clone();
+    let mut deltas = Vec::new();
+    let result = client(base, kind)
+        .stream("model", &history(), &cancel, |delta| {
+            deltas.push(delta.to_owned());
+            stop.cancel();
+        })
+        .await;
+    task.await.unwrap();
+    assert_eq!(deltas, vec!["provisional"]);
+    assert_eq!(result.unwrap_err().code, ErrorCode::Cancelled);
+}
+#[tokio::test]
+async fn openai_cancellation_beats_terminal_events_in_one_http_batch() {
+    assert_cancellation_wins_buffered_completion(ProviderKind::OpenAiCompatible,
+        "data: {\"choices\":[{\"delta\":{\"content\":\"provisional\"}}]}\n\ndata: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\n").await;
+}
+#[tokio::test]
+async fn codex_cancellation_beats_terminal_events_in_one_http_batch() {
+    assert_cancellation_wins_buffered_completion(ProviderKind::Codex,
+        "data: {\"type\":\"response.output_text.delta\",\"delta\":\"provisional\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\"}}\n\n").await;
+}

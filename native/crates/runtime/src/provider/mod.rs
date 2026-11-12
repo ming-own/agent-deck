@@ -96,6 +96,13 @@ impl CancellationToken {
     pub fn is_cancelled(&self) -> bool {
         *self.0.borrow()
     }
+    fn check(&self) -> Result<()> {
+        if self.is_cancelled() {
+            Err(ProviderError::new(ErrorCode::Cancelled))
+        } else {
+            Ok(())
+        }
+    }
     pub async fn cancelled(&self) {
         let mut rx = self.0.subscribe();
         if *rx.borrow_and_update() {
@@ -422,11 +429,14 @@ impl ProviderClient {
             if wire > MAX_WIRE {
                 return Err(ProviderError::new(ErrorCode::InvalidResponse));
             }
+            cancel.check()?;
             for event in decoder.push(&chunk)? {
+                cancel.check()?;
                 if !codex && event.trim() == "[DONE]" {
                     if !stopped || answer.trim().is_empty() {
                         return Err(ProviderError::new(ErrorCode::IncompleteStream));
                     }
+                    cancel.check()?;
                     return Ok(answer);
                 }
                 let value: Value = serde_json::from_str(&event)
@@ -445,6 +455,7 @@ impl ProviderClient {
                             {
                                 return Err(ProviderError::new(ErrorCode::IncompleteStream));
                             }
+                            cancel.check()?;
                             return Ok(answer);
                         }
                         Some("response.failed" | "response.incomplete" | "error") => {
@@ -486,6 +497,7 @@ impl ProviderClient {
                 if !delta.is_empty() {
                     answer.push_str(delta);
                     on_delta(delta);
+                    cancel.check()?;
                 }
             }
         }
