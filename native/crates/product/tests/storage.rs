@@ -117,18 +117,29 @@ fn refuses_symlink_target_parent_and_oversized_file() {
 fn duplicate_map_keys_are_corrupt_and_not_replaced() {
     let f = Fixture::new();
     let mut catalog = Catalog::new();
-    let id = catalog.add_space("Workspace");
-    let mut value = serde_json::to_value(&catalog).unwrap();
-    value["spaces"][0]["resources"] = serde_json::json!({ "skill": { "id": "skill", "title": "Skill", "content": "one", "kind": "skill", "revision": 1 } });
-    let json = serde_json::to_string(&value).unwrap();
-    let needle = r#""resources":{"skill":{"content":"one","id":"skill","kind":"skill","revision":1,"title":"Skill"}}"#;
-    assert!(json.contains(needle));
+    catalog.add_space("Workspace");
+    let json = serde_json::to_string(&catalog).unwrap();
+    // Only match the empty map; nested object key order can change when the
+    // desktop workspace enables serde_json/preserve_order through GPUI.
+    let needle = r#""resources":{}"#;
+    assert_eq!(json.matches(needle).count(), 1);
     let bad = json.replace(needle, r#""resources":{"skill":{"id":"skill","title":"Skill","content":"first","kind":"skill","revision":1},"skill":{"id":"skill","title":"Skill","content":"second","kind":"skill","revision":1}}"#);
+    // Ordinary serde accepts this otherwise valid catalog by discarding the
+    // first entry. The store must specifically detect the duplicate instead.
+    serde_json::from_str::<Catalog>(&bad)
+        .unwrap()
+        .validate()
+        .unwrap();
     fs::write(f.path(), &bad).unwrap();
+    let load_error = storage::load::<Catalog>(&f.path()).unwrap_err();
     assert!(
-        storage::load::<Catalog>(&f.path()).is_err(),
-        "duplicate keys must not silently discard data in {id}"
+        load_error.to_string().contains("Duplicate JSON key: skill"),
+        "{load_error}"
     );
-    assert!(storage::save(&f.path(), &catalog).is_err());
+    let save_error = storage::save(&f.path(), &catalog).unwrap_err();
+    assert!(
+        save_error.to_string().contains("Duplicate JSON key: skill"),
+        "{save_error}"
+    );
     assert_eq!(fs::read_to_string(f.path()).unwrap(), bad);
 }
