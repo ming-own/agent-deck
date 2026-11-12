@@ -401,13 +401,54 @@ fn refresh_lock(key: String) -> Arc<AsyncMutex<()>> {
     locks.insert(key, Arc::downgrade(&lock));
     lock
 }
+/// Per-client ownership of detached authentication transactions. Client clones
+/// share this tracker; independent connections/fixtures never share a drain.
+#[derive(Default)]
+pub(crate) struct PendingAuth {
+    count: std::sync::atomic::AtomicUsize,
+    idle: tokio::sync::Notify,
+}
+struct PendingAuthGuard(Arc<PendingAuth>);
+impl PendingAuth {
+    fn start(self: &Arc<Self>) -> PendingAuthGuard {
+        self.count.fetch_add(1, std::sync::atomic::Ordering::AcqRel);
+        PendingAuthGuard(self.clone())
+    }
+    pub(crate) async fn wait(&self) {
+        loop {
+            let notified = self.idle.notified();
+            tokio::pin!(notified);
+            // Register before the count check so the final guard cannot notify
+            // between checking a nonzero count and actually waiting.
+            notified.as_mut().enable();
+            if self.count.load(std::sync::atomic::Ordering::Acquire) == 0 {
+                return;
+            }
+            notified.await;
+        }
+    }
+}
+impl Drop for PendingAuthGuard {
+    fn drop(&mut self) {
+        if self
+            .0
+            .count
+            .fetch_sub(1, std::sync::atomic::Ordering::AcqRel)
+            == 1
+        {
+            self.0.idle.notify_waiters();
+        }
+    }
+}
 pub(crate) async fn fresh_credential(
     id: &str,
     store: &Arc<dyn CredentialStore>,
     http: &Client,
     token_url: &Url,
     cancel: &CancellationToken,
+    pending_auth: &Arc<PendingAuth>,
 ) -> Result<Credential> {
+    let pending = pending_auth.start();
     let (id, store, http, token_url, stop) = (
         id.to_owned(),
         store.clone(),
@@ -418,10 +459,10 @@ pub(crate) async fn fresh_credential(
     // A rotating token grant is a credential transaction. Once sent, finish and
     // persist it even if its caller cancels/drops the model request. The detached
     // task owns the locks until completion; no second grant can race it.
-    let task =
-        tokio::spawn(
-            async move { refresh_transaction(&id, &store, &http, &token_url, &stop).await },
-        );
+    let task = tokio::spawn(async move {
+        let _pending = pending;
+        refresh_transaction(&id, &store, &http, &token_url, &stop).await
+    });
     tokio::select! { biased;
         _ = cancel.cancelled() => Err(ProviderError::new(ErrorCode::Cancelled)),
         result = task => result.map_err(|_| ProviderError::new(ErrorCode::Transport))?,
@@ -590,9 +631,10 @@ mod tests {
         store.save("refresh", expired()).unwrap();
         let http = http_client().unwrap();
         let cancel = CancellationToken::new();
+        let pending_auth = Arc::new(PendingAuth::default());
         let (a, b) = tokio::join!(
-            fresh_credential("refresh", &store, &http, &url, &cancel),
-            fresh_credential("refresh", &store, &http, &url, &cancel)
+            fresh_credential("refresh", &store, &http, &url, &cancel, &pending_auth),
+            fresh_credential("refresh", &store, &http, &url, &cancel, &pending_auth)
         );
         assert_eq!(a.unwrap(), b.unwrap());
         assert!(
@@ -618,6 +660,7 @@ mod tests {
             &http_client().unwrap(),
             &url,
             &CancellationToken::new(),
+            &Arc::new(PendingAuth::default()),
         )
         .await
         .unwrap_err();
@@ -958,6 +1001,7 @@ mod cancellation_tests {
                 &http_client().unwrap(),
                 &url,
                 &cancel,
+                &Arc::new(PendingAuth::default()),
             )
             .await
         });
@@ -1020,6 +1064,7 @@ mod disconnect_tests {
                 &http_client().unwrap(),
                 &url,
                 &CancellationToken::new(),
+                &Arc::new(PendingAuth::default()),
             )
             .await
         });

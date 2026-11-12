@@ -503,3 +503,117 @@ async fn codex_cancellation_beats_terminal_events_in_one_http_batch() {
     assert_cancellation_wins_buffered_completion(ProviderKind::Codex,
         "data: {\"type\":\"response.output_text.delta\",\"delta\":\"provisional\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\"}}\n\n").await;
 }
+
+#[tokio::test]
+async fn auth_drain_waits_for_rotated_token_after_model_cancellation_and_is_client_scoped() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let token_url =
+        url::Url::parse(&format!("http://{}/token", listener.local_addr().unwrap())).unwrap();
+    let (received_tx, received_rx) = tokio::sync::oneshot::channel();
+    let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let server = tokio::spawn(async move {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let mut request = [0; 4096];
+        let _ = socket.read(&mut request).await.unwrap();
+        let _ = received_tx.send(());
+        let _ = release_rx.await;
+        let body = serde_json::json!({"access_token":"drain-rotated-access", "refresh_token":"drain-rotated-refresh", "expires_in":3600}).to_string();
+        let reply = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        socket.write_all(reply.as_bytes()).await.unwrap();
+    });
+    let mut connection = client("http://127.0.0.1:9".into(), ProviderKind::Codex);
+    connection.token_url = token_url;
+    connection
+        .store
+        .save(
+            "fixture",
+            Credential::Codex {
+                access_token: SecretString::new("drain-old-access"),
+                refresh_token: SecretString::new("drain-old-refresh"),
+                expires_at: 0,
+                account_id: "drain-account".into(),
+            },
+        )
+        .unwrap();
+    let request_client = connection.clone();
+    let cancel = CancellationToken::new();
+    let stop = cancel.clone();
+    let request =
+        tokio::spawn(async move { request_client.complete("model", &history(), &cancel).await });
+    received_rx.await.unwrap();
+    stop.cancel();
+    assert_eq!(
+        request.await.unwrap().unwrap_err().code,
+        ErrorCode::Cancelled
+    );
+    // Both original and clone see the same owned grant, while an unrelated
+    // client's drain is independent even with this response deliberately paused.
+    let observer = connection.clone();
+    let mut drain = Box::pin(connection.wait_for_pending_auth());
+    let mut clone_drain = Box::pin(observer.wait_for_pending_auth());
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), drain.as_mut())
+            .await
+            .is_err()
+    );
+    assert!(
+        tokio::time::timeout(std::time::Duration::from_millis(30), clone_drain.as_mut())
+            .await
+            .is_err()
+    );
+    let unrelated = client("http://127.0.0.1:9".into(), ProviderKind::Codex);
+    tokio::time::timeout(
+        std::time::Duration::from_secs(1),
+        unrelated.wait_for_pending_auth(),
+    )
+    .await
+    .unwrap();
+    release_tx.send(()).unwrap();
+    server.await.unwrap();
+    tokio::time::timeout(std::time::Duration::from_secs(1), async {
+        tokio::join!(drain, clone_drain);
+    })
+    .await
+    .unwrap();
+    assert!(
+        matches!(connection.store.load("fixture").unwrap(), Some(Credential::Codex { refresh_token, .. }) if refresh_token.expose() == "drain-rotated-refresh")
+    );
+}
+
+#[tokio::test]
+async fn auth_drain_finishes_after_failed_refresh_without_changing_credentials() {
+    let (token_url, server) = fixture(
+        "401 Unauthorized",
+        b"private upstream error".to_vec(),
+        "Content-Type: application/json\r\n",
+    )
+    .await;
+    let mut connection = client("http://127.0.0.1:9".into(), ProviderKind::Codex);
+    connection.token_url = url::Url::parse(&token_url).unwrap();
+    let old = Credential::Codex {
+        access_token: SecretString::new("old-access"),
+        refresh_token: SecretString::new("old-refresh"),
+        expires_at: 0,
+        account_id: "failed-drain-account".into(),
+    };
+    connection.store.save("fixture", old.clone()).unwrap();
+    assert_eq!(
+        connection
+            .complete("model", &history(), &CancellationToken::new())
+            .await
+            .unwrap_err()
+            .code,
+        ErrorCode::Unauthorized
+    );
+    tokio::time::timeout(
+        std::time::Duration::from_secs(1),
+        connection.wait_for_pending_auth(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(connection.store.load("fixture").unwrap(), Some(old));
+    server.await.unwrap();
+}

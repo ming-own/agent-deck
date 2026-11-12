@@ -215,6 +215,7 @@ pub struct ProviderClient {
     store: Arc<dyn CredentialStore>,
     http: Client,
     token_url: Url,
+    pending_auth: Arc<oauth::PendingAuth>,
 }
 impl ProviderClient {
     pub fn new(provider: Provider, store: Arc<dyn CredentialStore>) -> Result<Self> {
@@ -234,7 +235,18 @@ impl ProviderClient {
             store,
             http: http_client()?,
             token_url: Url::parse(oauth::TOKEN_URL).expect("constant URL"),
+            pending_auth: Arc::new(oauth::PendingAuth::default()),
         })
+    }
+    /// Wait for this client and its clones' already-owned authentication work to
+    /// finish, including persistence of an in-flight rotating refresh grant.
+    ///
+    /// Quiesce/cancel and join all request producers first, then await this barrier
+    /// while keeping their Tokio runtime alive. Only afterward drop the runtime.
+    /// This reports no credential material and does not imply a refresh succeeded.
+    /// Unrelated ProviderClient instances never delay this drain.
+    pub async fn wait_for_pending_auth(&self) {
+        self.pending_auth.wait().await;
     }
     fn endpoint(&self, path: &str) -> Url {
         let mut url = self.base.clone();
@@ -257,6 +269,7 @@ impl ProviderClient {
                 &self.http,
                 &self.token_url,
                 cancel,
+                &self.pending_auth,
             )
             .await?
         } else {
